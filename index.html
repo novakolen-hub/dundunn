@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
+<title>V9 Scanner</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#1a1a2e;color:#fff;padding:14px 16px;overflow-y:auto;font-size:16px;-webkit-text-size-adjust:100%}
+  .timer{font-size:52px;font-weight:bold;font-variant-numeric:tabular-nums;color:#4caf50;text-align:center;letter-spacing:2px}
+  .row{display:flex;align-items:center;justify-content:space-between;margin:4px 0}
+  .gp{font-size:28px;font-weight:bold;letter-spacing:1px}
+  .phase{font-size:16px;font-weight:bold;padding:5px 14px;border-radius:4px;background:#333}
+  .lbl{font-size:15px;color:#666;min-width:30px;display:inline-block}
+  .val{font-size:16px;font-weight:bold;font-variant-numeric:tabular-nums}
+  .quota{font-size:16px;font-variant-numeric:tabular-nums;text-align:center;margin-top:4px}
+  .divider{border-top:1px solid #333;margin:8px 0}
+  .toggles{display:flex;gap:16px;justify-content:center}
+  .sec-hdr{background:#2a2a4a;color:#fff;font-weight:bold;font-size:17px;padding:8px 10px;margin-top:12px;letter-spacing:0.5px;border-left:4px solid #4caf50;border-radius:2px}
+  .mkt-row{display:flex;justify-content:space-between;padding:6px 10px;font-size:15px;border-bottom:1px solid #1f1f3a}
+  .mkt-row:hover{background:#2a2a4a}
+  .sym{color:#ccc;min-width:60px;font-size:15px}
+  .mkt-val{font-variant-numeric:tabular-nums;min-width:60px;text-align:right;color:#ddd;font-size:15px}
+  .mkt-chg{font-weight:bold;font-variant-numeric:tabular-nums;min-width:58px;text-align:right;font-size:15px}
+  .pos{color:#4caf50}.neg{color:#F44336}.flat{color:#666}
+  .summary{font-size:14px;color:#888;text-align:center;margin:4px 0}
+  .score-row{background:#1a1a2e;font-weight:bold;border:1px solid #333}
+  .breadth-val{font-variant-numeric:tabular-nums;text-align:right;font-size:15px}
+  .news-hdr{background:#2a2a4a;color:#fff;font-weight:bold;font-size:17px;padding:8px 10px;margin-top:10px;letter-spacing:0.5px;border-left:4px solid #FF9800;border-radius:2px}
+  .news-item{padding:10px 10px;border-bottom:1px solid #1f1f3a;cursor:pointer}
+  .news-item.pos-news{border-left:3px solid #4caf50;background:rgba(76,175,80,0.08)}
+  .news-item.read{opacity:0.4}
+  .news-item.read .news-hl{text-decoration:line-through}
+  .news-item.stale{opacity:0.35}
+  .news-item.stale .news-hl{color:#666}
+  @keyframes gpFlash{0%{opacity:1}25%{opacity:0.2}50%{opacity:1}75%{opacity:0.2}100%{opacity:1}}
+  .gp-flash{animation:gpFlash 0.4s ease-in-out 5}
+  .gp-banner{padding:10px 12px;border-radius:6px;margin:4px 0;transition:background 0.3s}
+  .sparkline-wrap{margin:8px 0}
+  .spark-hdr{font-size:15px;font-weight:bold;color:#ccc;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+  .spark-val{font-size:16px;font-weight:bold;font-variant-numeric:tabular-nums}
+  .heatmap{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+  .heat-box{padding:5px 8px;border-radius:4px;font-size:12px;font-weight:bold;text-align:center;min-width:48px;flex:1 1 auto}
+  .news-hl{font-size:15px;color:#e0e0e0;line-height:1.5;display:block}
+  .news-meta{font-size:12px;color:#666;margin-top:4px}
+  .news-src{color:#888}.news-time{color:#4caf50;margin-left:6px}
+  .news-related{color:#FF9800;font-size:12px;font-weight:bold;margin-left:4px}
+  .ai-hdr{background:#2a2a4a;color:#fff;font-weight:bold;font-size:17px;padding:8px 10px;margin-top:10px;letter-spacing:0.5px;border-left:4px solid #9C27B0;border-radius:2px}
+  .ai-brief{padding:10px 12px;font-size:14px;color:#e0e0e0;line-height:1.7;white-space:pre-wrap;background:#12122a;border-radius:0 0 4px 4px}
+  .news-tags{margin-top:4px;display:flex;flex-wrap:wrap;gap:5px}
+  .news-tag{font-size:11px;font-weight:bold;padding:2px 8px;border-radius:8px;letter-spacing:0.3px}
+</style>
+<div>
+  <div id="countdown" class="timer">--:--</div>
+  <div class="divider"></div>
+  <div class="gp-banner" id="gpBanner">
+    <div class="row">
+      <div id="gp" class="gp">GP-?</div>
+      <div id="phase" class="phase">...</div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="toggles">
+    <div><span class="lbl">1m</span><span id="s1" class="val">...</span></div>
+    <div><span class="lbl">5m</span><span id="s5" class="val">...</span></div>
+    <div><span class="lbl">30m</span><span id="s30" class="val">...</span></div>
+  </div>
+  <div id="fullscan" class="val" style="text-align:center;margin-top:2px"></div>
+  <div class="divider"></div>
+  <div id="quota" class="quota">...</div>
+  <div id="gpTimelineSection" class="sparkline-wrap"></div>
+  <div id="sparklineSection" class="sparkline-wrap"></div>
+  <div id="heatmapSection"></div>
+  <div id="aiBriefSection"></div>
+  <div id="newsSection"></div>
+  <div class="divider"></div>
+  <div id="marketData"></div>
+  <div style="text-align:center;margin-top:16px;padding:8px">
+    <span id="connStatus" style="font-size:11px;color:#666">Connecting...</span><br>
+    <span onclick="setupUrl()" style="font-size:12px;color:#444;cursor:pointer;text-decoration:underline">⚙️ Change URL</span>
+  </div>
+</div>
+<script>
+var INTERVAL=5*60;var remaining=INTERVAL;var knownUpdate=null;var readNews={};var lastGP=null;var breadthHistory=[];var gpHistory=[];
+var gpColors={A:"#00C853",B:"#2196F3",C:"#FF9800",D:"#F44336"};
+var phaseColors={PM:"#9C27B0",OPEN:"#FF9800",CORE:"#4caf50",AH:"#607D8B",OFF:"#333"};
+var phaseLabels={PM:"PRE-MKT",OPEN:"OPENING",CORE:"CORE",AH:"AFTER-HRS",OFF:"OFF-HRS"};
+var GP_BG={A:"rgba(0,200,83,0.15)",B:"rgba(33,150,243,0.15)",C:"rgba(255,152,0,0.15)",D:"rgba(244,67,54,0.15)"};
+
+function flashGP(letter){
+  var banner=document.getElementById("gpBanner");
+  banner.style.background=GP_BG[letter]||"transparent";
+  banner.classList.remove("gp-flash");
+  void banner.offsetWidth;
+  banner.classList.add("gp-flash");
+  setTimeout(function(){banner.classList.remove("gp-flash")},4000);
+}
+
+function updateGPHistory(letter){
+  if(!letter)return;
+  renderGPTimeline();
+}
+
+function renderGPTimeline(){
+  var el=document.getElementById("gpTimelineSection");
+  if(gpHistory.length<1){el.innerHTML="";return}
+  var W=Math.min(document.body.clientWidth-24,400),H=44,PAD_L=8,PAD_R=8,BAR_TOP=4,BAR_H=16,LABEL_Y=38;
+  var plotW=W-PAD_L-PAD_R;
+  var now=Date.now();
+  
+  // Build 7am-2pm AZ window (AZ = UTC-7, no DST)
+  var d=new Date();
+  var utcMid=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),0,0,0);
+  var tMin=utcMid+14*3600000; // 7am AZ = 14:00 UTC
+  var tMax=utcMid+21*3600000; // 2pm AZ = 21:00 UTC
+  if(now>tMax)tMax=now;
+  var tRange=tMax-tMin||1;
+  
+  function xPos(t){var v=PAD_L+(t-tMin)/tRange*plotW;return Math.max(PAD_L,Math.min(W-PAD_R,v))}
+  
+  var GP_FILL={A:"#00C853",B:"#2196F3",C:"#FF9800",D:"#F44336"};
+  
+  // Draw colored blocks for each GP period
+  var blocks="";
+  for(var i=0;i<gpHistory.length;i++){
+    var x1=xPos(gpHistory[i].t);
+    var x2=(i<gpHistory.length-1)?xPos(gpHistory[i+1].t):xPos(tMax);
+    var w=x2-x1;
+    if(w<1)w=1;
+    blocks+='<rect x="'+x1.toFixed(1)+'" y="'+BAR_TOP+'" width="'+w.toFixed(1)+'" height="'+BAR_H+'" fill="'+GP_FILL[gpHistory[i].gp]+'" rx="2"/>';
+    // Label inside block if wide enough
+    if(w>20){
+      var tx=x1+w/2;
+      blocks+='<text x="'+tx.toFixed(1)+'" y="'+(BAR_TOP+BAR_H/2+4)+'" fill="#fff" font-size="9" font-weight="bold" text-anchor="middle">'+gpHistory[i].gp+'</text>';
+    }
+  }
+  
+  // Time axis - hardcoded AZ trading hours
+  var timeSvg="";
+  var azHours=[{h:7,l:"7a"},{h:8,l:"8a"},{h:9,l:"9a"},{h:10,l:"10a"},{h:11,l:"11a"},{h:12,l:"12p"},{h:13,l:"1p"},{h:14,l:"2p"}];
+  for(var hi=0;hi<azHours.length;hi++){
+    var hMs=utcMid+(azHours[hi].h+7)*3600000;
+    var tx=xPos(hMs);
+    if(tx>PAD_L+5&&tx<W-PAD_R-5){
+      timeSvg+='<line x1="'+tx.toFixed(1)+'" y1="'+(BAR_TOP+BAR_H)+'" x2="'+tx.toFixed(1)+'" y2="'+(BAR_TOP+BAR_H+4)+'" stroke="#444" stroke-width="0.5"/>';
+      timeSvg+='<text x="'+tx.toFixed(1)+'" y="'+LABEL_Y+'" fill="#666" font-size="8" text-anchor="middle">'+azHours[hi].l+'</text>';
+    }
+  }
+  
+  // Current time marker
+  var nowX=xPos(tMax);
+  var markerSvg='<line x1="'+nowX.toFixed(1)+'" y1="'+(BAR_TOP-2)+'" x2="'+nowX.toFixed(1)+'" y2="'+(BAR_TOP+BAR_H+2)+'" stroke="#fff" stroke-width="1.5" opacity="0.7"/>';
+  
+  // Duration label for current GP
+  var currentDur="";
+  if(gpHistory.length>0){
+    var lastEntry=gpHistory[gpHistory.length-1];
+    var durMin=Math.floor((now-lastEntry.t)/60000);
+    if(durMin<60)currentDur=durMin+"m";
+    else currentDur=Math.floor(durMin/60)+"h "+Math.floor(durMin%60)+"m";
+  }
+  
+  var svg='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block">'
+    +blocks+timeSvg+markerSvg
+    +'</svg>';
+  
+  var lastLetter=gpHistory[gpHistory.length-1].gp;
+  el.innerHTML='<div class="spark-hdr"><span>\u{1F3AF} GAMEPLAN</span><span class="spark-val" style="color:'+(GP_FILL[lastLetter]||"#fff")+'">GP-'+lastLetter+' <span style="color:#888;font-size:11px">'+currentDur+'</span></span></div>'+svg;
+}
+
+function updateSparkline(score){
+  renderSparkline();
+}
+
+function renderSparkline(){
+  var el=document.getElementById("sparklineSection");
+  if(breadthHistory.length<2){el.innerHTML="";return}
+  var W=Math.min(document.body.clientWidth-24,400),H=100,PAD_L=28,PAD_R=8,PAD_T=12,PAD_B=22;
+  var plotW=W-PAD_L-PAD_R,plotH=H-PAD_T-PAD_B;
+  var vals=breadthHistory.map(function(p){return p.v});
+  var mn=Math.min.apply(null,vals);
+  var mx=Math.max.apply(null,vals);
+  mn=Math.min(mn,-5);mx=Math.max(mx,12);
+  var range=mx-mn||1;
+  
+  // Always show 7am-2pm AZ (AZ = UTC-7, no DST)
+  var today=new Date();
+  var utcMid=Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate(),0,0,0);
+  var tMin=utcMid+14*3600000; // 7am AZ = 14:00 UTC
+  var tMax=utcMid+21*3600000; // 2pm AZ = 21:00 UTC
+  if(Date.now()>tMax)tMax=Date.now();
+  var tRange=tMax-tMin||1;
+  
+  function xPos(t){return PAD_L+(t-tMin)/tRange*plotW}
+  function yPos(v){return PAD_T+plotH-(v-mn)/range*plotH}
+  
+  // GP zone backgrounds
+  var zones=[
+    {min:9.5,max:mx,color:"rgba(0,200,83,0.08)"},
+    {min:3,max:9.5,color:"rgba(33,150,243,0.08)"},
+    {min:-3,max:3,color:"rgba(255,152,0,0.08)"},
+    {min:mn,max:-3,color:"rgba(244,67,54,0.08)"}
+  ];
+  var zoneSvg="";
+  for(var z=0;z<zones.length;z++){
+    var zt=yPos(zones[z].max);
+    var zb=yPos(zones[z].min);
+    if(zb>zt){
+      zoneSvg+='<rect x="'+PAD_L+'" y="'+zt.toFixed(1)+'" width="'+plotW+'" height="'+(zb-zt).toFixed(1)+'" fill="'+zones[z].color+'"/>';
+    }
+  }
+  
+  // GP threshold lines with labels
+  var thresholds=[{v:9.5,c:"#00C853",l:"A 9.5"},{v:3,c:"#2196F3",l:"B 3"},{v:0,c:"#666",l:"0"},{v:-3,c:"#F44336",l:"D -3"}];
+  var threshSvg="";
+  for(var t=0;t<thresholds.length;t++){
+    var ty=yPos(thresholds[t].v);
+    if(ty>=PAD_T&&ty<=PAD_T+plotH){
+      threshSvg+='<line x1="'+PAD_L+'" y1="'+ty.toFixed(1)+'" x2="'+(W-PAD_R)+'" y2="'+ty.toFixed(1)+'" stroke="'+thresholds[t].c+'" stroke-width="0.5" stroke-dasharray="3,2" opacity="0.5"/>';
+      threshSvg+='<text x="'+(PAD_L-3)+'" y="'+(ty+3).toFixed(1)+'" fill="'+thresholds[t].c+'" font-size="8" text-anchor="end" opacity="0.7">'+thresholds[t].l+'</text>';
+    }
+  }
+  
+  // Score axis (left) - min and max
+  var axisSvg='<text x="'+(PAD_L-3)+'" y="'+(PAD_T+5)+'" fill="#666" font-size="8" text-anchor="end">'+mx.toFixed(0)+'</text>';
+  axisSvg+='<text x="'+(PAD_L-3)+'" y="'+(PAD_T+plotH)+'" fill="#666" font-size="8" text-anchor="end">'+mn.toFixed(0)+'</text>';
+  
+  // Time axis - hardcoded AZ trading hours
+  var timeSvg="";
+  var azHours=[{h:7,l:"7a"},{h:8,l:"8a"},{h:9,l:"9a"},{h:10,l:"10a"},{h:11,l:"11a"},{h:12,l:"12p"},{h:13,l:"1p"},{h:14,l:"2p"}];
+  for(var hi=0;hi<azHours.length;hi++){
+    var hMs=utcMid+(azHours[hi].h+7)*3600000;
+    var tx=xPos(hMs);
+    if(tx>PAD_L+5&&tx<W-PAD_R-5){
+      timeSvg+='<line x1="'+tx.toFixed(1)+'" y1="'+(PAD_T+plotH)+'" x2="'+tx.toFixed(1)+'" y2="'+(PAD_T+plotH+4)+'" stroke="#444" stroke-width="0.5"/>';
+      timeSvg+='<text x="'+tx.toFixed(1)+'" y="'+(PAD_T+plotH+14)+'" fill="#666" font-size="8" text-anchor="middle">'+azHours[hi].l+'</text>';
+    }
+  }
+  
+  // Build colored line segments (color based on GP zone at each point)
+  function gpColor(v){return v>=9.5?"#00C853":v>=3?"#2196F3":v>=-3?"#FF9800":"#F44336"}
+  var pathSvg="";
+  for(var i=1;i<breadthHistory.length;i++){
+    var x1=xPos(breadthHistory[i-1].t).toFixed(1);
+    var y1=yPos(breadthHistory[i-1].v).toFixed(1);
+    var x2=xPos(breadthHistory[i].t).toFixed(1);
+    var y2=yPos(breadthHistory[i].v).toFixed(1);
+    var segColor=gpColor(breadthHistory[i].v);
+    pathSvg+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+segColor+'" stroke-width="2" stroke-linecap="round"/>';
+  }
+  
+  // Current value dot + glow
+  var lastV=vals[vals.length-1];
+  var dotColor=gpColor(lastV);
+  var dotX=xPos(tMax).toFixed(1);
+  var dotY=yPos(lastV).toFixed(1);
+  var dotSvg='<circle cx="'+dotX+'" cy="'+dotY+'" r="5" fill="'+dotColor+'" opacity="0.3"/>';
+  dotSvg+='<circle cx="'+dotX+'" cy="'+dotY+'" r="3" fill="'+dotColor+'"/>';
+  
+  // Plot border
+  var borderSvg='<rect x="'+PAD_L+'" y="'+PAD_T+'" width="'+plotW+'" height="'+plotH+'" fill="none" stroke="#333" stroke-width="0.5"/>';
+  
+  var svg='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block">'
+    +zoneSvg+borderSvg+threshSvg+axisSvg+timeSvg+pathSvg+dotSvg
+    +'</svg>';
+  
+  var scoreColor=gpColor(lastV);
+  var arrow=breadthHistory.length>=3?(lastV>breadthHistory[breadthHistory.length-3].v?"\u25B2":"\u25BC"):"";
+  var arrowColor=arrow==="\u25B2"?"#4caf50":"#F44336";
+  
+  el.innerHTML='<div class="spark-hdr"><span>\u{1F4C8} BREADTH</span><span class="spark-val" style="color:'+scoreColor+'">'+lastV.toFixed(1)+' <span style="color:'+arrowColor+';font-size:11px">'+arrow+'</span></span></div>'+svg;
+}
+
+function renderHeatmap(sectorData){
+  var el=document.getElementById("heatmapSection");
+  if(!sectorData||sectorData.length===0){el.innerHTML="";return}
+  var growth=[],defense=[];
+  for(var i=0;i<sectorData.length;i++){
+    if(sectorData[i].type==='D')defense.push(sectorData[i]);
+    else growth.push(sectorData[i]);
+  }
+  function makeBoxes(arr){
+    var h='';
+    for(var i=0;i<arr.length;i++){
+      var val=parseFloat(arr[i].chg)||0;
+      var bg,fg;
+      if(val>=1){bg="#00C853";fg="#000"}
+      else if(val>0){bg="#2E7D32";fg="#fff"}
+      else if(val===0){bg="#333";fg="#888"}
+      else if(val>=-1){bg="#c62828";fg="#fff"}
+      else{bg="#b71c1c";fg="#fff"}
+      h+='<span class="heat-box" style="background:'+bg+';color:'+fg+'" title="'+arr[i].name+": "+(val>=0?"+":"")+val.toFixed(2)+'%">'+arr[i].sym+'<br>'+(val>=0?"+":"")+val.toFixed(1)+'%</span>';
+    }
+    return h;
+  }
+  var h='<div class="sec-hdr" style="border-left-color:#E040FB">\u{1F5FA} SECTOR MAP</div>';
+  h+='<div style="font-size:9px;color:#888;margin:2px 0 1px 8px">GROWTH</div><div class="heatmap">'+makeBoxes(growth)+'</div>';
+  h+='<div style="font-size:9px;color:#888;margin:4px 0 1px 8px">DEFENSIVE</div><div class="heatmap">'+makeBoxes(defense)+'</div>';
+  el.innerHTML=h;
+}
+
+function chgClass(s){
+  if(!s)return"flat";
+  var n=parseFloat(String(s).replace('%',''));
+  if(isNaN(n))return"flat";
+  return n>0?"pos":n<0?"neg":"flat";
+}
+
+function fmtChg(s){
+  if(!s)return"";
+  var str=String(s);
+  var hasPercent=str.indexOf('%')>=0;
+  var n=parseFloat(str.replace('%',''));
+  if(isNaN(n))return s;
+  // If Sheets stripped %, value will be tiny decimal like 0.0042 instead of 0.42
+  if(!hasPercent&&Math.abs(n)<0.5&&n!==0) n=n*100;
+  var pct=n.toFixed(2)+"%";
+  return n>0?"+"+pct:pct;
+}
+
+function fmtBreadth(sym,val){
+  // Color-code breadth values
+  var n=parseFloat(val);
+  if(isNaN(n))return'<span class="breadth-val flat">'+val+'</span>';
+  var cls="flat";
+  if(sym==="$TICK"){cls=n>300?"pos":n<-300?"neg":"flat"}
+  else if(sym==="$ADD"||sym==="$ADQD"){cls=n>500?"pos":n<-500?"neg":"flat"}
+  else if(sym.indexOf("VOLD")>=0||sym.indexOf("VOLQD")>=0){cls=n>0?"pos":n<0?"neg":"flat"}
+  else if(sym==="$VIX"){cls=n<18?"pos":n>25?"neg":"flat"}
+  return'<span class="breadth-val '+cls+'">'+val+'</span>';
+}
+
+function renderAiBrief(brief){
+  var el=document.getElementById("aiBriefSection");
+  if(!brief){el.innerHTML="";return}
+  var h='<div class="ai-hdr">\u{1F9E0} CATALYST BRIEF</div>';
+  h+='<div class="ai-brief">'+brief.replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</div>';
+  el.innerHTML=h;
+}
+
+var NEWS_TAGS=[
+  {label:"Tariffs",rx:/tariff|trade war|trade deal|import dut|export ban|trade restrict|trade tension/i,bg:"#F44336",fg:"#fff"},
+  {label:"Fed",rx:/the fed |federal reserve|rate cut|rate hike|fomc|powell|hawkish|dovish|monetary policy|fed rate|fed hold/i,bg:"#2196F3",fg:"#fff"},
+  {label:"Inflation",rx:/cpi |ppi |pce |inflation|consumer price|producer price| cpi| ppi/i,bg:"#FF9800",fg:"#000"},
+  {label:"Jobs",rx:/nonfarm|non-farm|payroll|unemployment|jobless claim|jobs report|labor market/i,bg:"#9C27B0",fg:"#fff"},
+  {label:"GDP",rx:/gdp |economic growth|recession|soft landing| gdp/i,bg:"#00BCD4",fg:"#000"},
+  {label:"Oil",rx:/oil price|crude oil|crude price|opec|petroleum|brent crude|wti crude|oil surge|oil drop|oil fall/i,bg:"#795548",fg:"#fff"},
+  {label:"China",rx:/china|chinese|beijing|xi jinping|yuan|shanghai|hang seng/i,bg:"#F44336",fg:"#fff"},
+  {label:"Semis",rx:/semiconductor|chip maker|chipmaker|chip act|nvidia|nvda|amd |tsmc|asml|chip stock|chip sale/i,bg:"#4caf50",fg:"#fff"},
+  {label:"AI",rx:/artificial intelligence|ai model|ai launch|ai invest|ai race|ai boom|ai chip|ai spend|openai|chatgpt|deepseek|generative ai/i,bg:"#E040FB",fg:"#fff"},
+  {label:"Earnings",rx:/earnings|revenue miss|revenue beat|quarterly result|profit warn|beats estimate|misses estimate|eps |q[1-4] |fiscal q/i,bg:"#FFD600",fg:"#000"},
+  {label:"Crypto",rx:/bitcoin|btc |crypto|ethereum|eth /i,bg:"#FF9800",fg:"#000"},
+  {label:"Bonds",rx:/treasury|bond yield|10-year|2-year|yield curve|bond market/i,bg:"#607D8B",fg:"#fff"},
+  {label:"Dollar",rx:/us dollar|dollar strength|dollar weak|dxy |dollar index/i,bg:"#4CAF50",fg:"#fff"},
+  {label:"Gold",rx:/gold price|gold surge|gold drop|gold hit|precious metal|safe haven|gold rally/i,bg:"#FFD600",fg:"#000"},
+  {label:"Geopolitical",rx:/military|missile|invasion|geopolit|nato|conflict|attack|iran|russia|ukraine|israel|gaza|middle east/i,bg:"#F44336",fg:"#fff"},
+  {label:"Regulation",rx:/antitrust|regulat.*tech|big tech.*regulat|monopoly|breakup|doj.*google|ftc.*meta|sec.*charge|sec.*probe/i,bg:"#9E9E9E",fg:"#000"},
+  {label:"IPO",rx:/ipo |goes public|public offering|spac|direct listing| ipo/i,bg:"#00BCD4",fg:"#000"},
+  {label:"Sanctions",rx:/sanction/i,bg:"#F44336",fg:"#fff"},
+  {label:"Housing",rx:/housing|mortgage|home sales|real estate|home price/i,bg:"#8D6E63",fg:"#fff"},
+  {label:"Auto",rx:/tesla|tsla|electric vehicle|auto sale| ev |rivian|lucid/i,bg:"#2196F3",fg:"#fff"},
+  {label:"M&A",rx:/merger|acquisition|acquir|buyout|takeover|deal to buy|agrees to buy|bid for/i,bg:"#CE93D8",fg:"#000"},
+  {label:"Buyback",rx:/buyback|share repurchase|repurchase program|stock repurchase/i,bg:"#80CBC4",fg:"#000"},
+  {label:"Dividend",rx:/dividend hike|dividend cut|special dividend|dividend raise|dividend increase|dividend slash/i,bg:"#A5D6A7",fg:"#000"},
+  {label:"Analyst",rx:/upgrade|downgrade|price target|rating|overweight|underweight|outperform|underperform|buy rating|sell rating|initiates coverage/i,bg:"#42A5F5",fg:"#fff"},
+  {label:"FDA",rx:/fda |drug approval|clinical trial|phase 3|phase 2|drug approv|biotech/i,bg:"#EF5350",fg:"#fff"},
+  {label:"Layoffs",rx:/layoff|job cut|restructur|workforce reduc|headcount|downsiz/i,bg:"#BDBDBD",fg:"#000"},
+  {label:"Guidance",rx:/raised guidance|raised outlook|lowered guidance|lowered outlook|cuts forecast|raises forecast|updates outlook/i,bg:"#FFF176",fg:"#000"},
+  {label:"Split",rx:/stock split|reverse split|share split/i,bg:"#B39DDB",fg:"#000"},
+  {label:"Insider",rx:/insider buy|insider sell|ceo bought|ceo sold|insider purchas|insider fil/i,bg:"#FFAB91",fg:"#000"},
+  {label:"Debt",rx:/credit downgrade|credit upgrade|bond rating|default|debt ceiling|credit rating/i,bg:"#78909C",fg:"#fff"},
+  {label:"Energy",rx:/natural gas|solar|battery|renewable|nuclear|lng |wind farm|clean energy/i,bg:"#66BB6A",fg:"#000"},
+  {label:"Defense",rx:/pentagon|defense contract|lockheed|raytheon|northrop|arms deal|military spend/i,bg:"#5C6BC0",fg:"#fff"},
+  {label:"Retail",rx:/consumer spending|retail sales|same-store|consumer confidence|holiday sales|spending data/i,bg:"#FF8A65",fg:"#000"}
+];
+var NEWS_SOURCE_BLACKLIST={"marketwatch":1};
+
+function getNewsTags(headline, related){
+  var tags=[];
+  for(var t=0;t<NEWS_TAGS.length;t++){
+    if(NEWS_TAGS[t].rx.test(headline)){
+      tags.push(NEWS_TAGS[t]);
+    }
+  }
+  var tickers=[];
+  var seen={};
+  var companyMap={
+    "apple":"AAPL","microsoft":"MSFT","google":"GOOG","alphabet":"GOOG","amazon":"AMZN",
+    "meta":"META","facebook":"META","nvidia":"NVDA","tesla":"TSLA","netflix":"NFLX",
+    "amd":"AMD","intel":"INTC","broadcom":"AVGO","qualcomm":"QCOM","tsmc":"TSM",
+    "asml":"ASML","micron":"MU","palantir":"PLTR","salesforce":"CRM","adobe":"ADBE",
+    "coinbase":"COIN","jpmorgan":"JPM","goldman":"GS","morgan stanley":"MS",
+    "bank of america":"BAC","wells fargo":"WFC","citigroup":"C","disney":"DIS",
+    "boeing":"BA","caterpillar":"CAT","exxon":"XOM","chevron":"CVX",
+    "walmart":"WMT","costco":"COST","home depot":"HD","target":"TGT",
+    "uber":"UBER","airbnb":"ABNB","spotify":"SPOT","snap":"SNAP",
+    "crowdstrike":"CRWD","snowflake":"SNOW","datadog":"DDOG","shopify":"SHOP",
+    "arm holdings":"ARM","super micro":"SMCI","supermicro":"SMCI",
+    "eli lilly":"LLY","novo nordisk":"NVO","unitedhealth":"UNH",
+    "berkshire":"BRK.B","warren buffett":"BRK.B"
+  };
+  if(related){
+    var rel=related.split(",");
+    for(var r=0;r<rel.length;r++){
+      var tk=rel[r].trim().toUpperCase();
+      if(tk&&tk.length>=1&&tk.length<=5&&!seen[tk]){seen[tk]=1;tickers.push(tk)}
+    }
+  }
+  // Find $TICKER patterns
+  var dRx=new RegExp("\\\\$([A-Z]{1,5})","g");
+  var dm=headline.match(dRx);
+  if(dm){
+    for(var d=0;d<dm.length;d++){
+      var tk=dm[d].replace("$","");
+      if(!seen[tk]){seen[tk]=1;tickers.push(tk)}
+    }
+  }
+  // Find uppercase tickers (3-5 chars to reduce false positives)
+  var skip={"THE":1,"AND":1,"FOR":1,"ARE":1,"BUT":1,"NOT":1,"YOU":1,"ALL":1,"CAN":1,"HAS":1,"HER":1,"WAS":1,"ONE":1,"OUR":1,"OUT":1,"NEW":1,"NOW":1,"WAY":1,"MAY":1,"SAY":1,"SHE":1,"TWO":1,"HOW":1,"ITS":1,"LET":1,"PUT":1,"TOO":1,"USE":1,"CEO":1,"IPO":1,"GDP":1,"CPI":1,"PPI":1,"PCE":1,"FED":1,"SEC":1,"USA":1,"NYSE":1,"ETF":1,"DOJ":1,"FTC":1,"NATO":1,"OPEC":1,"IMF":1,"WHO":1,"FBI":1};
+  var words=headline.split(/[^A-Za-z]+/);
+  for(var w=0;w<words.length;w++){
+    var wd=words[w];
+    if(wd.length>=2&&wd.length<=5&&wd===wd.toUpperCase()&&/^[A-Z]+$/.test(wd)&&!skip[wd]&&!seen[wd]){
+      seen[wd]=1;tickers.push(wd);
+    }
+  }
+  // Check company names
+  var lower=headline.toLowerCase();
+  var keys=Object.keys(companyMap);
+  for(var c=0;c<keys.length;c++){
+    if(lower.indexOf(keys[c])>=0){
+      var tk=companyMap[keys[c]];
+      if(!seen[tk]){seen[tk]=1;tickers.push(tk)}
+    }
+  }
+  return{tags:tags,tickers:tickers};
+}
+
+var _positionTickers=[];
+function renderNews(news){
+  var el=document.getElementById("newsSection");
+  if(!news||news.length===0){
+    el.innerHTML='<div class="news-hdr">\u{1F4F0} NEWS</div><div style="padding:8px;color:#666;font-size:12px">No recent headlines</div>';
+    return;
+  }
+  var posItems=[];
+  var mktItems=[];
+  for(var i=0;i<news.length;i++){
+    var n=news[i];
+    var ago="";
+    if(n.time){
+      var mins=Math.floor((Date.now()/1000-n.time)/60);
+      if(mins<1)ago="just now";
+      else if(mins<60)ago=mins+"m ago";
+      else{var hrs=Math.floor(mins/60);ago=hrs+"h "+Math.floor(mins%60)+"m ago";}
+    }
+    var safeUrl=n.url.replace(/"/g,"&quot;");
+    var result=getNewsTags(n.headline, n.related);
+    var tags=result.tags;
+    var tickers=result.tickers;
+    if(tags.length===0) continue;
+    if(NEWS_SOURCE_BLACKLIST[(n.source||"").toLowerCase()]) continue;
+    var isStale=n.time?(Math.floor(Date.now()/1000-n.time)>10800):false;
+    if(isStale) continue;
+    var tagHtml="";
+    if(tags.length>0||tickers.length>0){
+      tagHtml='<div class="news-tags">';
+      for(var t=0;t<tags.length;t++){
+        tagHtml+='<span class="news-tag" style="background:'+tags[t].bg+';color:'+tags[t].fg+'">'+tags[t].label+'</span>';
+      }
+      for(var k=0;k<tickers.length&&k<5;k++){
+        tagHtml+='<span class="news-tag" style="background:#1a1a2e;color:#4caf50;border:1px solid #4caf50">$'+tickers[k]+'</span>';
+      }
+      tagHtml+='</div>';
+    }
+    // Check if headline relates to a My Positions ticker
+    var isPosition=false;
+    for(var p=0;p<_positionTickers.length;p++){
+      var pt=_positionTickers[p];
+      if(!pt)continue;
+      for(var tk=0;tk<tickers.length;tk++){
+        if(tickers[tk]===pt){isPosition=true;break;}
+      }
+      if(isPosition)break;
+      // Also check headline for ticker mention
+      var ptRx=new RegExp('(^|[\\s(])'+pt+'([\\s).,!?:;]|$)','i');
+      if(ptRx.test(n.headline)){isPosition=true;break;}
+    }
+    var badgeColors={"IC":"#FF6D00","FH":"#1565C0","CN":"#00838F","YF":"#6A1B9A"};
+    var badgeLabel=n.feed||"FH";
+    var badgeBg=badgeColors[badgeLabel]||"#555";
+    var feedBadge='<span style="background:'+badgeBg+';color:#fff;font-size:8px;padding:1px 4px;border-radius:2px;margin-right:4px;font-weight:bold">'+badgeLabel+'</span>';
+    var itemObj={html:'',url:safeUrl};
+    var ih='<div class="news-item'+(isPosition?' pos-news':'')+'" data-url="'+safeUrl+'">';
+    ih+='<span class="news-hl">'+n.headline+'</span>';
+    ih+='<div class="news-meta">'+feedBadge+'<span class="news-src">'+n.source+'</span><span class="news-time">'+ago+'</span></div>';
+    ih+=tagHtml;
+    ih+='</div>';
+    itemObj.html=ih;
+    if(isPosition){posItems.push(itemObj);}else{mktItems.push(itemObj);}
+  }
+  var h='';
+  if(posItems.length>0){
+    h+='<div class="news-hdr" style="color:#4caf50">\u{1F4CC} MY POSITIONS ('+posItems.length+')</div>';
+    for(var pi=0;pi<posItems.length;pi++) h+=posItems[pi].html;
+  }
+  h+='<div class="news-hdr">\u{1F4F0} MARKET NEWS'+(mktItems.length>0?' ('+mktItems.length+')':'')+'</div>';
+  for(var mi=0;mi<mktItems.length;mi++) h+=mktItems[mi].html;
+  el.innerHTML=h;
+  var items=el.querySelectorAll(".news-item");
+  for(var j=0;j<items.length;j++){
+    if(readNews[items[j].getAttribute("data-url")])items[j].classList.add("read");
+    items[j].addEventListener("click",function(){
+      var u=this.getAttribute("data-url");
+      if(u){window.open(u,"_blank");this.classList.add("read");readNews[u]=1}
+    });
+  }
+}
+
+function renderMarket(m,breadthScore,sectorPts,leader,lagger){
+  if(!m)return;
+  var el=document.getElementById("marketData");
+  var h="";
+  
+  var order=["BENCHMARKS","FUTURES","BREADTH DETAIL","INTERNALS","GROWTH SECTORS","DEFENSIVE SECTORS","INTERMARKET RATIOS","COMMODITIES","INVERSE ETFs (GP-D)"];
+  for(var s=0;s<order.length;s++){
+    var sec=order[s];
+    var items=m[sec];
+    if(!items||items.length===0)continue;
+    h+='<div class="sec-hdr">'+sec+'</div>';
+    for(var i=0;i<items.length;i++){
+      var it=items[i];
+      if(sec==="BREADTH DETAIL"){
+        h+='<div class="mkt-row"><span class="sym">'+it.sym+'</span>'+fmtBreadth(it.sym,it.val)+'</div>';
+      } else if(sec==="INTERNALS"){
+        h+='<div class="mkt-row"><span class="sym">'+it.sym+'</span>'+fmtBreadth(it.sym,it.val)+'</div>';
+      } else if(sec==="GROWTH SECTORS"||sec==="DEFENSIVE SECTORS"){
+        // Sectors: val may be "0.42%" or 0.0042 (Sheets strips %)
+        var rawVal=String(it.val);
+        var pctN;
+        if(rawVal.indexOf('%')>=0){
+          pctN=parseFloat(rawVal.replace('%',''));
+        } else {
+          pctN=parseFloat(rawVal);
+          // If Sheets converted "0.42%" to 0.0042, it'll be tiny — multiply back
+          if(!isNaN(pctN)&&Math.abs(pctN)<1&&rawVal.indexOf('.')==1) pctN=pctN*100;
+        }
+        var sCls=isNaN(pctN)?"flat":pctN>0?"pos":pctN<0?"neg":"flat";
+        var sDisp=isNaN(pctN)?rawVal:pctN.toFixed(2)+"%";
+        var udCls=it.chg==="UP"?"pos":it.chg==="DN"?"neg":"flat";
+        h+='<div class="mkt-row"><span class="sym">'+it.sym+'</span><span class="mkt-val '+sCls+'">'+sDisp+'</span><span class="mkt-chg '+udCls+'">'+it.chg+'</span></div>';
+      } else if(sec==="INTERMARKET RATIOS"){
+        var cls=chgClass(it.chg);
+        var chgDisplay=fmtChg(it.chg);
+        h+='<div class="mkt-row"><span class="sym">'+it.sym+'</span><span class="mkt-val" style="font-size:11px">'+it.val+'</span><span class="mkt-chg '+cls+'">'+chgDisplay+'</span></div>';
+      } else {
+        var cls=chgClass(it.chg);
+        var chgDisplay=fmtChg(it.chg);
+        h+='<div class="mkt-row"><span class="sym">'+it.sym+'</span><span class="mkt-val">'+it.val+'</span><span class="mkt-chg '+cls+'">'+chgDisplay+'</span></div>';
+      }
+    }
+    if(sec==="BREADTH DETAIL"&&(breadthScore!==undefined)){
+      var scoreN=parseFloat(breadthScore)||0;
+      var scoreCls=scoreN>=9.5?"pos":scoreN>=3?"":"flat";
+      if(scoreN<=-3)scoreCls="neg";
+      else if(scoreN<3)scoreCls="neg";
+      h+='<div class="mkt-row score-row"><span class="sym" style="color:#fff">BREADTH</span><span class="mkt-chg '+scoreCls+'">'+breadthScore+'</span><span class="sym" style="color:#fff">SECTOR</span><span class="mkt-chg">'+sectorPts+'</span></div>';
+    }
+    if(sec==="DEFENSIVE SECTORS"&&leader){
+      h+='<div class="summary"><span class="pos">\u25B2 '+leader+'</span> &nbsp; <span class="neg">\u25BC '+lagger+'</span></div>';
+    }
+  }
+  el.innerHTML=h;
+}
+
+
+// ==================== CONFIG ====================
+// Set your deployed web app URL here (ends with /exec)
+var DATA_URL = localStorage.getItem('v9_data_url') || '';
+
+function setupUrl() {
+  var url = prompt('Paste your deployed Web App URL:\n(Deploy > Manage Deployments > copy URL)', DATA_URL);
+  if (url && url.trim()) {
+    DATA_URL = url.trim();
+    localStorage.setItem('v9_data_url', DATA_URL);
+    document.getElementById('setupBanner').style.display = 'none';
+    poll();
+  }
+}
+
+// Show setup banner if no URL configured
+if (!DATA_URL) {
+  var sb = document.createElement('div');
+  sb.id = 'setupBanner';
+  sb.style.cssText = 'background:#F44336;color:#fff;padding:12px;text-align:center;font-size:14px;cursor:pointer;border-radius:4px;margin-bottom:8px';
+  sb.innerHTML = '⚠️ Tap here to set your Web App URL';
+  sb.onclick = setupUrl;
+  document.body.insertBefore(sb, document.body.firstChild);
+}
+
+function poll(){
+  if (!DATA_URL) return;
+  fetch(DATA_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'} })
+    .then(function(resp) { 
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json(); 
+    })
+    .then(function(r) {
+    if(!r)return;
+    var el=document.getElementById("countdown");
+    if(!r.enabled){
+      el.textContent="--:--";el.style.color="#666";remaining=0;
+    } else if(r.updated){
+      if(knownUpdate!==r.updated){knownUpdate=r.updated;remaining=INTERVAL}
+      else{var e=Math.floor((Date.now()-parseInt(r.updated,10))/1000);if(e<600){remaining=Math.max(0,INTERVAL-e)}else{remaining=0}}
+    }
+    if(r.gpLetter){
+      var g=document.getElementById("gp");g.textContent="GP-"+r.gpLetter;g.style.color=gpColors[r.gpLetter]||"#fff";
+      var banner=document.getElementById("gpBanner");banner.style.background=GP_BG[r.gpLetter]||"transparent";
+      if(lastGP&&lastGP!==r.gpLetter)flashGP(r.gpLetter);
+      lastGP=r.gpLetter;
+      updateGPHistory(r.gpLetter);
+    }
+    var p=document.getElementById("phase");
+    var ph=r.phase||"OFF";
+    p.textContent=phaseLabels[ph]||ph;
+    p.style.background=phaseColors[ph]||"#333";
+    p.style.color="#fff";
+    var s5=document.getElementById("s5");
+    s5.textContent=r.enabled?"ON":"OFF";
+    s5.style.color=r.enabled?"#4caf50":"#F44336";
+    var s1=document.getElementById("s1");
+    s1.textContent=r.marketEnabled?"ON":"OFF";
+    s1.style.color=r.marketEnabled?"#4caf50":"#F44336";
+    var s30=document.getElementById("s30");
+    var f=document.getElementById("fullscan");
+    if(r.fullEnabled){
+      s30.textContent="ON";s30.style.color="#4caf50";
+      if(r.fullScanIn>0){f.textContent="\u27F3"+r.fullScanIn+"m";f.style.color="#2196F3"}
+      else if(r.fullScanIn===0){f.textContent="\u27F3NOW";f.style.color="#00C853"}
+      else{f.textContent=""}
+    }else{
+      s30.textContent="OFF";s30.style.color="#F44336";f.textContent="";
+    }
+    var q=document.getElementById("quota");
+    var c=r.quotaCount||0;
+    q.textContent="\u{1F4E1} "+(c>999?(c/1000).toFixed(1)+"K":c)+" / 20K";
+    q.style.color=c>16000?"#F44336":c>12000?"#FF9800":"#00BCD4";
+    if(r.history&&r.history.length>0){
+      breadthHistory=[];gpHistory=[];var lastGpEntry=null;
+      for(var hi=0;hi<r.history.length;hi++){
+        var pt=r.history[hi];
+        breadthHistory.push({t:pt.t,v:pt.v});
+        if(!lastGpEntry||lastGpEntry.gp!==pt.gp){
+          gpHistory.push({t:pt.t,gp:pt.gp});
+          lastGpEntry=pt;
+        }
+      }
+    }
+    if(r.breadthScore!==undefined)updateSparkline(r.breadthScore);
+    try{renderHeatmap(r.sectorHeatmap)}catch(e){}
+    try{renderAiBrief(r.aiBrief)}catch(e){document.getElementById("aiBriefSection").innerHTML='<div style="color:red;font-size:10px">Brief error: '+e.message+'</div>'}
+    try{if(r.positionTickers)_positionTickers=r.positionTickers}catch(e){}
+    try{renderNews(r.news)}catch(e){document.getElementById("newsSection").innerHTML='<div style="color:red;font-size:10px">News error: '+e.message+'</div>'}
+    try{renderMarket(r.market,r.breadthScore,r.sectorPts,r.leader,r.lagger)}catch(e){document.getElementById("marketData").innerHTML='<div style="color:red;font-size:10px">Market error: '+e.message+'</div>'}
+    var cs=document.getElementById("connStatus");
+    if(cs){cs.textContent="✅ Connected — polling every 5s";cs.style.color="#4caf50"}
+  }).catch(function(err) {
+    console.log('Poll error:', err);
+    var el = document.getElementById("countdown");
+    if (el) { el.textContent = "ERR"; el.style.color = "#F44336"; }
+    var cs = document.getElementById("connStatus");
+    if (cs) cs.textContent = "❌ Connection error — check URL";
+    cs.style.color = "#F44336";
+  });
+}
+if(DATA_URL) poll();
+setInterval(function(){
+  var el=document.getElementById("countdown");
+  if(!el)return;
+  if(remaining<=0){el.textContent="\u27F3";el.style.color="#2196F3";return}
+  var m=Math.floor(remaining/60);var s=remaining%60;
+  el.textContent=m+":"+(s<10?"0":"")+s;
+  if(remaining<=10)el.style.color="#F44336";
+  else if(remaining<=30)el.style.color="#FF9800";
+  else el.style.color="#4caf50";
+  remaining--;
+},1000);
+setInterval(poll,5000);
+</script>
+</html>
