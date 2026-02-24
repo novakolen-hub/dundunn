@@ -155,10 +155,10 @@ function rSess(d){
   var bn=gS(d,'BENCHMARKS'),fut=gS(d,'FUTURES'),comm=gS(d,'COMMODITIES');
   if(!bn.length&&!fut.length){$('sSess').innerHTML='';return}
   // Get Opus session analysis
-  var nar=d.dashboardNarrative||'',sec=parseN(nar),sessAn=gN(sec,['SESSION ANALYSIS','SESSION','STATS']);
-  var anMap={};if(sessAn){var lines=sessAn.split('\n');for(var i=0;i<lines.length;i++){var m=lines[i].match(/^([A-Z$\/]+):\s*(.+)/);if(m)anMap[m[1].trim()]=m[2].trim();}}
+  var nar=d.dashboardNarrative||'',sec=parseN(nar),sessAn=gN(sec,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
+  var anMap={};if(sessAn){var lines=sessAn.split('\n');for(var i=0;i<lines.length;i++){var m=lines[i].match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(m){var tk=m[1].replace(/\*/g,'').trim();anMap[tk]=m[2].trim();}}};
   var h='<h2>Session Stats</h2><div class="info-box"><table><tr><th>Ticker</th><th>Last</th><th>Chg%</th><th>Analysis</th></tr>';
-  var keys=['SPY','QQQ','DIA','IWM'];for(var k=0;k<keys.length;k++){var it=fS(bn,keys[k]);if(it){var an=anMap[it.sym]||e(it.desc||'');h+='<tr><td class="white bold tc">'+e(it.sym)+'</td><td class="mono">'+e(it.val)+'</td><td>'+pct(it.chg)+'</td><td class="dim" style="font-size:12px">'+e(an)+'</td></tr>';}}
+  var keys=['SPY','QQQ','DIA','IWM'];for(var k=0;k<keys.length;k++){var it=fS(bn,keys[k]);if(it){var an=anMap[it.sym]||'';h+='<tr><td class="white bold tc">'+e(it.sym)+'</td><td class="mono">'+e(it.val)+'</td><td>'+pct(it.chg)+'</td><td class="dim" style="font-size:12px">'+e(an)+'</td></tr>';}}
   var bd=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd,'$VIX'),dxy=fS(bd,'$DXY');
   if(vix){var va=anMap['VIX']||anMap['$VIX']||'';h+='<tr><td class="y bold tc">$VIX</td><td class="mono">'+e(vix.val)+'</td><td>'+pct(vix.chg)+'</td><td class="dim" style="font-size:12px">'+e(va)+'</td></tr>';}
   if(dxy){var da=anMap['DXY']||anMap['$DXY']||'';h+='<tr><td class="dim tc">$DXY</td><td class="mono">'+e(dxy.val)+'</td><td>'+pct(dxy.chg)+'</td><td class="dim" style="font-size:12px">'+e(da)+'</td></tr>';}
@@ -200,7 +200,7 @@ function rNews(d){var news=d.news||[];if(!news.length){$('sNews').innerHTML='';r
 function rBook(d){
   var pos=d.positions||[];if(!pos.length){$('sBook').innerHTML='<h2><span class="tag tag-live">YOUR BOOK</span> Positions</h2><div class="info-box"><p class="dim">No positions loaded.</p></div>';return}
   // Parse Opus position alerts into lookup
-  var nar=d.dashboardNarrative||'',sec=parseN(nar),pa=gN(sec,['POSITION ALERTS','POSITIONS','ALERTS','YOUR BOOK']);
+  var nar=d.dashboardNarrative||'',sec=parseN(nar),pa=gN(sec,['POSITION ALERTS','POSITIONS','ALERTS','YOUR BOOK','BOOK','ACTIVE POSITIONS','PORTFOLIO ALERTS']);
   var alertMap={};if(pa){var lines=pa.split('\n');for(var i=0;i<lines.length;i++){var parts=lines[i].split('|').map(function(x){return x.trim()}).filter(function(x){return x});if(parts.length>=2){var tk=parts[0].replace(/\*\*/g,'').trim();alertMap[tk]={status:parts.length>=2?parts[1]:'',action:parts.length>=3?parts[2]:(parts.length>=2?parts[1]:'')};}};}
   var h='<h2><span class="tag tag-live">YOUR BOOK</span> Positions ('+pos.length+')</h2><div class="info-box">';
   for(var i=0;i<pos.length;i++){var p=pos[i],alert=alertMap[p.ticker]||null;
@@ -224,7 +224,7 @@ function rBook(d){
 // ═══ SETUPS & WATCHLIST (confluence + Opus picks merged) ═══
 function rSetups(d){
   var w=d.watchlistTop||[];
-  var nar=d.dashboardNarrative||'',sec=parseN(nar),ts=gN(sec,['TOP SETUPS','SETUPS','WATCHLIST','SETUPS & WATCHLIST']);
+  var nar=d.dashboardNarrative||'',sec=parseN(nar),ts=gN(sec,['TOP SETUPS','SETUPS','WATCHLIST','SETUPS & WATCHLIST','ACTIONABLE','TRADE IDEAS','OPPORTUNITIES']);
   if(!w.length&&!ts){$('sSetups').innerHTML='';return}
   var h='<h2>Setups & Watchlist</h2>';
   // Opus narrative first
@@ -241,7 +241,7 @@ function rSetups(d){
 function rRisk(d){
   var pos=d.positions||[];
   var nar=d.dashboardNarrative||'',sec=parseN(nar);
-  var prNar=gN(sec,['PORTFOLIO RISK','CORRELATION CHECK','CORRELATION','RISK']);
+  var prNar=gN(sec,['PORTFOLIO RISK','CORRELATION CHECK','CORRELATION','RISK','RISK MANAGEMENT','EXPOSURE','CONCENTRATION']);
   if(!pos.length&&!prNar){$('sPortRisk').innerHTML='';return}
   var h='<h2>Portfolio Risk</h2>';
   // Opus narrative
@@ -263,7 +263,7 @@ function rRisk(d){
 // ═══ INTERMARKET RATIOS (with Opus read) ═══
 function rRatios(d){
   var r=gS(d,'INTERMARKET RATIOS');if(!r.length){$('sRatios').innerHTML='';return}
-  var nar=d.dashboardNarrative||'',sec=parseN(nar),imRead=gN(sec,['INTERMARKET READ','INTERMARKET','RATIOS']);
+  var nar=d.dashboardNarrative||'',sec=parseN(nar),imRead=gN(sec,['INTERMARKET READ','INTERMARKET','RATIOS','CROSS-MARKET','MACRO']);
   var h='<h2>Intermarket</h2>';
   if(imRead)h+='<div class="story-box" style="border-color:#d29922">'+fmt(imRead)+'</div>';
   h+='<div class="info-box">';
@@ -279,18 +279,26 @@ function rRatios(d){
 // ═══ COACHING ═══
 function rCoach(d){
   var nar=d.dashboardNarrative||'';if(!nar){$('sCoach').innerHTML='';return}
-  var sec=parseN(nar),c=gN(sec,['COACHING','COACH','BEHAVIORAL']),edu=gN(sec,['DAILY EDUCATION','EDUCATION','LEARN','CONCEPT']);
+  var sec=parseN(nar),c=gN(sec,['BOTTOM LINE','COACHING','COACH','BEHAVIORAL','DISCIPLINE','ACCOUNTABILITY']),edu=gN(sec,['DAILY EDGE','DAILY EDUCATION','EDUCATION','LEARN','CONCEPT','EDGE','LESSON']);
   var h='';
-  if(c)h+='<h2>🎯 Coaching</h2><div class="warn-box" style="border-color:#d29922"><p style="font-size:13px;line-height:1.7">'+fmt(c)+'</p></div>';
-  if(edu)h+='<h2>📚 Daily Education</h2><div class="learn-box"><p style="font-size:13px;line-height:1.7">'+fmt(edu)+'</p></div>';
+  if(c)h+='<h2>🧭 Bottom Line</h2><div class="warn-box" style="border-color:#d29922"><p style="font-size:13px;line-height:1.7">'+fmt(c)+'</p></div>';
+  if(edu)h+='<h2>📚 Daily Edge</h2><div class="learn-box"><p style="font-size:13px;line-height:1.7">'+fmt(edu)+'</p></div>';
   $('sCoach').innerHTML=h;
 }
 
-function rFoot(d){$('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+'</small>';}
+function rFoot(d){
+  // Show any unmatched Opus sections for debugging
+  var nar=d.dashboardNarrative||'';
+  if(nar){var sec=parseN(nar);var matched=['THE STORY','STORY','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
+    if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+'</small>';
+}
 
 // ═══ UTILS ═══
 function parseN(t){var s={},l=t.split('\n'),k='',b=[];for(var i=0;i<l.length;i++){var li=l[i],m=li.match(/^#{1,3}\s*\**\s*(?:\d+[\.\)]\s*)?(.+?)\s*\**\s*$/);if(m){if(k)s[k]=b.join('\n').trim();k=m[1].toUpperCase().replace(/[:#*_]/g,'').replace(/\s+/g,' ').trim();b=[];}else b.push(li);}if(k)s[k]=b.join('\n').trim();return s;}
-function gN(sec,keys){for(var i=0;i<keys.length;i++){var v=sec[keys[i]];if(v)return v;}return'';}
+function gN(sec,keys){for(var i=0;i<keys.length;i++){var v=sec[keys[i]];if(v)return v;}
+  // Fuzzy match: check if any sec key CONTAINS any of our search keys
+  var sk=Object.keys(sec);for(var i=0;i<keys.length;i++){for(var j=0;j<sk.length;j++){if(sk[j].indexOf(keys[i])>=0||keys[i].indexOf(sk[j])>=0){if(sec[sk[j]])return sec[sk[j]];}}}return'';}
 function fmt(t){if(!t)return'';var h=e(t);h=h.replace(/\*\*(.+?)\*\*/g,'<span class="white bold">$1</span>');h=h.replace(/\$([A-Z]{1,5})/g,'<span class="b bold">$$$1</span>');h=h.replace(/\n/g,'<br>');return h;}
 
 poll();setInterval(poll,60000);
