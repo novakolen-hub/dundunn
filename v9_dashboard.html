@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b0e14">
+<title>V9 Trading Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0b0e14;color:#c4cad4;font-family:'DM Sans',-apple-system,sans-serif;font-size:14px;line-height:1.55;padding:12px;max-width:720px;margin:0 auto;-webkit-text-size-adjust:100%}
+  h1{font-family:'JetBrains Mono',monospace;color:#58a6ff;font-size:17px;letter-spacing:-0.3px;padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid #1c2333}
+  h2{color:#e6edf3;font-size:15px;font-weight:700;margin-top:22px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  h2::before{content:'';width:3px;height:16px;background:#58a6ff;border-radius:2px;flex-shrink:0}
+  h3{color:#7d8590;font-size:11px;font-weight:700;margin-top:14px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+  p{margin-bottom:8px}a{color:#58a6ff;text-decoration:none}
+  .g{color:#3fb950}.r{color:#f85149}.y{color:#d29922}.b{color:#58a6ff}.dim{color:#7d8590}.bold{font-weight:700}.white{color:#e6edf3}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+  .tag-gp{font-family:'JetBrains Mono',monospace;font-size:13px;padding:5px 14px;border-radius:6px}
+  .tag-gp-a{background:#0d2818;color:#00C853;border:1px solid #00C853}
+  .tag-gp-b{background:#0d1a2e;color:#2196F3;border:1px solid #2196F3}
+  .tag-gp-c{background:#1f1a0f;color:#FF9800;border:1px solid #FF9800}
+  .tag-gp-d{background:#1f1315;color:#F44336;border:1px solid #F44336}
+  .tag-live{background:#0d2818;color:#3fb950;border:1px solid #238636;font-size:10px;padding:1px 6px}
+  .tag-acct{background:#161b22;color:#7d8590;border:1px solid #30363d;font-size:10px;padding:1px 6px}
+  .gp-box{background:linear-gradient(135deg,#0f1923 0%,#131d2b 100%);border:1px solid #1c2333;padding:14px 16px;border-radius:8px;margin-bottom:6px}
+  .story-box{background:#0f1318;border-left:3px solid #58a6ff;padding:12px 16px;margin:8px 0;border-radius:0 6px 6px 0;font-size:13px;line-height:1.7}
+  .info-box{background:#0f1318;border:1px solid #1c2333;padding:12px 16px;border-radius:6px;margin:8px 0}
+  .warn-box{background:#1f1315;border-left:3px solid #f85149;padding:10px 16px;margin:8px 0;border-radius:0 6px 6px 0}
+  .alert-box{background:#0f1318;border-left:3px solid #d29922;padding:10px 16px;margin:8px 0;border-radius:0 6px 6px 0;font-size:13px}
+  .heat-box{background:#0f1318;border-left:3px solid #3fb950;padding:10px 16px;margin:8px 0;border-radius:0 6px 6px 0;font-size:13px}
+  .learn-box{background:#13111a;border-left:3px solid #d2a8ff;padding:14px 16px;border-radius:0 8px 8px 0;margin:8px 0}
+  .coaching{color:#d2a8ff;font-style:italic;font-size:13px}
+  .risk-card{background:#0f1318;border:1px solid #1c2333;border-radius:8px;padding:12px 16px;margin:8px 0}
+  table{width:100%;border-collapse:collapse;margin:6px 0 10px 0;font-size:13px}
+  th{background:#0f1318;color:#7d8590;text-align:left;padding:5px 8px;border-bottom:1px solid #1c2333;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+  td{padding:5px 8px;border-bottom:1px solid #161b22;vertical-align:top}
+  tr:hover{background:#0f1318}.tc{white-space:nowrap}
+  .heatmap{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:8px 0}
+  .hm-hot2,.hm-hot1,.hm-flat,.hm-cold1,.hm-cold2,.hm-cold3{padding:8px 6px;border-radius:4px;text-align:center;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .hm-hot2{background:#0a2e15;color:#56d364}.hm-hot1{background:#0a2610;color:#7ee787}.hm-flat{background:#161b22;color:#7d8590}
+  .hm-cold1{background:#1f1315;color:#ffa198}.hm-cold2{background:#2c1519;color:#f85149}.hm-cold3{background:#3d1519;color:#ff7b72}
+  .tracker{display:flex;gap:3px;align-items:flex-end;margin:6px 0;height:40px}
+  .tracker-bar{flex:1;border-radius:2px 2px 0 0;min-width:16px}
+  .score-big{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700}
+  .divider{border:0;border-top:1px solid #1c2333;margin:20px 0}
+  .footer{text-align:center;color:#30363d;font-size:11px;margin-top:24px;font-family:'JetBrains Mono',monospace}
+  .pos-block{border-bottom:1px solid #161b22;padding:8px 0}.pos-block:last-child{border-bottom:0}
+  .gauge{display:flex;align-items:center;gap:8px;margin:4px 0}
+  .gauge-bar{flex:1;height:8px;background:#161b22;border-radius:4px;overflow:hidden}
+  .gauge-fill{height:100%;border-radius:4px}
+  .gauge-label{font-size:11px;font-family:'JetBrains Mono',monospace;min-width:40px;text-align:right}
+  .status-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#161b22;border-radius:6px;font-size:11px;margin-bottom:8px}
+  .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+  .pulse-live{background:#3fb950;animation:blink 2s infinite}.pulse-stale{background:#d29922}.pulse-off{background:#f85149}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+  .news-item{padding:8px 10px;border-bottom:1px solid #161b22}
+  .news-item a{color:#e6edf3;font-size:13px;line-height:1.5}.news-item a:hover{color:#58a6ff}
+  .news-meta{font-size:11px;color:#7d8590;margin-top:3px}.news-src{color:#58a6ff}.news-time{margin-left:6px}.news-item.stale{opacity:0.35}
+  .ratio-row{padding:6px 0;border-bottom:1px solid #161b22}
+  @media(max-width:480px){body{padding:8px;font-size:13px}.heatmap{grid-template-columns:repeat(3,1fr)}table{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="status-bar"><div><span class="pulse pulse-off" id="pl"></span><span id="st">Connecting...</span></div><div id="lu" class="mono">--:--</div></div>
+<h1 id="hdr">📡 V9 Trading Dashboard</h1>
+<p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
+<div id="sGP"></div>
+<div id="sBreadth"></div>
+<div id="sSess"></div>
+<div id="sGrowth"></div>
+<div id="sDefense"></div>
+<div id="sStory"></div>
+<div id="sInverse"></div>
+<div id="sNews"></div>
+<hr class="divider">
+<div id="sBook"></div>
+<div id="sSetups"></div>
+<div id="sPortRisk"></div>
+<div id="sRatios"></div>
+<hr class="divider">
+<div id="sCoach"></div>
+<div class="footer" id="foot">THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard · Polling 60s</small></div>
+<script>
+var EP='https://script.google.com/macros/s/AKfycbyA45O4vPIEOTdOW601PmdkdnOpTDSzu44qaSPq-PDBhElHlzThmyqdvD8MO7IZqmLq/exec';
+var _d,_n=0,_e=0;
+var SN={SOXX:'Semis',SMH:'Semis',XLK:'Tech',XLY:'Cons Disc',XLF:'Financials',XLI:'Industrials',XLC:'Comm Svcs',IWM:'Small Cap',XLU:'Utilities',XLP:'Staples',XLV:'Healthcare',XLE:'Energy',XLB:'Materials'};
+var GPC={A:'g',B:'b',C:'y',D:'r'};
+function $(i){return document.getElementById(i)}
+function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function pct(v){var s=String(v||''),n=parseFloat(s.replace('%',''));if(isNaN(n))return'<span class="dim">—</span>';if(Math.abs(n)<0.5&&s.indexOf('%')<0)n*=100;var c=n>0.01?'g':n<-0.01?'r':'dim';return'<span class="'+c+'">'+(n>0?'+':'')+n.toFixed(2)+'%</span>'}
+function pc(v){var n=parseFloat(String(v).replace(/[$,+]/g,''));return n>0?'g':n<0?'r':'dim'}
+function tA(ep){if(!ep)return'';var s=Math.floor(Date.now()/1000)-ep;if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d'}
+function hc(v){if(v>=2)return'hm-hot2';if(v>=.5)return'hm-hot1';if(v>-.5)return'hm-flat';if(v>-1.5)return'hm-cold1';if(v>-2.5)return'hm-cold2';return'hm-cold3'}
+function bc(s){var n=parseFloat(s);return n>=9.5?'#00C853':n>=3?'#2196F3':n>=-3?'#FF9800':'#F44336'}
+function bh(s){var n=parseFloat(s);return Math.min(100,Math.max(10,(n+10)/20*100))+'%'}
+function sL(p){return{PM:'Pre-Market',OPEN:'Morning',CORE:'Core',AH:'After Hours',OFF:'Closed'}[p]||p}
+function gS(d,n){return(d.market&&d.market[n])||[]}
+function fS(a,s){for(var i=0;i<a.length;i++)if(a[i].sym===s)return a[i];return null}
+function bCls(s){var n=parseFloat(s);return n>=9.5?'g':n>=3?'y':n>=-3?'dim':'r'}
+
+function poll(){
+  fetch(EP+'?mode=dashboard&t='+Date.now()).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){
+    _d=d;_n++;_e=0;R(d);$('pl').className='pulse pulse-live';$('st').textContent='Live · #'+_n;
+    $('lu').textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Phoenix'});
+  }).catch(function(){_e++;$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
+}
+
+function R(d){rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rNews(d);rBook(d);rSetups(d);rRisk(d);rRatios(d);rCoach(d);rFoot(d);}
+
+function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),mn='Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
+$('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase);
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>');}
+
+// ═══ GAMEPLAN (with tracker) ═══
+function rGP(d){
+  var gp=d.gpLetter||'C',sc=d.breadthScore||'—',sp=d.sectorPts||'—',cl=GPC[gp]||'dim';
+  var lab={A:'Hunt Mode · $15-20K',B:'Sniper Mode · $8-12K',C:'Bench Mode · No Trades',D:'Short Mode · Inverse ETFs'};
+  var h='<h2>Gameplan</h2><div class="gp-box"><span class="tag tag-gp tag-gp-'+gp.toLowerCase()+'">GP-'+gp+' · '+sc+' pts · '+sL(d.phase)+'</span>';
+  h+='<p style="margin-top:8px" class="white bold">'+e(lab[gp])+'</p>';
+  var bn=gS(d,'BENCHMARKS'),spy=fS(bn,'SPY'),qqq=fS(bn,'QQQ'),bd=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd,'$VIX');
+  h+='<p class="dim" style="font-size:13px">';if(spy)h+='SPY '+e(spy.val)+' ('+pct(spy.chg)+') · ';if(qqq)h+='QQQ '+e(qqq.val)+' ('+pct(qqq.chg)+') · ';if(vix)h+='VIX '+e(vix.val);h+='</p>';
+  var hist=d.history||[];
+  if(hist.length>0){h+='<table style="margin-top:8px;font-size:12px"><tr><th>Time</th><th>GP</th><th>Score</th></tr>';var r=hist.slice(-8);for(var i=0;i<r.length;i++){var s=parseFloat(r[i].score)||0,c=bCls(s),last=i===r.length-1;h+='<tr'+(last?' style="font-weight:700"':'')+'><td class="dim">'+e(r[i].time)+'</td><td class="'+c+' bold">'+e(r[i].gp)+'</td><td class="'+c+'">'+s.toFixed(1)+'</td></tr>';}h+='</table>';}
+  h+='</div>';$('sGP').innerHTML=h;
+}
+
+// ═══ BREADTH (tracker + detail combined) ═══
+function rBreadth(d){
+  var score=parseFloat(d.breadthScore)||0,hist=d.history||[],cls=bCls(score);
+  var trend=score>=9.5?'▲ Strong':score>=3?'▲ Positive':score>=-3?'◆ Neutral':'▼ Negative';
+  var h='<h2>Breadth</h2><div class="info-box"><p><span class="score-big '+cls+'">'+score.toFixed(1)+'</span> <span class="dim" style="font-size:14px">· <span class="'+cls+' bold">'+trend+'</span></span></p>';
+  if(hist.length>1){var r=hist.slice(-10);h+='<div class="tracker" style="margin-top:10px">';for(var i=0;i<r.length;i++){var s=parseFloat(r[i].score)||0;h+='<div class="tracker-bar" style="height:'+bh(s)+';background:'+bc(s)+'"></div>';}h+='</div><div style="display:flex;justify-content:space-between;font-size:9px;color:#484f58">';for(var i=0;i<r.length;i++){var t=r[i].time||'',p=t.split(' ');h+='<span>'+e(p[p.length-1]||t)+'</span>';}h+='</div>';}
+  // Detail indicators
+  var bd=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS'));
+  var items=bd.filter(function(x){return x.sym!=='$VIX'&&x.sym!=='$DXY'});
+  if(items.length>0){
+    h+='<div style="margin-top:12px">';
+    for(var i=0;i<items.length;i++){var desc=items[i].desc||'',ins=desc.indexOf('—')>=0?desc.split('—').slice(1).join('—').trim():desc;
+      var val=parseFloat(String(items[i].val).replace(/[,N\/A]/g,'')),vC='dim',sym=items[i].sym;
+      if(sym==='$ADD'||sym==='$ADQD')vC=val>1000?'g':val>0?'y':val>-1000?'y':'r';
+      else if(sym==='$TICK'||sym==='$TICKQ')vC=val>500?'g':val>0?'y':val>-500?'y':'r';
+      else if(sym==='$VOLD'||sym==='$VOLQD')vC=val>0?'g':'r';
+      else if(sym==='$TRIN')vC=val<1?'g':val<1.5?'y':'r';
+      h+='<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #161b22"><span class="white bold" style="min-width:75px;font-size:12px">'+e(sym)+'</span><span class="'+vC+' bold mono" style="min-width:55px;text-align:right;font-size:12px">'+e(items[i].val)+'</span><span class="dim" style="font-size:11px;flex:1;margin-left:8px">'+e(ins)+'</span></div>';
+    }h+='</div>';}
+  h+='</div>';$('sBreadth').innerHTML=h;
+}
+
+// ═══ SESSION STATS (benchmarks + commodities + Opus analysis) ═══
+function rSess(d){
+  var bn=gS(d,'BENCHMARKS'),fut=gS(d,'FUTURES'),comm=gS(d,'COMMODITIES');
+  if(!bn.length&&!fut.length){$('sSess').innerHTML='';return}
+  // Get Opus session analysis
+  var nar=d.dashboardNarrative||'',sec=parseN(nar),sessAn=gN(sec,['SESSION ANALYSIS','SESSION','STATS']);
+  var anMap={};if(sessAn){var lines=sessAn.split('\n');for(var i=0;i<lines.length;i++){var m=lines[i].match(/^([A-Z$\/]+):\s*(.+)/);if(m)anMap[m[1].trim()]=m[2].trim();}}
+  var h='<h2>Session Stats</h2><div class="info-box"><table><tr><th>Ticker</th><th>Last</th><th>Chg%</th><th>Analysis</th></tr>';
+  var keys=['SPY','QQQ','DIA','IWM'];for(var k=0;k<keys.length;k++){var it=fS(bn,keys[k]);if(it){var an=anMap[it.sym]||e(it.desc||'');h+='<tr><td class="white bold tc">'+e(it.sym)+'</td><td class="mono">'+e(it.val)+'</td><td>'+pct(it.chg)+'</td><td class="dim" style="font-size:12px">'+e(an)+'</td></tr>';}}
+  var bd=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd,'$VIX'),dxy=fS(bd,'$DXY');
+  if(vix){var va=anMap['VIX']||anMap['$VIX']||'';h+='<tr><td class="y bold tc">$VIX</td><td class="mono">'+e(vix.val)+'</td><td>'+pct(vix.chg)+'</td><td class="dim" style="font-size:12px">'+e(va)+'</td></tr>';}
+  if(dxy){var da=anMap['DXY']||anMap['$DXY']||'';h+='<tr><td class="dim tc">$DXY</td><td class="mono">'+e(dxy.val)+'</td><td>'+pct(dxy.chg)+'</td><td class="dim" style="font-size:12px">'+e(da)+'</td></tr>';}
+  for(var c=0;c<comm.length;c++){var ca=anMap[comm[c].sym]||'';h+='<tr><td class="dim tc">'+e(comm[c].sym)+'</td><td class="mono">'+e(comm[c].val)+'</td><td>'+pct(comm[c].chg)+'</td><td class="dim" style="font-size:12px">'+e(ca)+'</td></tr>';}
+  if(fut.length){h+='<tr><td colspan="4" style="font-size:11px;color:#7d8590;padding-top:6px;border:none">FUTURES</td></tr>';for(var f=0;f<fut.length;f++)h+='<tr><td class="dim tc">'+e(fut[f].sym)+'</td><td class="mono">'+e(fut[f].val)+'</td><td>'+pct(fut[f].chg)+'</td><td></td></tr>';}
+  h+='</table></div>';$('sSess').innerHTML=h;
+}
+
+// ═══ SECTORS ═══
+function rSectors(d){
+  var hm=d.sectorHeatmap||[],gr=hm.filter(function(x){return x.type==='G'}).sort(function(a,b){return b.chg-a.chg}),df=hm.filter(function(x){return x.type==='D'}).sort(function(a,b){return b.chg-a.chg});
+  var gg=gr.filter(function(x){return x.chg>0.05}).length,dg=df.filter(function(x){return x.chg>0.05}).length;
+  var h='<h2>Sectors — Growth ('+gg+'/'+gr.length+')</h2><div class="heatmap">';
+  for(var i=0;i<gr.length;i++){var nm=SN[gr[i].sym]||'';h+='<div class="'+hc(gr[i].chg)+'">'+e(gr[i].sym)+'<br>'+(gr[i].chg>0?'+':'')+gr[i].chg.toFixed(2)+'%'+(nm?'<br><span style="font-size:9px;opacity:.7">'+e(nm)+'</span>':'')+'</div>';}
+  h+='</div>';$('sGrowth').innerHTML=h;
+  var hd='<h2>Sectors — Defensive ('+dg+'/'+df.length+')</h2><div class="heatmap" style="grid-template-columns:repeat('+Math.min(df.length,5)+',1fr)">';
+  for(var i=0;i<df.length;i++){var nm=SN[df[i].sym]||'';hd+='<div class="'+hc(df[i].chg)+'">'+e(df[i].sym)+'<br>'+(df[i].chg>0?'+':'')+df[i].chg.toFixed(2)+'%'+(nm?'<br><span style="font-size:9px;opacity:.7">'+e(nm)+'</span>':'')+'</div>';}
+  hd+='</div>';$('sDefense').innerHTML=hd;
+}
+
+// ═══ THE STORY + GAMEPLAN STATUS (colored) ═══
+function rStory(d){
+  var nar=d.dashboardNarrative||'';if(!nar){$('sStory').innerHTML='<h2>The Story</h2><div class="info-box"><p class="dim">No Opus narrative yet. Run 📡 Dashboard Now.</p></div>';return}
+  var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
+  var h='<h2>The Story</h2><p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
+  var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
+  var gps=gN(sec,['GAMEPLAN STATUS','GAMEPLAN','GP STATUS']);
+  if(gps){h+='<h3>Gameplan Status</h3><div class="info-box" style="border-color:'+bc(d.breadthScore||0)+';font-size:13px;line-height:1.7"><span class="'+cl+' bold" style="font-size:14px">GP-'+gp+'</span> '+fmt(gps)+'</div>';}
+  h+='</div>';$('sStory').innerHTML=h;
+}
+
+// ═══ INVERSE ETFs ═══
+function rInv(d){if((d.gpLetter||'C')!=='D'){$('sInverse').innerHTML='';return}var inv=gS(d,'INVERSE ETFs (GP-D)');if(!inv.length){$('sInverse').innerHTML='';return}var h='<h2 style="color:#f85149">Inverse ETFs — GP-D</h2><div class="info-box"><table><tr><th>ETF</th><th>Last</th><th>Chg%</th><th>Tracks</th></tr>';for(var i=0;i<inv.length;i++)h+='<tr><td class="r bold tc">'+e(inv[i].sym)+'</td><td>'+e(inv[i].val)+'</td><td>'+pct(inv[i].chg)+'</td><td class="dim">'+e(inv[i].desc)+'</td></tr>';h+='</table></div>';$('sInverse').innerHTML=h;}
+
+// ═══ NEWS ═══
+function rNews(d){var news=d.news||[];if(!news.length){$('sNews').innerHTML='';return}var h='<h2 style="color:#d29922">Market News ('+news.length+')</h2><div class="info-box" style="padding:0">';for(var i=0;i<Math.min(news.length,25);i++){var n=news[i],age=tA(n.time),stale=(Date.now()/1000-(n.time||0))>7200,src=n.source||n.feed||'',ft=n.feed||'';h+='<div class="news-item'+(stale?' stale':'')+'"><a href="'+e(n.url)+'" target="_blank">'+e(n.headline)+'</a><div class="news-meta"><span class="news-src">'+e(src)+'</span>'+(ft&&ft!==src?' ['+e(ft)+']':'')+'<span class="news-time">'+age+'</span>'+(n.related?' <span class="y bold" style="font-size:10px">'+e(n.related)+'</span>':'')+'</div></div>';}h+='</div>';$('sNews').innerHTML=h;}
+
+// ═══ YOUR BOOK (positions + Opus alerts merged) ═══
+function rBook(d){
+  var pos=d.positions||[];if(!pos.length){$('sBook').innerHTML='<h2><span class="tag tag-live">YOUR BOOK</span> Positions</h2><div class="info-box"><p class="dim">No positions loaded.</p></div>';return}
+  // Parse Opus position alerts into lookup
+  var nar=d.dashboardNarrative||'',sec=parseN(nar),pa=gN(sec,['POSITION ALERTS','POSITIONS','ALERTS','YOUR BOOK']);
+  var alertMap={};if(pa){var lines=pa.split('\n');for(var i=0;i<lines.length;i++){var parts=lines[i].split('|').map(function(x){return x.trim()}).filter(function(x){return x});if(parts.length>=2){var tk=parts[0].replace(/\*\*/g,'').trim();alertMap[tk]={status:parts.length>=2?parts[1]:'',action:parts.length>=3?parts[2]:(parts.length>=2?parts[1]:'')};}};}
+  var h='<h2><span class="tag tag-live">YOUR BOOK</span> Positions ('+pos.length+')</h2><div class="info-box">';
+  for(var i=0;i<pos.length;i++){var p=pos[i],alert=alertMap[p.ticker]||null;
+    h+='<div class="pos-block"><div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<span><span class="white bold" style="font-size:15px">'+e(p.ticker)+'</span>';
+    if(p.accountType)h+=' <span class="tag tag-acct">'+e(p.accountType)+'</span>';
+    if(p.tag)h+=' <span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e">'+e(p.tag)+'</span>';
+    h+='</span><span class="'+pc(p.totalPL)+' bold mono" style="font-size:14px">'+e(p.totalPL)+'</span></div>';
+    h+='<p style="font-size:12px;color:#7d8590;margin:2px 0">'+e(p.side)+' '+e(p.shares)+'sh @ $'+e(p.avgCost)+' → $'+e(p.last)+'</p>';
+    h+='<p style="font-size:12px;margin:0">Day: <span class="'+pc(p.dayPL)+' bold">'+e(p.dayPL)+' ('+e(p.dayPLPct)+')</span> · Total: <span class="'+pc(p.totalPL)+' bold">'+e(p.totalPLPct)+'</span></p>';
+    if(alert){var acl=String(alert.action||'').match(/trim|exit|review|broken|stop/i)?'r':String(alert.action||'').match(/hold|monitor/i)?'y':'b';
+      h+='<p style="font-size:12px;margin-top:4px"><span class="'+acl+' bold">→ '+e(alert.action)+'</span></p>';}
+    h+='</div>';}
+  h+='</div>';
+  // Arete
+  var ac=d.areteCarries||[],aw=d.areteWatching||[];
+  if(ac.length||aw.length){h+='<h3 style="margin-top:14px;color:#d29922">Arete Radar</h3><div class="info-box" style="font-size:12px;border-color:#9e6a03"><p class="dim" style="font-size:11px;margin-bottom:6px">Arete Discord — not your positions.</p>';if(ac.length)h+='<p><span class="y bold">Carries:</span> '+ac.map(function(a){return'<span class="white">'+e(a.ticker)+'</span>'+(a.level?' <span class="dim">'+e(a.level)+'</span>':'')}).join(' · ')+'</p>';if(aw.length)h+='<p><span class="y bold">Watching:</span> <span class="dim">'+aw.map(e).join(', ')+'</span></p>';h+='</div>';}
+  $('sBook').innerHTML=h;
+}
+
+// ═══ SETUPS & WATCHLIST (confluence + Opus picks merged) ═══
+function rSetups(d){
+  var w=d.watchlistTop||[];
+  var nar=d.dashboardNarrative||'',sec=parseN(nar),ts=gN(sec,['TOP SETUPS','SETUPS','WATCHLIST','SETUPS & WATCHLIST']);
+  if(!w.length&&!ts){$('sSetups').innerHTML='';return}
+  var h='<h2>Setups & Watchlist</h2>';
+  // Opus narrative first
+  if(ts)h+='<div class="alert-box">'+fmt(ts)+'</div>';
+  // Confluence table
+  if(w.length){h+='<div class="info-box"><table><tr><th>Ticker</th><th>Last</th><th>Conf</th><th>Qual</th><th>Setup</th><th style="font-size:10px">Section</th></tr>';
+    for(var i=0;i<Math.min(w.length,15);i++){var it=w[i],cc=it.confluence>=28?'g':it.confluence>=24?'y':'dim';
+      h+='<tr><td class="white bold tc">'+e(it.ticker)+'</td><td>'+e(it.last)+'</td><td class="'+cc+' bold mono">'+it.confluence.toFixed(1)+'</td><td class="dim">'+e(it.quality)+'</td><td class="dim">'+e(it.setup)+'</td><td class="dim" style="font-size:11px">'+e(it.section)+'</td></tr>';}
+    h+='</table></div>';}
+  $('sSetups').innerHTML=h;
+}
+
+// ═══ PORTFOLIO RISK (exposure + correlation + Opus recommendations merged) ═══
+function rRisk(d){
+  var pos=d.positions||[];
+  var nar=d.dashboardNarrative||'',sec=parseN(nar);
+  var prNar=gN(sec,['PORTFOLIO RISK','CORRELATION CHECK','CORRELATION','RISK']);
+  if(!pos.length&&!prNar){$('sPortRisk').innerHTML='';return}
+  var h='<h2>Portfolio Risk</h2>';
+  // Opus narrative
+  if(prNar)h+='<div class="alert-box" style="border-color:#f85149">'+fmt(prNar)+'</div>';
+  // Live numbers
+  if(pos.length){
+    var tMV=0,tDay=0,tUn=0,tags={},longs=0,shorts=0;
+    for(var i=0;i<pos.length;i++){var p=pos[i];var mv=parseFloat(String(p.mktValue||'0').replace(/[$,+]/g,''))||0;var dp=parseFloat(String(p.dayPL||'0').replace(/[$,+]/g,''))||0;var tp=parseFloat(String(p.totalPL||'0').replace(/[$,+]/g,''))||0;tMV+=Math.abs(mv);tDay+=dp;tUn+=tp;if(p.side==='Long')longs++;else shorts++;var t=p.tag||p.accountType||'Untagged';if(!tags[t])tags[t]={count:0,tickers:[]};tags[t].count++;tags[t].tickers.push(p.ticker);}
+    h+='<div class="risk-card">';
+    h+='<p><span class="white bold">Positions:</span> '+pos.length+' ('+longs+'L/'+shorts+'S) · <span class="bold">Limit: 5</span></p>';
+    h+='<p><span class="white bold">Exposure:</span> $'+tMV.toLocaleString('en-US',{maximumFractionDigits:0})+' <span class="dim">/ $60K limit</span></p>';
+    h+='<p><span class="white bold">Day P&L:</span> <span class="'+pc(tDay)+' bold">'+(tDay>=0?'+$':'-$')+Math.abs(tDay).toFixed(2)+'</span> · <span class="white bold">Unrealized:</span> <span class="'+pc(tUn)+' bold">'+(tUn>=0?'+$':'-$')+Math.abs(tUn).toFixed(2)+'</span></p>';
+    var tk=Object.keys(tags);if(tk.length){h+='<h3 style="margin-top:8px">Concentration</h3>';for(var i=0;i<tk.length;i++){var pB=Math.round(tags[tk[i]].count/pos.length*100),wc=pB>50?'#f85149':pB>30?'#d29922':'#3fb950';h+='<div class="gauge"><span class="dim" style="min-width:70px;font-size:12px">'+e(tk[i])+'</span><div class="gauge-bar"><div class="gauge-fill" style="width:'+pB+'%;background:'+wc+'"></div></div><span class="gauge-label" style="color:'+wc+'">'+pB+'% ('+tags[tk[i]].tickers.join(',')+')</span></div>';}}
+    if(pos.length>=5)h+='<div class="warn-box" style="margin-top:8px"><span class="r bold">⚠ At 5-position limit.</span></div>';
+    h+='</div>';}
+  $('sPortRisk').innerHTML=h;
+}
+
+// ═══ INTERMARKET RATIOS (with Opus read) ═══
+function rRatios(d){
+  var r=gS(d,'INTERMARKET RATIOS');if(!r.length){$('sRatios').innerHTML='';return}
+  var nar=d.dashboardNarrative||'',sec=parseN(nar),imRead=gN(sec,['INTERMARKET READ','INTERMARKET','RATIOS']);
+  var h='<h2>Intermarket</h2>';
+  if(imRead)h+='<div class="story-box" style="border-color:#d29922">'+fmt(imRead)+'</div>';
+  h+='<div class="info-box">';
+  for(var i=0;i<r.length;i++){var cn=parseFloat(String(r[i].chg).replace('%',''));var desc=r[i].desc||'',sig='',meas='';
+    if(desc.indexOf('—')>=0){meas=desc.split('—')[0].trim();var rest=desc.split('—').slice(1).join('—').trim();if(rest.indexOf('rising')>=0&&rest.indexOf('falling')>=0){if(cn>0.01)sig=rest.split('rising')[1].split(',')[0].replace(/[=]/g,'').trim();else if(cn<-0.01)sig=rest.split('falling')[1].split(',')[0].replace(/[=]/g,'').trim();else sig='flat';}else sig=rest;}else sig=desc;
+    var sc=cn>0.01?'g':cn<-0.01?'r':'dim';
+    h+='<div class="ratio-row"><span class="white bold">'+e(r[i].sym)+'</span> <span class="mono dim" style="font-size:12px">'+e(r[i].val)+'</span> '+pct(r[i].chg)+' <span class="'+sc+' bold" style="font-size:12px">'+e(sig)+'</span>';
+    if(meas)h+='<br><span class="dim" style="font-size:10px">'+e(meas)+'</span>';
+    h+='</div>';}
+  h+='</div>';$('sRatios').innerHTML=h;
+}
+
+// ═══ COACHING ═══
+function rCoach(d){
+  var nar=d.dashboardNarrative||'';if(!nar){$('sCoach').innerHTML='';return}
+  var sec=parseN(nar),c=gN(sec,['COACHING','COACH','BEHAVIORAL']),edu=gN(sec,['DAILY EDUCATION','EDUCATION','LEARN','CONCEPT']);
+  var h='';
+  if(c)h+='<h2>🎯 Coaching</h2><div class="warn-box" style="border-color:#d29922"><p style="font-size:13px;line-height:1.7">'+fmt(c)+'</p></div>';
+  if(edu)h+='<h2>📚 Daily Education</h2><div class="learn-box"><p style="font-size:13px;line-height:1.7">'+fmt(edu)+'</p></div>';
+  $('sCoach').innerHTML=h;
+}
+
+function rFoot(d){$('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+'</small>';}
+
+// ═══ UTILS ═══
+function parseN(t){var s={},l=t.split('\n'),k='',b=[];for(var i=0;i<l.length;i++){var li=l[i],m=li.match(/^#{1,3}\s*\**\s*(?:\d+[\.\)]\s*)?(.+?)\s*\**\s*$/);if(m){if(k)s[k]=b.join('\n').trim();k=m[1].toUpperCase().replace(/[:#*_]/g,'').replace(/\s+/g,' ').trim();b=[];}else b.push(li);}if(k)s[k]=b.join('\n').trim();return s;}
+function gN(sec,keys){for(var i=0;i<keys.length;i++){var v=sec[keys[i]];if(v)return v;}return'';}
+function fmt(t){if(!t)return'';var h=e(t);h=h.replace(/\*\*(.+?)\*\*/g,'<span class="white bold">$1</span>');h=h.replace(/\$([A-Z]{1,5})/g,'<span class="b bold">$$$1</span>');h=h.replace(/\n/g,'<br>');return h;}
+
+poll();setInterval(poll,60000);
+</script>
+</body>
+</html>
