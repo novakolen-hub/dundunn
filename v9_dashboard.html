@@ -138,15 +138,17 @@ function rBreadth(d){
   var bd=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS'));
   var items=bd.filter(function(x){return x.sym!=='$VIX'&&x.sym!=='$DXY'});
   if(items.length>0){
-    h+='<div style="margin-top:12px">';
+    h+='<table style="margin-top:12px;font-size:12px"><tr><th style="min-width:70px">Indicator</th><th style="min-width:55px;text-align:right">Value</th><th>Signal</th></tr>';
     for(var i=0;i<items.length;i++){var desc=items[i].desc||'',ins=desc.indexOf('—')>=0?desc.split('—').slice(1).join('—').trim():desc;
-      var val=parseFloat(String(items[i].val).replace(/[,N\/A]/g,'')),vC='dim',sym=items[i].sym;
+      var sym=String(items[i].sym||'').replace(/\s*\(scaled\)/gi,''),rawV=String(items[i].val||'');
+      var val=parseFloat(rawV.replace(/[,N\/A]/g,'')),vC='dim';
+      var dv=rawV;if(!isNaN(val)){if(sym==='$TRIN'||sym==='$TRINQ')dv=val.toFixed(2);else if(Math.abs(val)>100)dv=String(Math.round(val));else dv=val.toFixed(2);}
       if(sym==='$ADD'||sym==='$ADQD')vC=val>1000?'g':val>0?'y':val>-1000?'y':'r';
       else if(sym==='$TICK'||sym==='$TICKQ')vC=val>500?'g':val>0?'y':val>-500?'y':'r';
-      else if(sym==='$VOLD'||sym==='$VOLQD')vC=val>0?'g':'r';
-      else if(sym==='$TRIN')vC=val<1?'g':val<1.5?'y':'r';
-      h+='<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #161b22"><span class="white bold" style="min-width:75px;font-size:12px">'+e(sym)+'</span><span class="'+vC+' bold mono" style="min-width:55px;text-align:right;font-size:12px">'+e(items[i].val)+'</span><span class="dim" style="font-size:11px;flex:1;margin-left:8px">'+e(ins)+'</span></div>';
-    }h+='</div>';}
+      else if(sym.indexOf('VOLD')>=0||sym.indexOf('VOLQD')>=0)vC=val>0?'g':'r';
+      else if(sym.indexOf('TRIN')>=0)vC=val<1?'g':val<1.5?'y':'r';
+      h+='<tr><td class="white bold">'+e(sym)+'</td><td class="'+vC+' bold mono" style="text-align:right">'+e(dv)+'</td><td class="dim" style="font-size:11px">'+e(ins)+'</td></tr>';
+    }h+='</table>';}
   h+='</div>';$('sBreadth').innerHTML=h;
 }
 
@@ -156,7 +158,7 @@ function rSess(d){
   if(!bn.length&&!fut.length){$('sSess').innerHTML='';return}
   // Get Opus session analysis
   var nar=d.dashboardNarrative||'',sec=parseN(nar),sessAn=gN(sec,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
-  var anMap={};if(sessAn){var lines=sessAn.split('\n');for(var i=0;i<lines.length;i++){var m=lines[i].match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(m){var tk=m[1].replace(/\*/g,'').trim();anMap[tk]=m[2].trim();}}};
+  var anMap={};if(sessAn){var lines=sessAn.replace(/\|/g,'\n').split('\n');for(var i=0;i<lines.length;i++){var m=lines[i].trim().match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(m){var tk=m[1].replace(/\*/g,'').trim();anMap[tk]=m[2].trim();}}};
   var h='<h2>Session Stats</h2><div class="info-box"><table><tr><th>Ticker</th><th>Last</th><th>Chg%</th><th>Analysis</th></tr>';
   var keys=['SPY','QQQ','DIA','IWM'];for(var k=0;k<keys.length;k++){var it=fS(bn,keys[k]);if(it){var an=anMap[it.sym]||'';h+='<tr><td class="white bold tc">'+e(it.sym)+'</td><td class="mono">'+e(it.val)+'</td><td>'+pct(it.chg)+'</td><td class="dim" style="font-size:12px">'+e(an)+'</td></tr>';}}
   var bd=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd,'$VIX'),dxy=fS(bd,'$DXY');
