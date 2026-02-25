@@ -259,19 +259,24 @@ function rBook(d){
 }
 // ═══ ARETE BOOK (carries/swings + day trade carry-overs — separate from your book) ═══
 // ═══ ARETE BOOK (from Arete Trades tab — reference only) ═══
+function areteCard(p){
+  var h='<div class="pos-block" style="border-left:3px solid #9e6a03"><div style="display:flex;justify-content:space-between;align-items:center">';
+  h+='<span>'+tkLink(p.ticker).replace('font-size:11px','font-size:15px');
+  h+=' <span class="tag" style="background:#1f1a0f;color:#d29922;border:1px solid #9e6a03;font-size:10px">'+e(p.type)+'</span>';
+  if(p.tag)h+=' <span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e;font-size:10px">'+e(p.tag)+'</span>';
+  h+='</span></div>';
+  if(p.notes)h+='<div class="dim" style="font-size:12px;margin-top:4px">'+e(p.notes)+'</div>';
+  h+='</div>';return h;
+}
 function rAreteBook(d){
   var sw=d.areteSwing||[],carry=d.areteCarry||[];
-  if(!sw.length&&!carry.length){$('sAreteBook').innerHTML='';return}
-  var h='<h2 style="color:#d29922"><span class="tag" style="background:#1f1a0f;color:#d29922;border:1px solid #9e6a03">ARETE</span> Book</h2>';
+  if(!sw.length&&!carry.length){$('sAreteBook').innerHTML='<h2 style="color:#d29922"><span class="tag" style="background:#1f1a0f;color:#d29922;border:1px solid #9e6a03">ARETE</span> Book</h2><p class="dim" style="font-size:12px">No Arete positions active.</p>';return}
+  var h='<h2 style="color:#d29922"><span class="tag" style="background:#1f1a0f;color:#d29922;border:1px solid #9e6a03">ARETE</span> Book ('+(sw.length+carry.length)+')</h2>';
   h+='<p class="dim" style="font-size:11px;margin-bottom:6px">Arete Discord positions — reference only, not your trades.</p>';
-  // Swing Trades
-  if(sw.length){h+='<h3 style="color:#d29922">Swing Trades ('+sw.length+')</h3><div class="info-box" style="border-color:#9e6a03"><table><tr><th>Ticker</th><th>Side</th><th>Entry</th><th>Date</th><th>Note</th></tr>';
-    for(var i=0;i<sw.length;i++){var s=sw[i];h+='<tr><td class="tc">'+tkLink(s.ticker)+(s.flag?' <span class="g bold" style="font-size:10px">'+e(s.flag)+'</span>':'')+'</td><td class="dim">'+e(s.side)+'</td><td class="mono">'+e(s.entry)+'</td><td class="dim">'+e(s.date)+'</td><td class="dim" style="font-size:11px;max-width:120px">'+e(s.note)+'</td></tr>';}
-    h+='</table></div>';}
-  // DT Carry-Overs
-  if(carry.length){h+='<h3 style="color:#d29922">DT Carry-Overs ('+carry.length+')</h3><div class="info-box" style="border-color:#9e6a03"><table><tr><th>Ticker</th><th>Side</th><th>Entry</th><th>Date</th><th>Note</th></tr>';
-    for(var i=0;i<carry.length;i++){var c=carry[i];h+='<tr><td class="tc">'+tkLink(c.ticker)+(c.flag?' <span class="g bold" style="font-size:10px">'+e(c.flag)+'</span>':'')+'</td><td class="dim">'+e(c.side)+'</td><td class="mono">'+e(c.entry)+'</td><td class="dim">'+e(c.date)+'</td><td class="dim" style="font-size:11px;max-width:120px">'+e(c.note)+'</td></tr>';}
-    h+='</table></div>';}
+  if(sw.length){h+='<h3 style="color:#d29922">Swing Trades ('+sw.length+')</h3><div class="info-box" style="border-color:#9e6a03">';
+    for(var i=0;i<sw.length;i++)h+=areteCard(sw[i]);h+='</div>';}
+  if(carry.length){h+='<h3 style="color:#d29922">DT Carry-Overs ('+carry.length+')</h3><div class="info-box" style="border-color:#9e6a03">';
+    for(var i=0;i<carry.length;i++)h+=areteCard(carry[i]);h+='</div>';}
   $('sAreteBook').innerHTML=h;
 }
 // ═══ WATCHING (Config tab: my watching + arete watching with tags) ═══
