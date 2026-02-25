@@ -111,7 +111,7 @@ function poll(){
   fetch(EP+'?mode=dashboard&t='+Date.now()).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){
     _d=d;_n++;_e=0;var ld=$('loader');if(ld)ld.remove();R(d);$('pl').className='pulse pulse-live';$('st').textContent='Live · #'+_n;
     $('lu').textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Phoenix'});
-  }).catch(function(){_e++;$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
+  }).catch(function(err){_e++;var ld=$('loader');if(ld)ld.innerHTML='<div style="color:#f85149;padding:16px;font-size:13px">❌ '+err.message+'<br><br><span class="dim">Check: did you deploy a NEW version? The endpoint URL may have changed.<br>Current EP: '+EP.substring(0,60)+'...</span></div>';$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
 }
 
 function R(d){rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rNews(d);rBook(d);rAreteBook(d);rWatching(d);rSetups(d);rRisk(d);rRatios(d);rCoach(d);rFoot(d);}
