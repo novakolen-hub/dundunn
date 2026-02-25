@@ -230,7 +230,7 @@ function rNews(d){var news=d.news||[];if(!news.length){$('sNews').innerHTML='';r
 // Helper to render a position card
 function posCard(p,alert){
   var h='<div class="pos-block"><div style="display:flex;justify-content:space-between;align-items:center">';
-  h+='<span>'+tkLink(p.ticker).replace('font-size:11px','font-size:15px')+'
+  h+='<span>'+tkLink(p.ticker).replace('font-size:11px','font-size:15px');
   if(p.accountType)h+=' <span class="tag tag-acct">'+e(p.accountType)+'</span>';
   if(p.tag)h+=' <span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e">'+e(p.tag)+'</span>';
   h+='</span><span class="'+pc(p.totalPL)+' bold mono" style="font-size:14px">'+e(p.totalPL)+'</span></div>';
