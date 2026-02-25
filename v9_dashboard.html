@@ -78,6 +78,8 @@
 <div id="sNews"></div>
 <hr class="divider">
 <div id="sBook"></div>
+<div id="sAreteBook"></div>
+<div id="sWatching"></div>
 <div id="sSetups"></div>
 <div id="sPortRisk"></div>
 <div id="sRatios"></div>
@@ -91,6 +93,8 @@ var SN={SOXX:'Semis',SMH:'Semis',XLK:'Tech',XLY:'Cons Disc',XLF:'Financials',XLI
 var GPC={A:'g',B:'b',C:'y',D:'r'};
 function $(i){return document.getElementById(i)}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+var _ic={};
+function tkLink(tk){var sl=_ic[tk.toUpperCase()]||'';var icUrl=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk);var tvUrl='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<a href="'+icUrl+'" target="_blank" style="color:#58a6ff;font-size:11px;font-weight:700;text-decoration:none">$'+e(tk)+'</a><a href="'+tvUrl+'" target="_blank" style="text-decoration:none;margin-left:2px" title="TradingView">🔵</a>';}
 function pct(v){var s=String(v||''),n=parseFloat(s.replace('%',''));if(isNaN(n))return'<span class="dim">—</span>';if(Math.abs(n)<0.5&&s.indexOf('%')<0)n*=100;var c=n>0.01?'g':n<-0.01?'r':'dim';return'<span class="'+c+'">'+(n>0?'+':'')+n.toFixed(2)+'%</span>'}
 function pc(v){var n=parseFloat(String(v).replace(/[$,+]/g,''));return n>0?'g':n<0?'r':'dim'}
 function tA(ep){if(!ep)return'';var s=Math.floor(Date.now()/1000)-ep;if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d'}
@@ -104,12 +108,12 @@ function bCls(s){var n=parseFloat(s);return n>=9.5?'g':n>=3?'y':n>=-3?'dim':'r'}
 
 function poll(){
   fetch(EP+'?mode=dashboard&t='+Date.now()).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){
-    _d=d;_n++;_e=0;R(d);$('pl').className='pulse pulse-live';$('st').textContent='Live · #'+_n;
+    _d=d;_n++;_e=0;_ic=d.icSlugs||{};R(d);$('pl').className='pulse pulse-live';$('st').textContent='Live · #'+_n;
     $('lu').textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Phoenix'});
   }).catch(function(){_e++;$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
 }
 
-function R(d){rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rNews(d);rBook(d);rSetups(d);rRisk(d);rRatios(d);rCoach(d);rFoot(d);}
+function R(d){rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rNews(d);rBook(d);rAreteBook(d);rWatching(d);rSetups(d);rRisk(d);rRatios(d);rCoach(d);rFoot(d);}
 
 function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),mn='Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase);
@@ -196,34 +200,93 @@ function rStory(d){
 function rInv(d){if((d.gpLetter||'C')!=='D'){$('sInverse').innerHTML='';return}var inv=gS(d,'INVERSE ETFs (GP-D)');if(!inv.length){$('sInverse').innerHTML='';return}var h='<h2 style="color:#f85149">Inverse ETFs — GP-D</h2><div class="info-box"><table><tr><th>ETF</th><th>Last</th><th>Chg%</th><th>Tracks</th></tr>';for(var i=0;i<inv.length;i++)h+='<tr><td class="r bold tc">'+e(inv[i].sym)+'</td><td>'+e(inv[i].val)+'</td><td>'+pct(inv[i].chg)+'</td><td class="dim">'+e(inv[i].desc)+'</td></tr>';h+='</table></div>';$('sInverse').innerHTML=h;}
 
 // ═══ NEWS ═══
-function rNews(d){var news=d.news||[];if(!news.length){$('sNews').innerHTML='';return}var h='<h2 style="color:#d29922">Market News ('+news.length+')</h2><div class="info-box" style="padding:0">';for(var i=0;i<Math.min(news.length,25);i++){var n=news[i],age=tA(n.time),stale=(Date.now()/1000-(n.time||0))>7200,src=n.source||n.feed||'',ft=n.feed||'';h+='<div class="news-item'+(stale?' stale':'')+'"><a href="'+e(n.url)+'" target="_blank">'+e(n.headline)+'</a><div class="news-meta"><span class="news-src">'+e(src)+'</span>'+(ft&&ft!==src?' ['+e(ft)+']':'')+'<span class="news-time">'+age+'</span>'+(n.related?' <span class="y bold" style="font-size:10px">'+e(n.related)+'</span>':'')+'</div></div>';}h+='</div>';$('sNews').innerHTML=h;}
+var NT=[
+{l:"Tariffs",rx:/tariff|trade war|trade deal|import dut|export ban/i,bg:"#F44336",fg:"#fff"},
+{l:"Fed",rx:/the fed |federal reserve|rate cut|rate hike|fomc|powell|hawkish|dovish/i,bg:"#2196F3",fg:"#fff"},
+{l:"Inflation",rx:/cpi |ppi |pce |inflation|consumer price/i,bg:"#FF9800",fg:"#000"},
+{l:"Jobs",rx:/nonfarm|payroll|unemployment|jobless claim|jobs report/i,bg:"#9C27B0",fg:"#fff"},
+{l:"Oil",rx:/oil price|crude oil|opec|brent crude|wti crude/i,bg:"#795548",fg:"#fff"},
+{l:"China",rx:/china|chinese|beijing|xi jinping/i,bg:"#F44336",fg:"#fff"},
+{l:"Semis",rx:/semiconductor|chip maker|chipmaker|nvidia|nvda|amd |tsmc|asml|chip stock/i,bg:"#4caf50",fg:"#fff"},
+{l:"AI",rx:/artificial intelligence|ai model|ai launch|ai invest|ai chip|openai|chatgpt|deepseek/i,bg:"#E040FB",fg:"#fff"},
+{l:"Earnings",rx:/earnings|revenue miss|revenue beat|quarterly result|beats estimate|misses estimate/i,bg:"#FFD600",fg:"#000"},
+{l:"Crypto",rx:/bitcoin|btc |crypto|ethereum/i,bg:"#FF9800",fg:"#000"},
+{l:"Bonds",rx:/treasury|bond yield|10-year|yield curve/i,bg:"#607D8B",fg:"#fff"},
+{l:"Gold",rx:/gold price|gold surge|gold drop|precious metal/i,bg:"#FFD600",fg:"#000"},
+{l:"Geopolitical",rx:/military|missile|invasion|geopolit|conflict|iran|russia|ukraine|israel/i,bg:"#F44336",fg:"#fff"},
+{l:"Analyst",rx:/upgrade|downgrade|price target|overweight|underweight|outperform/i,bg:"#42A5F5",fg:"#fff"},
+{l:"M&A",rx:/merger|acquisition|acquir|buyout|takeover/i,bg:"#CE93D8",fg:"#000"},
+{l:"Guidance",rx:/raised guidance|lowered guidance|cuts forecast|raises forecast/i,bg:"#FFF176",fg:"#000"},
+{l:"Energy",rx:/natural gas|solar|nuclear|lng |clean energy/i,bg:"#66BB6A",fg:"#000"},
+{l:"Defense",rx:/pentagon|defense contract|lockheed|raytheon|military spend/i,bg:"#5C6BC0",fg:"#fff"}
+];
+var CM={"apple":"AAPL","microsoft":"MSFT","google":"GOOG","alphabet":"GOOG","amazon":"AMZN","meta":"META","nvidia":"NVDA","tesla":"TSLA","amd":"AMD","intel":"INTC","broadcom":"AVGO","qualcomm":"QCOM","tsmc":"TSM","asml":"ASML","micron":"MU","palantir":"PLTR","salesforce":"CRM","adobe":"ADBE","coinbase":"COIN","jpmorgan":"JPM","goldman":"GS","disney":"DIS","boeing":"BA","exxon":"XOM","chevron":"CVX","walmart":"WMT","uber":"UBER","crowdstrike":"CRWD","snowflake":"SNOW","arm holdings":"ARM","super micro":"SMCI","eli lilly":"LLY","novo nordisk":"NVO","berkshire":"BRK.B"};
+var SKIP={"THE":1,"AND":1,"FOR":1,"ARE":1,"BUT":1,"NOT":1,"ALL":1,"CAN":1,"HAS":1,"WAS":1,"ONE":1,"NEW":1,"NOW":1,"MAY":1,"SAY":1,"TWO":1,"HOW":1,"ITS":1,"USE":1,"CEO":1,"IPO":1,"GDP":1,"CPI":1,"PPI":1,"PCE":1,"FED":1,"SEC":1,"USA":1,"NYSE":1,"ETF":1,"DOJ":1,"FTC":1,"NATO":1,"OPEC":1,"IMF":1,"WHO":1,"FBI":1};
+function nTags(hl,rel){var tags=[],tks=[],seen={};for(var t=0;t<NT.length;t++)if(NT[t].rx.test(hl))tags.push(NT[t]);if(rel){var rs=rel.split(',');for(var r=0;r<rs.length;r++){var tk=rs[r].trim().toUpperCase();if(tk&&tk.length<=5&&!seen[tk]){seen[tk]=1;tks.push(tk)}}}var dm=hl.match(/\$([A-Z]{1,5})/g);if(dm)for(var d=0;d<dm.length;d++){var tk=dm[d].replace('$','');if(!seen[tk]){seen[tk]=1;tks.push(tk)}}var ws=hl.split(/[^A-Za-z]+/);for(var w=0;w<ws.length;w++){var wd=ws[w];if(wd.length>=2&&wd.length<=5&&wd===wd.toUpperCase()&&/^[A-Z]+$/.test(wd)&&!SKIP[wd]&&!seen[wd]){seen[wd]=1;tks.push(wd)}}var lo=hl.toLowerCase(),ck=Object.keys(CM);for(var c=0;c<ck.length;c++)if(lo.indexOf(ck[c])>=0){var tk=CM[ck[c]];if(!seen[tk]){seen[tk]=1;tks.push(tk)}}return{tags:tags,tickers:tks};}
+function rNews(d){var news=d.news||[];if(!news.length){$('sNews').innerHTML='';return}var h='<h2 style="color:#d29922">Market News ('+news.length+')</h2><div class="info-box" style="padding:0">';for(var i=0;i<Math.min(news.length,25);i++){var n=news[i],age=tA(n.time),stale=(Date.now()/1000-(n.time||0))>7200,src=n.source||n.feed||'',ft=n.feed||'';var nt=nTags(n.headline||'',n.related||'');h+='<div class="news-item'+(stale?' stale':'')+'">';h+='<a href="'+e(n.url)+'" target="_blank">'+e(n.headline)+'</a>';if(nt.tags.length||nt.tickers.length){h+='<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">';for(var t=0;t<nt.tags.length;t++)h+='<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:'+nt.tags[t].bg+';color:'+nt.tags[t].fg+'">'+e(nt.tags[t].l)+'</span>';for(var k=0;k<Math.min(nt.tickers.length,5);k++)h+='<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:#1a1a2e;color:#4caf50;border:1px solid #4caf50">$'+e(nt.tickers[k])+'</span>';h+='</div>';}h+='<div class="news-meta"><span class="news-src">'+e(src)+'</span>'+(ft&&ft!==src?' ['+e(ft)+']':'')+'<span class="news-time">'+age+'</span></div></div>';}h+='</div>';$('sNews').innerHTML=h;}
 
 // ═══ YOUR BOOK (positions + Opus alerts merged) ═══
-function rBook(d){
-  var pos=d.positions||[];if(!pos.length){$('sBook').innerHTML='<h2><span class="tag tag-live">YOUR BOOK</span> Positions</h2><div class="info-box"><p class="dim">No positions loaded.</p></div>';return}
-  // Parse Opus position alerts into lookup
+// Helper to render a position card
+function posCard(p,alert){
+  var h='<div class="pos-block"><div style="display:flex;justify-content:space-between;align-items:center">';
+  h+='<span>'+tkLink(p.ticker).replace('font-size:11px','font-size:15px')+'
+  if(p.accountType)h+=' <span class="tag tag-acct">'+e(p.accountType)+'</span>';
+  if(p.tag)h+=' <span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e">'+e(p.tag)+'</span>';
+  h+='</span><span class="'+pc(p.totalPL)+' bold mono" style="font-size:14px">'+e(p.totalPL)+'</span></div>';
+  h+='<p style="font-size:12px;color:#7d8590;margin:2px 0">'+e(p.side)+' '+e(p.shares)+'sh @ $'+e(p.avgCost)+' → $'+e(p.last)+'</p>';
+  h+='<p style="font-size:12px;margin:0">Day: <span class="'+pc(p.dayPL)+' bold">'+e(p.dayPL)+' ('+e(p.dayPLPct)+')</span> · Total: <span class="'+pc(p.totalPL)+' bold">'+e(p.totalPLPct)+'</span></p>';
+  if(alert){var acl=String(alert.action||'').match(/trim|exit|review|broken|stop/i)?'r':String(alert.action||'').match(/hold|monitor/i)?'y':'b';
+    h+='<p style="font-size:12px;margin-top:4px"><span class="'+acl+' bold">→ '+e(alert.action)+'</span></p>';}
+  h+='</div>';return h;
+}
+function getAlertMap(d){
   var nar=d.dashboardNarrative||'',sec=parseN(nar),pa=gN(sec,['POSITION ALERTS','POSITIONS','ALERTS','YOUR BOOK','BOOK','ACTIVE POSITIONS','PORTFOLIO ALERTS']);
-  var alertMap={};if(pa){var lines=pa.split('\n');for(var i=0;i<lines.length;i++){var parts=lines[i].split('|').map(function(x){return x.trim()}).filter(function(x){return x});if(parts.length>=2){var tk=parts[0].replace(/\*\*/g,'').trim();alertMap[tk]={status:parts.length>=2?parts[1]:'',action:parts.length>=3?parts[2]:(parts.length>=2?parts[1]:'')};}};}
-  var h='<h2><span class="tag tag-live">YOUR BOOK</span> Positions ('+pos.length+')</h2><div class="info-box">';
-  for(var i=0;i<pos.length;i++){var p=pos[i],alert=alertMap[p.ticker]||null;
-    h+='<div class="pos-block"><div style="display:flex;justify-content:space-between;align-items:center">';
-    h+='<span><span class="white bold" style="font-size:15px">'+e(p.ticker)+'</span>';
-    if(p.accountType)h+=' <span class="tag tag-acct">'+e(p.accountType)+'</span>';
-    if(p.tag)h+=' <span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e">'+e(p.tag)+'</span>';
-    h+='</span><span class="'+pc(p.totalPL)+' bold mono" style="font-size:14px">'+e(p.totalPL)+'</span></div>';
-    h+='<p style="font-size:12px;color:#7d8590;margin:2px 0">'+e(p.side)+' '+e(p.shares)+'sh @ $'+e(p.avgCost)+' → $'+e(p.last)+'</p>';
-    h+='<p style="font-size:12px;margin:0">Day: <span class="'+pc(p.dayPL)+' bold">'+e(p.dayPL)+' ('+e(p.dayPLPct)+')</span> · Total: <span class="'+pc(p.totalPL)+' bold">'+e(p.totalPLPct)+'</span></p>';
-    if(alert){var acl=String(alert.action||'').match(/trim|exit|review|broken|stop/i)?'r':String(alert.action||'').match(/hold|monitor/i)?'y':'b';
-      h+='<p style="font-size:12px;margin-top:4px"><span class="'+acl+' bold">→ '+e(alert.action)+'</span></p>';}
-    h+='</div>';}
-  h+='</div>';
-  // Arete
-  var ac=d.areteCarries||[],aw=d.areteWatching||[];
-  if(ac.length||aw.length){h+='<h3 style="margin-top:14px;color:#d29922">Arete Radar</h3><div class="info-box" style="font-size:12px;border-color:#9e6a03"><p class="dim" style="font-size:11px;margin-bottom:6px">Arete Discord — not your positions.</p>';if(ac.length)h+='<p><span class="y bold">Carries:</span> '+ac.map(function(a){return'<span class="white">'+e(a.ticker)+'</span>'+(a.level?' <span class="dim">'+e(a.level)+'</span>':'')}).join(' · ')+'</p>';if(aw.length)h+='<p><span class="y bold">Watching:</span> <span class="dim">'+aw.map(e).join(', ')+'</span></p>';h+='</div>';}
+  var am={};if(pa){var lines=pa.split('\n');for(var i=0;i<lines.length;i++){var parts=lines[i].split('|').map(function(x){return x.trim()}).filter(function(x){return x});if(parts.length>=2){var tk=parts[0].replace(/\*\*/g,'').trim();am[tk]={status:parts.length>=2?parts[1]:'',action:parts.length>=3?parts[2]:(parts.length>=2?parts[1]:'')};}}}return am;
+}
+// ═══ YOUR BOOK (live + paper positions with Opus alerts) ═══
+function rBook(d){
+  var pos=d.positions||[],paper=d.paperPositions||[];
+  var alertMap=getAlertMap(d);
+  var h='<h2><span class="tag tag-live">YOUR BOOK</span> Positions ('+(pos.length+paper.length)+')</h2>';
+  if(!pos.length&&!paper.length){h+='<div class="info-box"><p class="dim">No positions loaded.</p></div>';$('sBook').innerHTML=h;return}
+  // Live positions
+  if(pos.length){h+='<div class="info-box">';for(var i=0;i<pos.length;i++)h+=posCard(pos[i],alertMap[pos[i].ticker]||null);h+='</div>';}
+  // Paper trades
+  if(paper.length){h+='<h3 style="margin-top:12px">📋 Paper Trades ('+paper.length+')</h3><div class="info-box" style="border-color:#30363d">';for(var i=0;i<paper.length;i++)h+=posCard(paper[i],null);h+='</div>';}
+  else{h+='<h3 style="margin-top:12px">📋 Paper Trades</h3><div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:12px">No paper trades active.</p></div>';}
   $('sBook').innerHTML=h;
 }
-
-// ═══ SETUPS & WATCHLIST (confluence + Opus picks merged) ═══
+// ═══ ARETE BOOK (carries/swings + day trade carry-overs — separate from your book) ═══
+// ═══ ARETE BOOK (from Arete Trades tab — reference only) ═══
+function rAreteBook(d){
+  var sw=d.areteSwing||[],carry=d.areteCarry||[];
+  if(!sw.length&&!carry.length){$('sAreteBook').innerHTML='';return}
+  var h='<h2 style="color:#d29922"><span class="tag" style="background:#1f1a0f;color:#d29922;border:1px solid #9e6a03">ARETE</span> Book</h2>';
+  h+='<p class="dim" style="font-size:11px;margin-bottom:6px">Arete Discord positions — reference only, not your trades.</p>';
+  // Swing Trades
+  if(sw.length){h+='<h3 style="color:#d29922">Swing Trades ('+sw.length+')</h3><div class="info-box" style="border-color:#9e6a03"><table><tr><th>Ticker</th><th>Side</th><th>Entry</th><th>Date</th><th>Note</th></tr>';
+    for(var i=0;i<sw.length;i++){var s=sw[i];h+='<tr><td class="tc">'+tkLink(s.ticker)+(s.flag?' <span class="g bold" style="font-size:10px">'+e(s.flag)+'</span>':'')+'</td><td class="dim">'+e(s.side)+'</td><td class="mono">'+e(s.entry)+'</td><td class="dim">'+e(s.date)+'</td><td class="dim" style="font-size:11px;max-width:120px">'+e(s.note)+'</td></tr>';}
+    h+='</table></div>';}
+  // DT Carry-Overs
+  if(carry.length){h+='<h3 style="color:#d29922">DT Carry-Overs ('+carry.length+')</h3><div class="info-box" style="border-color:#9e6a03"><table><tr><th>Ticker</th><th>Side</th><th>Entry</th><th>Date</th><th>Note</th></tr>';
+    for(var i=0;i<carry.length;i++){var c=carry[i];h+='<tr><td class="tc">'+tkLink(c.ticker)+(c.flag?' <span class="g bold" style="font-size:10px">'+e(c.flag)+'</span>':'')+'</td><td class="dim">'+e(c.side)+'</td><td class="mono">'+e(c.entry)+'</td><td class="dim">'+e(c.date)+'</td><td class="dim" style="font-size:11px;max-width:120px">'+e(c.note)+'</td></tr>';}
+    h+='</table></div>';}
+  $('sAreteBook').innerHTML=h;
+}
+// ═══ WATCHING (Config tab: my watching + arete watching with tags) ═══
+function rWatching(d){
+  var mw=d.myWatching||[],aw=d.areteWatching||[];
+  if(!mw.length&&!aw.length){$('sWatching').innerHTML='';return}
+  var h='<h2>👀 Watching</h2><div class="info-box">';
+  if(mw.length){h+='<h3>My Watching ('+mw.length+')</h3>';
+    for(var i=0;i<mw.length;i++){var w=mw[i];
+      h+=tkLink(w.ticker)+' ';
+      if(w.tag)h+='<span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e;font-size:9px;margin-right:6px">'+e(w.tag)+'</span>';}
+    h+='<br style="margin-bottom:8px">';}
+  if(aw.length){h+='<h3 style="color:#d29922">Arete Watching ('+aw.length+')</h3>';
+    for(var i=0;i<aw.length;i++)h+=tkLink(aw[i])+' ';}
+  h+='</div>';$('sWatching').innerHTML=h;
+}
 function rSetups(d){
   var w=d.watchlistTop||[];
   var nar=d.dashboardNarrative||'',sec=parseN(nar),ts=gN(sec,['TOP SETUPS','SETUPS','WATCHLIST','SETUPS & WATCHLIST','ACTIONABLE','TRADE IDEAS','OPPORTUNITIES']);
@@ -234,7 +297,7 @@ function rSetups(d){
   // Confluence table
   if(w.length){h+='<div class="info-box"><table><tr><th>Ticker</th><th>Last</th><th>Conf</th><th>Qual</th><th>Setup</th><th style="font-size:10px">Section</th></tr>';
     for(var i=0;i<Math.min(w.length,15);i++){var it=w[i],cc=it.confluence>=28?'g':it.confluence>=24?'y':'dim';
-      h+='<tr><td class="white bold tc">'+e(it.ticker)+'</td><td>'+e(it.last)+'</td><td class="'+cc+' bold mono">'+it.confluence.toFixed(1)+'</td><td class="dim">'+e(it.quality)+'</td><td class="dim">'+e(it.setup)+'</td><td class="dim" style="font-size:11px">'+e(it.section)+'</td></tr>';}
+      h+='<tr><td class="tc">'+tkLink(it.ticker)+'</td><td>'+e(it.last)+'</td><td class="'+cc+' bold mono">'+it.confluence.toFixed(1)+'</td><td class="dim">'+e(it.quality)+'</td><td class="dim">'+e(it.setup)+'</td><td class="dim" style="font-size:11px">'+e(it.section)+'</td></tr>';}
     h+='</table></div>';}
   $('sSetups').innerHTML=h;
 }
@@ -263,21 +326,38 @@ function rRisk(d){
 }
 
 // ═══ INTERMARKET RATIOS (with Opus read) ═══
+// Static intermarket reference: what each ratio measures + affected tickers
+var IM_REF={
+'HYG/TLT':{what:'Credit risk appetite',up:'risk-on, junk bonds bid',dn:'flight to safety, credit stress',tickers:['HYG','TLT','JNK']},
+'GLD/SPY':{what:'Gold vs equities',up:'fear/inflation hedge',dn:'risk-on, equities preferred',tickers:['GLD','GDX','NEM']},
+'QQQ/SPY':{what:'Tech vs broad market',up:'growth leading',dn:'rotation out of tech',tickers:['QQQ','XLK','AAPL','MSFT']},
+'VUG/VTV':{what:'Growth vs value',up:'growth winning',dn:'value rotation',tickers:['VUG','VTV','IWF','IWD']},
+'IWM/SPY':{what:'Small cap vs large',up:'broad risk-on',dn:'flight to quality',tickers:['IWM','TNA','TZA']},
+'XLK/XLU':{what:'Tech vs utilities',up:'risk-on offensive',dn:'defensive rotation',tickers:['XLK','XLU','NEE']},
+'TLT/SHY':{what:'Long vs short bonds',up:'rate cut bets',dn:'higher-for-longer',tickers:['TLT','SHY','TBT']},
+'XLE/SPY':{what:'Energy vs broad',up:'inflation/commodity bid',dn:'deflation signal',tickers:['XLE','XOM','CVX','USO']},
+'XLF/SPY':{what:'Financials vs broad',up:'yield curve steepening',dn:'banking stress',tickers:['XLF','JPM','GS','BAC']},
+'SMH/QQQ':{what:'Semis vs Nasdaq',up:'semis leading tech',dn:'semis lagging',tickers:['SMH','NVDA','AMD','MU','AVGO']}
+};
 function rRatios(d){
   var r=gS(d,'INTERMARKET RATIOS');if(!r.length){$('sRatios').innerHTML='';return}
   var nar=d.dashboardNarrative||'',sec=parseN(nar),imRead=gN(sec,['INTERMARKET READ','INTERMARKET','RATIOS','CROSS-MARKET','MACRO']);
   var h='<h2>Intermarket</h2>';
   if(imRead)h+='<div class="story-box" style="border-color:#d29922">'+fmt(imRead)+'</div>';
   h+='<div class="info-box">';
-  for(var i=0;i<r.length;i++){var cn=parseFloat(String(r[i].chg).replace('%',''));var desc=r[i].desc||'',sig='',meas='';
-    if(desc.indexOf('—')>=0){meas=desc.split('—')[0].trim();var rest=desc.split('—').slice(1).join('—').trim();if(rest.indexOf('rising')>=0&&rest.indexOf('falling')>=0){if(cn>0.01)sig=rest.split('rising')[1].split(',')[0].replace(/[=]/g,'').trim();else if(cn<-0.01)sig=rest.split('falling')[1].split(',')[0].replace(/[=]/g,'').trim();else sig='flat';}else sig=rest;}else sig=desc;
+  for(var i=0;i<r.length;i++){var cn=parseFloat(String(r[i].chg).replace('%',''));var desc=r[i].desc||'',sig='',ref=IM_REF[r[i].sym]||null;
+    if(ref){sig=cn>0.01?ref.up:cn<-0.01?ref.dn:'flat';}
+    else if(desc.indexOf('—')>=0){var rest=desc.split('—').slice(1).join('—').trim();if(rest.indexOf('rising')>=0&&rest.indexOf('falling')>=0){if(cn>0.01)sig=rest.split('rising')[1].split(',')[0].replace(/[=]/g,'').trim();else if(cn<-0.01)sig=rest.split('falling')[1].split(',')[0].replace(/[=]/g,'').trim();else sig='flat';}else sig=rest;}else sig=desc;
     var sc=cn>0.01?'g':cn<-0.01?'r':'dim';
-    h+='<div class="ratio-row"><span class="white bold">'+e(r[i].sym)+'</span> <span class="mono dim" style="font-size:12px">'+e(r[i].val)+'</span> '+pct(r[i].chg)+' <span class="'+sc+' bold" style="font-size:12px">'+e(sig)+'</span>';
-    if(meas)h+='<br><span class="dim" style="font-size:10px">'+e(meas)+'</span>';
+    h+='<div class="ratio-row"><div style="display:flex;justify-content:space-between;align-items:baseline">';
+    h+='<span class="white bold">'+e(r[i].sym)+'</span><span>'+pct(r[i].chg)+' <span class="'+sc+' bold" style="font-size:12px">'+e(sig)+'</span></span></div>';
+    if(ref){h+='<div style="font-size:11px;margin-top:2px"><span class="dim">'+e(ref.what)+'</span>';
+      h+=' <span style="color:#484f58">·</span> ';
+      for(var t=0;t<Math.min(ref.tickers.length,4);t++)h+=tkLink(ref.tickers[t])+' ';
+      h+='</div>';}
     h+='</div>';}
   h+='</div>';$('sRatios').innerHTML=h;
 }
-
 // ═══ COACHING ═══
 function rCoach(d){
   var nar=d.dashboardNarrative||'';if(!nar){$('sCoach').innerHTML='';return}
@@ -301,7 +381,7 @@ function parseN(t){var s={},l=t.split('\n'),k='',b=[];for(var i=0;i<l.length;i++
 function gN(sec,keys){for(var i=0;i<keys.length;i++){var v=sec[keys[i]];if(v)return v;}
   // Fuzzy match: check if any sec key CONTAINS any of our search keys
   var sk=Object.keys(sec);for(var i=0;i<keys.length;i++){for(var j=0;j<sk.length;j++){if(sk[j].indexOf(keys[i])>=0||keys[i].indexOf(sk[j])>=0){if(sec[sk[j]])return sec[sk[j]];}}}return'';}
-function fmt(t){if(!t)return'';var h=e(t);h=h.replace(/\*\*(.+?)\*\*/g,'<span class="white bold">$1</span>');h=h.replace(/\$([A-Z]{1,5})/g,'<span class="b bold">$$$1</span>');h=h.replace(/\n/g,'<br>');return h;}
+function fmt(t){if(!t)return'';var h=e(t);h=h.replace(/\*\*(.+?)\*\*/g,'<span class="white bold">$1</span>');h=h.replace(/\$([A-Z]{1,5})/g,function(m,tk){var sl=_ic[tk]||'';var iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+tk;var tv='https://www.tradingview.com/chart/?symbol='+tk;return'<a href="'+iu+'" target="_blank" style="color:#58a6ff;font-weight:700;text-decoration:none">$'+tk+'</a><a href="'+tv+'" target="_blank" style="text-decoration:none;margin-left:1px" title="TradingView">🔵</a>';});h=h.replace(/\n/g,'<br>');return h;}
 
 poll();setInterval(poll,60000);
 </script>
