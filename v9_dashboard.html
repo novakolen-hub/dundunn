@@ -156,7 +156,7 @@ function posNewsHtml(tk){
     h+=' <span class="dim" style="font-size:9px">'+age+'</span></div>';}
   return h+'</div>';
 }
-function rTimer(d){var t=d.timerState||{};function cd(s){if(!s||s<=0)return'<span class="g">RUN</span>';var m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r;}$('t1m').innerHTML=cd(t.sec1m);$('t5m').innerHTML=cd(t.sec5m);$('t30m').innerHTML=cd(t.sec30m);$('tQ').innerHTML=(t.fetchCount||'--')+'<span class="dim" style="font-size:9px">/20K</span>';$('tPh').textContent=sL(d.phase)||'--';}
+function rTimer(d){var t=d.timerState||d;function cd(s){if(!s||s<=0)return'<span class="g">RUN</span>';var m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r;}$('t1m').innerHTML=cd(t.sec1m||d.sec1m);$('t5m').innerHTML=cd(t.sec5m||d.sec5m);$('t30m').innerHTML=cd(t.sec30m||d.sec30m);$('tQ').innerHTML=((d.quotaCount||t.quotaCount||t.fetchCount)||'--')+'<span class="dim" style="font-size:9px">/20K</span>';$('tPh').textContent=sL(d.phase)||'--';}
 var readUrls=(function(){try{var s=localStorage.getItem('v9_read_urls');return s?new Set(JSON.parse(s)):new Set();}catch(e){return new Set();}})();
 function saveReadUrls(){try{localStorage.setItem('v9_read_urls',JSON.stringify(Array.from(readUrls)));}catch(e){}}
 function initNewsRead(){
