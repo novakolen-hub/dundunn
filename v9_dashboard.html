@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.6.2</title>
+<title>V9 Trading Dashboard v11.6.3</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -595,7 +595,7 @@ function rSess(d){
 function rSectors(d){
   var hm=d.sectorHeatmap||[],gr=hm.filter(function(x){return x.type==='G'}).sort(function(a,b){return b.chg-a.chg}),df=hm.filter(function(x){return x.type==='D'}).sort(function(a,b){return b.chg-a.chg});
   var gg=gr.filter(function(x){return x.chg>0.05}).length,dg=df.filter(function(x){return x.chg>0.05}).length;
-  var isCol=false;try{isCol=localStorage.getItem('sec_col_sectors')==='1';}catch(e){}
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_sectors');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'sectors\')"><span id="secArrow_sectors" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Sectors <span class="dim" style="font-size:12px;font-weight:400">('+gg+'/'+gr.length+' growth · '+dg+'/'+df.length+' defensive)</span></h2>';
   h+='<div id="secBody_sectors" style="'+(isCol?'display:none':'')+'">';
   h+='<h3>Growth ('+gg+'/'+gr.length+')</h3><div class="heatmap">';
@@ -670,7 +670,7 @@ function nTags(hl,rel){
 function rEcon(d){
   var eco=d.ecoEvents||[];
   if(!eco.length){$('sEcon').innerHTML='';return;}
-  var isCol=false;try{isCol=localStorage.getItem('sec_col_econ')==='1';}catch(e){}
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_econ');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'econ\')"><span id="secArrow_econ" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Economic Calendar <span class="dim" style="font-size:12px;font-weight:400">('+eco.length+')</span></h2>';
   h+='<div id="secBody_econ" style="'+(isCol?'display:none':'')+'"><div class="info-box" style="padding:0">';
   var impactColor={High:'#f85149',Medium:'#e3b341',Low:'#7d8590'};
@@ -703,7 +703,7 @@ function rEcon(d){
 function rEarnings(d){
   var earn=d.earnings||[];
   if(!earn.length){$('sEarnings').innerHTML='';return;}
-  var isCol=false;try{isCol=localStorage.getItem('sec_col_earn')==='1';}catch(e){}
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_earn');if(_v!==null)isCol=_v==='1';}catch(e){}
   // Check if fallback mode
   var isFallback=earn.length>0&&earn[0].tier==='top20';
   var label=isFallback?'Earnings This Week <span class="dim" style="font-size:11px">(top 20 by revenue — no watchlist matches)</span>':'Earnings This Week';
@@ -781,7 +781,7 @@ function rNews(d){
   primary.sort(function(a,b){return(b.inPos?1:0)-(a.inPos?1:0);});
   // Render
   var totalShown=primary.length+secondary.length;
-  var isCol=false;try{isCol=localStorage.getItem('sec_col_news')==='1';}catch(e){}
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_news');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleSec(\'news\')"><span id="secArrow_news" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Market News <span class="dim" style="font-size:12px;font-weight:400">('+totalShown+' of '+news.length+')</span></h2>';
   h+='<div id="secBody_news" style="'+(isCol?'display:none':'')+'">';
   // ── Primary section ──
@@ -959,7 +959,7 @@ function rAreteBook(d){
 function rWatching(d){
   var mw=d.myWatching||[];
   if(!mw.length){$('sWatching').innerHTML='';return}
-  var isCol=false;try{isCol=localStorage.getItem('sec_col_watch')==='1';}catch(e){}
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_watch');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 👀 Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span></h2>';
   h+='<div id="secBody_watch" style="'+(isCol?'display:none':'')+'">';
   var nar=d.dashboardNarrative||'',sec=parseN(nar);
@@ -997,7 +997,7 @@ function rSetups(d){
   var w=d.watchlistTop||[];
   var nar=d.dashboardNarrative||'',sec=parseN(nar),ts=gN(sec,['TOP SETUPS','SETUPS','WATCHLIST','SETUPS & WATCHLIST','ACTIONABLE','TRADE IDEAS','OPPORTUNITIES']);
   if(!w.length&&!ts){$('sSetups').innerHTML='';return}
-  var isCol=false;try{isCol=localStorage.getItem('sec_col_setups')==='1';}catch(e){}
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_setups');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Setups & Watchlist</h2>';
   h+='<div id="secBody_setups" style="'+(isCol?'display:none':'')+'">';
   // Opus narrative first
@@ -1049,8 +1049,8 @@ var IM_REF={
 function rRatios(d){
   var r=gS(d,'INTERMARKET RATIOS');if(!r.length){$('sRatios').innerHTML='';return}
   var nar=d.dashboardNarrative||'',sec=parseN(nar),imRead=gN(sec,['INTERMARKET READ','INTERMARKET','RATIOS','CROSS-MARKET','MACRO']);
-  var isCol=false;try{isCol=localStorage.getItem('sec_col_inter')==='1';}catch(e){}
-  var tkCol=false;try{tkCol=localStorage.getItem('sec_col_intertk')==='1';}catch(e){}
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_inter');if(_v!==null)isCol=_v==='1';}catch(e){}
+  var tkCol=true;try{var _v=localStorage.getItem('sec_col_intertk');if(_v!==null)tkCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'inter\')"><span id="secArrow_inter" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Intermarket</h2>';
   h+='<div id="secBody_inter" style="'+(isCol?'display:none':'')+'">';
   if(imRead)h+='<div class="story-box" style="border-color:#e3b341">'+fmt(imRead)+'</div>';
@@ -1093,7 +1093,7 @@ function rInst(d){
   var vixT=[{v:0,c:'#3fb950',l:'Complacent'},{v:15,c:'#e3b341',l:'Normal'},{v:20,c:'#d29922',l:'Elevated'},{v:25,c:'#f85149',l:'High Fear'},{v:30,c:'#da3633',l:'Panic'}];
   var ivrT=[{v:0,c:'#3fb950',l:'Low'},{v:20,c:'#e3b341',l:'Normal'},{v:40,c:'#d29922',l:'Elevated'},{v:60,c:'#f85149',l:'High'}];
   var fgT=[{v:0,c:'#f85149',l:'Ext Fear'},{v:25,c:'#d29922',l:'Fear'},{v:45,c:'#e3b341',l:'Neutral'},{v:55,c:'#3fb950',l:'Greed'},{v:75,c:'#238636',l:'Ext Greed'}];
-  var isCol=false;try{isCol=localStorage.getItem('sec_col_pulse')==='1';}catch(e){}
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_pulse');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="color:#d29922;cursor:pointer;user-select:none" onclick="toggleSec(\'pulse\')"><span id="secArrow_pulse" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 🏛️ Institutional Pulse</h2>';
   h+='<div id="secBody_pulse" style="'+(isCol?'display:none':'')+'">';
   h+='<p class="dim" style="font-size:11px;margin-top:-4px;margin-bottom:10px">What big money is doing — positioning, flows, sentiment, and credit stress.';
@@ -1248,7 +1248,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.6.2 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.6.3 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
