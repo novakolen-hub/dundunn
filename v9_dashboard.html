@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.2</title>
+<title>V9 Trading Dashboard v11.3</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -97,11 +97,10 @@
 <div id="sInst"></div>
 <div id="sNews"></div>
 <hr class="divider">
+<div id="sWatching"></div>
 <div id="sBook"></div>
 <div id="sAreteBook"></div>
-<div id="sWatching"></div>
 <div id="sSetups"></div>
-<div id="sPortRisk"></div>
 <div id="sRatios"></div>
 <hr class="divider">
 <div id="sCoach"></div>
@@ -118,6 +117,7 @@ var _icSlugs={};
 var _tq={};
 var _to={};
 var _tkNews={};
+var _lastD={};
 function tkLink(tk,lg){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="_blank" title="TradingView"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk"'+(lg?' style="font-size:15px"':'')+'>'+e(tk)+'</a></span>';}
 function pct(v){var s=String(v||''),n=parseFloat(s.replace('%',''));if(isNaN(n))return'<span class="dim">—</span>';if(Math.abs(n)<0.5&&s.indexOf('%')<0)n*=100;var c=n>0.01?'g':n<-0.01?'r':'dim';return'<span class="'+c+'">'+(n>0?'+':'')+n.toFixed(2)+'%</span>'}
 function pc(v){var n=parseFloat(String(v).replace(/[$,+]/g,''));return n>0?'g':n<0?'r':'dim'}
@@ -139,7 +139,7 @@ function poll(){
   }).catch(function(err){_e++;var ld=$('loader');if(ld)ld.innerHTML='<div style="color:#f85149;padding:16px;font-size:13px">❌ '+err.message+'<br><br><span class="dim">Check: did you deploy a NEW version? The endpoint URL may have changed.<br>Current EP: '+EP.substring(0,60)+'...</span></div>';$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
 }
 
-function R(d){if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rBook(d);rAreteBook(d);rWatching(d);rSetups(d);rRisk(d);rRatios(d);rCoach(d);rFoot(d);initSparkTips();initNewsRead();}
+function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rFoot(d);initSparkTips();initNewsRead();}
 function buildTkNews(d){
   _tkNews={};var news=d.news||[];var now=Date.now()/1000;
   for(var i=0;i<news.length;i++){var n=news[i];if(n.time&&(now-n.time)>86400)continue;var nt=nTags(n.headline||'',n.related||'');
@@ -805,6 +805,7 @@ function rBook(d){
   if(pos.length){bc+='<div class="info-box">';for(var i=0;i<pos.length;i++)bc+=posCard(pos[i],alertMap[pos[i].ticker]||null);bc+='</div>';}
   if(paper.length){bc+='<h3 style="margin-top:12px">📋 Paper Trades ('+paper.length+')</h3><div class="info-box" style="border-color:#30363d">';for(var i=0;i<paper.length;i++)bc+=posCard(paper[i],null);bc+='</div>';}
   else{bc+='<h3 style="margin-top:12px">📋 Paper Trades</h3><div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:12px">No paper trades active.</p></div>';}
+  bc+=rRiskHtml(d);
   h+='<div id="bookContent">'+bc+'</div>';
   $('sBook').innerHTML=h;
 }
@@ -831,8 +832,14 @@ function areteCard(p){
 }
 function rAreteBook(d){
   var all=d.aretePositions||[];
-  if(!all.length){$('sAreteBook').innerHTML='<h2 style="color:#e3b341"><span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book</h2><p class="dim" style="font-size:12px">No Arete positions active.</p>';return}
-  var h='<h2 style="color:#e3b341"><span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book ('+all.length+')</h2>';
+  var aw=d.areteWatching||[];
+  var totalCount=all.length+aw.length;
+  if(!all.length&&!aw.length){$('sAreteBook').innerHTML='';return}
+  var outerCol=false;try{outerCol=localStorage.getItem('arete_col_outer')==='1';}catch(e){}
+  var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\'outer\')">';
+  h+='<span id="areteArrow_outer" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(outerCol?'-90':'0')+'deg)">▼</span> ';
+  h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book ('+totalCount+')</h2>';
+  h+='<div id="areteBody_outer" style="'+(outerCol?'display:none':'')+'">';
   h+='<p class="dim" style="font-size:11px;margin-bottom:6px">Arete Discord positions — reference only, not your trades.</p>';
   var groups={};var order=['Swing','DTC','Option','Long'];
   for(var i=0;i<all.length;i++){var t=all[i].tag||'Other';if(!groups[t])groups[t]=[];groups[t].push(all[i]);}
@@ -843,44 +850,12 @@ function rAreteBook(d){
     h+=e(k)+' ('+groups[k].length+')</h3>';
     h+='<div id="areteBody_'+k+'" class="info-box" style="border-color:#9e6a03;'+(isCol?'display:none':'')+'">';
     for(var i=0;i<groups[k].length;i++)h+=areteCard(groups[k][i]);h+='</div>';}
-  $('sAreteBook').innerHTML=h;
-}
-// ═══ WATCHING (Config tab: my watching + arete watching) ═══
-function rWatching(d){
-  var mw=d.myWatching||[],aw=d.areteWatching||[];
-  if(!mw.length&&!aw.length){$('sWatching').innerHTML='';return}
-  var h='<h2>👀 Watching</h2>';
-  // Parse Opus watching notes from narrative
-  var nar=d.dashboardNarrative||'',sec=parseN(nar);
-  var wn=gN(sec,['WATCHING NOTES']);
-  if(mw.length){h+='<h3>My Watching ('+mw.length+')</h3>';
-    if(wn){
-      // Parse "TICKER — BIAS | level | thesis" lines from Opus
-      var wLines=wn.split('\n');
-      for(var i=0;i<wLines.length;i++){
-        var ln=wLines[i].trim();if(!ln||ln.indexOf('—')<0)continue;
-        var parts=ln.split('—');
-        var tk=parts[0].replace(/\$/g,'').trim();
-        var rest=(parts[1]||'').trim();
-        var segs=rest.split('|');
-        var bias=(segs[0]||'').trim().toUpperCase();
-        var lvl=(segs[1]||'').trim();
-        var thesis=(segs[2]||'').trim();
-        var bc=bias.indexOf('LONG')>=0?'#0d5e2e':bias.indexOf('SHORT')>=0?'#6e1b1b':'#2a2a3a';
-        var btx=bias.indexOf('LONG')>=0?'🟢':bias.indexOf('SHORT')>=0?'🔴':'⚪';
-        h+='<div style="background:'+bc+';border:1px solid #333;border-radius:8px;padding:10px 12px;margin-bottom:6px">';
-        h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
-        h+=tkLink(tk,1)+qBadge(tk);
-        h+=' <span style="font-size:11px;opacity:0.8">'+btx+' '+e(bias)+'</span>';
-        if(lvl)h+=' <span style="color:#58a6ff;font-size:12px">📍'+e(lvl)+'</span>';
-        h+='</div>';
-        if(thesis)h+='<div style="color:#aaa;font-size:11px;margin-top:4px">'+e(thesis)+'</div>';
-        h+='</div>';}
-    } else {
-      h+='<div class="info-box" style="display:flex;flex-wrap:wrap;gap:6px">';
-      for(var i=0;i<mw.length;i++)h+=tkLink(mw[i])+qBadge(mw[i]);
-      h+='</div>';}}
-  if(aw.length){h+='<h3 style="color:#e3b341">Arete Watching ('+aw.length+')</h3>';
+  if(aw.length){
+    var awCol=false;try{awCol=localStorage.getItem('arete_col_Watching')==='1';}catch(e){}
+    h+='<h3 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\'Watching\')">';
+    h+='<span id="areteArrow_Watching" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(awCol?'-90':'0')+'deg)">▼</span> ';
+    h+='Watching ('+aw.length+')</h3>';
+    h+='<div id="areteBody_Watching" style="'+(awCol?'display:none':'')+'">';
     h+='<div class="info-box" style="display:flex;flex-wrap:wrap;align-items:center;gap:0">';
     for(var i=0;i<aw.length;i++){
       if(i>0)h+='<span style="color:#30363d;margin:0 8px;font-size:16px;line-height:1">│</span>';
@@ -888,6 +863,42 @@ function rWatching(d){
       if(q&&q.last){prStr=' <span class="mono dim" style="font-size:11px">$'+e(q.last)+'</span>';if(q.chg)chStr=' <span style="font-size:10px">'+pct(q.chg)+'</span>';}
       h+='<span style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap">'+tkLink(aw[i])+prStr+chStr+'</span>';
     }
+    h+='</div></div>';}
+  h+='</div>';
+  $('sAreteBook').innerHTML=h;
+}
+// ═══ WATCHING (Config tab: my watching + arete watching) ═══
+function rWatching(d){
+  var mw=d.myWatching||[];
+  if(!mw.length){$('sWatching').innerHTML='';return}
+  var h='<h2>👀 Watching</h2>';
+  var nar=d.dashboardNarrative||'',sec=parseN(nar);
+  var wn=gN(sec,['WATCHING NOTES']);
+  h+='<h3>My Watching ('+mw.length+')</h3>';
+  if(wn){
+    var wLines=wn.split('\n');
+    for(var i=0;i<wLines.length;i++){
+      var ln=wLines[i].trim();if(!ln||ln.indexOf('—')<0)continue;
+      var parts=ln.split('—');
+      var tk=parts[0].replace(/\$/g,'').trim();
+      var rest=(parts[1]||'').trim();
+      var segs=rest.split('|');
+      var bias=(segs[0]||'').trim().toUpperCase();
+      var lvl=(segs[1]||'').trim();
+      var thesis=(segs[2]||'').trim();
+      var bc=bias.indexOf('LONG')>=0?'#0d5e2e':bias.indexOf('SHORT')>=0?'#6e1b1b':'#2a2a3a';
+      var btx=bias.indexOf('LONG')>=0?'🟢':bias.indexOf('SHORT')>=0?'🔴':'⚪';
+      h+='<div style="background:'+bc+';border:1px solid #333;border-radius:8px;padding:10px 12px;margin-bottom:6px">';
+      h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+      h+=tkLink(tk,1)+qBadge(tk);
+      h+=' <span style="font-size:11px;opacity:0.8">'+btx+' '+e(bias)+'</span>';
+      if(lvl)h+=' <span style="color:#58a6ff;font-size:12px">📍'+e(lvl)+'</span>';
+      h+='</div>';
+      if(thesis)h+='<div style="color:#aaa;font-size:11px;margin-top:4px">'+e(thesis)+'</div>';
+      h+='</div>';}
+  } else {
+    h+='<div class="info-box" style="display:flex;flex-wrap:wrap;gap:6px">';
+    for(var i=0;i<mw.length;i++)h+=tkLink(mw[i])+qBadge(mw[i]);
     h+='</div>';}
   $('sWatching').innerHTML=h;
 }
@@ -907,15 +918,13 @@ function rSetups(d){
 }
 
 // ═══ PORTFOLIO RISK (exposure + correlation + Opus recommendations merged) ═══
-function rRisk(d){
+function rRiskHtml(d){
   var pos=d.positions||[];
   var nar=d.dashboardNarrative||'',sec=parseN(nar);
   var prNar=gN(sec,['PORTFOLIO RISK','CORRELATION CHECK','CORRELATION','RISK','RISK MANAGEMENT','EXPOSURE','CONCENTRATION']);
-  if(!pos.length&&!prNar){$('sPortRisk').innerHTML='';return}
-  var h='<h2>Portfolio Risk</h2>';
-  // Opus narrative
+  if(!pos.length&&!prNar)return'';
+  var h='<h3 style="margin-top:12px">Portfolio Risk</h3>';
   if(prNar)h+='<div class="alert-box" style="border-color:#f85149">'+fmt(prNar)+'</div>';
-  // Live numbers
   if(pos.length){
     var tMV=0,tDay=0,tUn=0,tags={},longs=0,shorts=0;
     for(var i=0;i<pos.length;i++){var p=pos[i];var mv=parseFloat(String(p.mktValue||'0').replace(/[$,+]/g,''))||0;var dp=parseFloat(String(p.dayPL||'0').replace(/[$,+]/g,''))||0;var tp=parseFloat(String(p.totalPL||'0').replace(/[$,+]/g,''))||0;tMV+=Math.abs(mv);tDay+=dp;tUn+=tp;if(p.side==='Long')longs++;else shorts++;var t=p.tag||p.accountType||'Untagged';if(!tags[t])tags[t]={count:0,tickers:[]};tags[t].count++;tags[t].tickers.push(p.ticker);}
@@ -926,7 +935,7 @@ function rRisk(d){
     var tk=Object.keys(tags);if(tk.length){h+='<h3 style="margin-top:8px">Concentration</h3>';for(var i=0;i<tk.length;i++){var pB=Math.round(tags[tk[i]].count/pos.length*100),wc=pB>50?'#f85149':pB>30?'#e3b341':'#3fb950';h+='<div class="gauge"><span class="dim" style="min-width:70px;font-size:12px">'+e(tk[i])+'</span><div class="gauge-bar"><div class="gauge-fill" style="width:'+pB+'%;background:'+wc+'"></div></div><span class="gauge-label" style="color:'+wc+'">'+pB+'% ('+tags[tk[i]].tickers.join(',')+')</span></div>';}}
     if(pos.length>=5)h+='<div class="warn-box" style="margin-top:8px"><span class="r bold">⚠ At 5-position limit.</span></div>';
     h+='</div>';}
-  $('sPortRisk').innerHTML=h;
+  return h;
 }
 
 // ═══ INTERMARKET RATIOS (with Opus read) ═══
@@ -1141,7 +1150,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.2 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.3 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
