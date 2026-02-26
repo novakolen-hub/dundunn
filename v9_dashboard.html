@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.7.1</title>
+<title>V9 Trading Dashboard v11.8</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -952,31 +952,61 @@ function rAreteBook(d){
     var secGroups={},secOrder=[];
     for(var i=0;i<aw.length;i++){var tk=aw[i];var sec=_SEC[tk]||(_confMap[tk]&&_confMap[tk].sect?_confMap[tk].sect:'')||'Other';
       if(!secGroups[sec]){secGroups[sec]=[];secOrder.push(sec);}secGroups[sec].push(tk);}
+    // Build overlap lookup (positions + my watching)
+    var _myTk={};
+    var myPos=d.positions||[];for(var pi=0;pi<myPos.length;pi++)_myTk[myPos[pi].ticker]='pos';
+    var myW=d.myWatching||[];for(var wi=0;wi<myW.length;wi++){if(!_myTk[myW[wi]])_myTk[myW[wi]]='watch';}
     // Sort sector groups: sectors with more tickers first, 'Other' last
     secOrder.sort(function(a,b){if(a==='Other')return 1;if(b==='Other')return -1;return secGroups[b].length-secGroups[a].length;});
     for(var si=0;si<secOrder.length;si++){
       var sec=secOrder[si],tks=secGroups[sec];
-      h+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:#7d8590;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid #21262d;padding-bottom:2px">'+e(sec)+' ('+tks.length+')</div>';
+      // Sort within sector by confluence descending
+      tks.sort(function(a,b){var ca=(_confMap[a]||{}).conf||0,cb=(_confMap[b]||{}).conf||0;return cb-ca;});
+      // Sector avg change
+      var secSum=0,secCnt=0;
+      for(var ti=0;ti<tks.length;ti++){var sq=_tq[tks[ti]];if(sq&&sq.chg){var sv=parseFloat(String(sq.chg).replace('%',''));if(!isNaN(sv)){secSum+=sv;secCnt++;}}}
+      var secAvg=secCnt?secSum/secCnt:0;var secAvgC=secAvg>0.01?'g':secAvg<-0.01?'r':'dim';
+      h+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:#7d8590;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid #21262d;padding-bottom:2px">'+e(sec)+' ('+tks.length+') <span class="'+secAvgC+'" style="font-weight:400">avg '+(secAvg>0?'+':'')+secAvg.toFixed(2)+'%</span></div>';
       for(var ti=0;ti<tks.length;ti++){
         var tk=tks[ti],q=_tq[tk]||{},op=_to[tk]||{},cm=_confMap[tk]||{},nws=_tkNews[tk]||[];
+        // Border color by change
+        var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
+        var bCol=chgN>0.05?'#238636':chgN<-0.05?'#da3633':'#9e6a03';
         // Card
-        h+='<div class="pos-block" style="border-left:3px solid #9e6a03;padding:8px 10px;margin-bottom:4px">';
-        // Row 1: ticker, price, change
+        h+='<div class="pos-block" style="border-left:3px solid '+bCol+';padding:8px 10px;margin-bottom:4px">';
+        // Row 1: ticker, overlap badge, confluence, price, change
         h+='<div style="display:flex;justify-content:space-between;align-items:center">';
         h+='<span>'+tkLink(tk,1);
+        if(_myTk[tk]==='pos')h+=' <span style="font-size:9px;background:#238636;color:#fff;padding:1px 4px;border-radius:3px">IN BOOK</span>';
+        else if(_myTk[tk]==='watch')h+=' <span style="font-size:9px;background:#1f6feb;color:#fff;padding:1px 4px;border-radius:3px">WATCHING</span>';
         if(cm.conf){var cc=cm.conf>=28?'g':cm.conf>=24?'y':'dim';h+=' <span class="mono '+cc+'" style="font-size:11px" title="Confluence">⚡'+cm.conf.toFixed(0)+'</span>';}
+        if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
         h+='</span>';
         h+='<span class="mono" style="font-size:12px">';
         if(q.last)h+=e(q.last)+' ';
         if(q.chg)h+=pct(q.chg);
         h+='</span></div>';
-        // Row 2: options data
+        // Row 2: options data (if available from tastytrade bridge)
         var oH='';
         if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';
         if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';
         if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';
         if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';
         if(oH)h+='<div style="font-size:11px;margin-top:2px">📊 '+oH+'</div>';
+        // Row 2b: enriched data from watchlist
+        var eH='';
+        if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
+        if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
+        if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
+        if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
+        // Flags
+        var flags='';
+        if(q.vwapF&&q.vwapF!=='—')flags+='<span title="VWAP">V</span>';
+        if(q.rsF&&q.rsF!=='—')flags+='<span title="Rel Strength">R</span>';
+        if(q.rsiF&&q.rsiF!=='—')flags+='<span title="RSI">S</span>';
+        if(q.rvolF&&q.rvolF!=='—')flags+='<span title="RVOL">V</span>';
+        if(flags)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:0 3px;font-size:10px;font-weight:700;color:#58a6ff">'+flags+'</span>';
+        if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
         // Row 3: confluence setup if present
         if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
         // Row 4: news
@@ -1282,7 +1312,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.7.1 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.8 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
