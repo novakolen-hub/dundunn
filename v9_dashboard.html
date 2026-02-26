@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.8.2</title>
+<title>V9 Trading Dashboard v11.8.3</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -188,6 +188,16 @@ function toggleAll(collapse){
     body.style.display=collapse?'none':'';
     if(arrow)arrow.style.transform=collapse?'rotate(-90deg)':'rotate(0deg)';
     try{localStorage.setItem('sec_col_'+keys[i],collapse?'1':'0');}catch(e){}
+  }
+  // Also toggle Arete sub-sections
+  var aKeys=['outer','Swing','DTC','Option','Long','Watching'];
+  for(var i=0;i<aKeys.length;i++){
+    var body=document.getElementById('areteBody_'+aKeys[i]);
+    var arrow=document.getElementById('areteArrow_'+aKeys[i]);
+    if(!body)continue;
+    body.style.display=collapse?'none':'';
+    if(arrow)arrow.style.transform=collapse?'rotate(-90deg)':'rotate(0deg)';
+    try{localStorage.setItem('arete_col_'+aKeys[i],collapse?'1':'0');}catch(e){}
   }
 }
 function toggleSec(k){
@@ -924,7 +934,7 @@ function rAreteBook(d){
   var aw=d.areteWatching||[];
   var totalCount=all.length+aw.length;
   if(!all.length&&!aw.length){$('sAreteBook').innerHTML='';return}
-  var outerCol=false;try{outerCol=localStorage.getItem('arete_col_outer')==='1';}catch(e){}
+  var outerCol=true;try{var _ov=localStorage.getItem('arete_col_outer');if(_ov!==null)outerCol=_ov==='1';}catch(e){}
   var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\'outer\')">';
   h+='<span id="areteArrow_outer" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(outerCol?'-90':'0')+'deg)">▼</span> ';
   h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book ('+totalCount+')</h2>';
@@ -933,14 +943,14 @@ function rAreteBook(d){
   var groups={};var order=['Swing','DTC','Option','Long'];
   for(var i=0;i<all.length;i++){var t=all[i].tag||'Other';if(!groups[t])groups[t]=[];groups[t].push(all[i]);}
   for(var g=0;g<order.length;g++){var k=order[g];if(!groups[k])continue;
-    var colKey='arete_col_'+k;var isCol=false;try{isCol=localStorage.getItem(colKey)==='1';}catch(e){}
+    var colKey='arete_col_'+k;var isCol=true;try{var _sv=localStorage.getItem(colKey);if(_sv!==null)isCol=_sv==='1';}catch(e){}
     h+='<h3 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\''+k+'\')">';
     h+='<span id="areteArrow_'+k+'" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> ';
     h+=e(k)+' ('+groups[k].length+')</h3>';
     h+='<div id="areteBody_'+k+'" class="info-box" style="border-color:#9e6a03;'+(isCol?'display:none':'')+'">';
     for(var i=0;i<groups[k].length;i++)h+=areteCard(groups[k][i]);h+='</div>';}
   if(aw.length){
-    var awCol=false;try{awCol=localStorage.getItem('arete_col_Watching')==='1';}catch(e){}
+    var awCol=true;try{var _awv=localStorage.getItem('arete_col_Watching');if(_awv!==null)awCol=_awv==='1';}catch(e){}
     h+='<h3 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\'Watching\')">';
     h+='<span id="areteArrow_Watching" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(awCol?'-90':'0')+'deg)">▼</span> ';
     h+='Watching ('+aw.length+')</h3>';
@@ -1347,7 +1357,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.8.2 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.8.3 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
