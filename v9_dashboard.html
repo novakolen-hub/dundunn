@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.6.3</title>
+<title>V9 Trading Dashboard v11.7</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -110,6 +110,7 @@
 var EP='https://script.google.com/macros/s/AKfycbyA45O4vPIEOTdOW601PmdkdnOpTDSzu44qaSPq-PDBhElHlzThmyqdvD8MO7IZqmLq/exec';
 var _d,_n=0,_e=0;
 var SN={SOXX:'Semis',SMH:'Semis',XLK:'Tech',XLY:'Cons Disc',XLF:'Financials',XLI:'Industrials',XLC:'Comm Svcs',IWM:'Small Cap',XLU:'Utilities',XLP:'Staples',XLV:'Healthcare',XLE:'Energy',XLB:'Materials'};
+var _SEC={NVDA:'Semis',AMD:'Semis',AVGO:'Semis',TSM:'Semis',MU:'Semis',MRVL:'Semis',INTC:'Semis',QCOM:'Semis',ARM:'Semis',KLAC:'Semis',LRCX:'Semis',AMAT:'Semis',ASML:'Semis',ADI:'Semis',SMCI:'Semis',SMTC:'Semis',ONTO:'Semis',ACLS:'Semis',MSFT:'Software',ORCL:'Software',CRM:'Software',NOW:'Software',ADBE:'Software',PLTR:'Software',SNOW:'Software',DDOG:'Software',MDB:'Software',NET:'Software',PANW:'Software',CRWD:'Software',ZS:'Software',FTNT:'Software',AAPL:'Mega Tech',GOOGL:'Mega Tech',GOOG:'Mega Tech',AMZN:'Mega Tech',META:'Mega Tech',NFLX:'Mega Tech',TSLA:'Mega Tech',CRDO:'Networking',ALAB:'Networking',CSCO:'Networking',JNPR:'Networking',CIEN:'Networking',ANET:'Networking',GLW:'Networking',COHR:'Networking',LITE:'Networking',RMBS:'Networking',EQIX:'Data Centers',SKYT:'Data Centers',IREN:'Data Centers',NBIS:'Data Centers',APLD:'Data Centers',JPM:'Financials',GS:'Financials',MS:'Financials',BAC:'Financials',V:'Financials',MA:'Financials',BLK:'Financials',COIN:'Crypto',MSTR:'Crypto',HOOD:'Crypto',IONQ:'Quantum',QBTS:'Quantum',RGTI:'Quantum',RKLB:'Space',OKLO:'Space',LMT:'Defense',RTX:'Defense',NOC:'Defense',XOM:'Energy',CVX:'Energy',SLB:'Energy',OXY:'Energy',LLY:'Pharma',UNH:'Healthcare',JNJ:'Healthcare',PFE:'Pharma',ABBV:'Pharma',BA:'Aero',CAT:'Industrial',DE:'Industrial',WMT:'Retail',COST:'Retail',HD:'Retail',LOW:'Retail',TGT:'Retail',UBER:'Transport',ABNB:'Travel',SQ:'Fintech',SHOP:'E-Commerce',DIS:'Media',BABA:'China',JD:'China',PDD:'China',BIDU:'China',RIVN:'EV',SPOT:'Media'};
 var GPC={A:'g',B:'b',C:'y',D:'r'};
 function $(i){return document.getElementById(i)}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
@@ -944,14 +945,47 @@ function rAreteBook(d){
     h+='<span id="areteArrow_Watching" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(awCol?'-90':'0')+'deg)">▼</span> ';
     h+='Watching ('+aw.length+')</h3>';
     h+='<div id="areteBody_Watching" style="'+(awCol?'display:none':'')+'">';
-    h+='<div class="info-box" style="display:flex;flex-wrap:wrap;align-items:center;gap:0">';
-    for(var i=0;i<aw.length;i++){
-      if(i>0)h+='<span style="color:#30363d;margin:0 8px;font-size:16px;line-height:1">│</span>';
-      var q=_tq[aw[i]];var prStr='',chStr='';
-      if(q&&q.last){prStr=' <span class="mono dim" style="font-size:11px">$'+e(q.last)+'</span>';if(q.chg)chStr=' <span style="font-size:10px">'+pct(q.chg)+'</span>';}
-      h+='<span style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap">'+tkLink(aw[i])+prStr+chStr+'</span>';
+    // Build confluence lookup from watchlistTop
+    var _confMap={};var wt=d.watchlistTop||[];
+    for(var ci=0;ci<wt.length;ci++){if(wt[ci].ticker)_confMap[wt[ci].ticker]={conf:wt[ci].confluence,qual:wt[ci].quality,setup:wt[ci].setup,sect:wt[ci].sector};}
+    // Group by sector
+    var secGroups={},secOrder=[];
+    for(var i=0;i<aw.length;i++){var tk=aw[i];var sec=_SEC[tk]||(_confMap[tk]&&_confMap[tk].sect?_confMap[tk].sect:'')||'Other';
+      if(!secGroups[sec]){secGroups[sec]=[];secOrder.push(sec);}secGroups[sec].push(tk);}
+    // Sort sector groups: sectors with more tickers first, 'Other' last
+    secOrder.sort(function(a,b){if(a==='Other')return 1;if(b==='Other')return -1;return secGroups[b].length-secGroups[a].length;});
+    for(var si=0;si<secOrder.length;si++){
+      var sec=secOrder[si],tks=secGroups[sec];
+      h+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:#7d8590;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid #21262d;padding-bottom:2px">'+e(sec)+' ('+tks.length+')</div>';
+      for(var ti=0;ti<tks.length;ti++){
+        var tk=tks[ti],q=_tq[tk]||{},op=_to[tk]||{},cm=_confMap[tk]||{},nws=_tkNews[tk]||[];
+        // Card
+        h+='<div class="pos-block" style="border-left:3px solid #9e6a03;padding:8px 10px;margin-bottom:4px">';
+        // Row 1: ticker, price, change
+        h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+        h+='<span>'+tkLink(tk,1);
+        if(cm.conf){var cc=cm.conf>=28?'g':cm.conf>=24?'y':'dim';h+=' <span class="mono '+cc+'" style="font-size:11px" title="Confluence">⚡'+cm.conf.toFixed(0)+'</span>';}
+        h+='</span>';
+        h+='<span class="mono" style="font-size:12px">';
+        if(q.last)h+=e(q.last)+' ';
+        if(q.chg)h+=pct(q.chg);
+        h+='</span></div>';
+        // Row 2: options data
+        var oH='';
+        if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';
+        if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';
+        if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';
+        if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';
+        if(oH)h+='<div style="font-size:11px;margin-top:2px">📊 '+oH+'</div>';
+        // Row 3: confluence setup if present
+        if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
+        // Row 4: news
+        h+=posNewsHtml(tk);
+        h+='</div>';
+      }
+      h+='</div>';
     }
-    h+='</div></div>';}
+    h+='</div>';}
   h+='</div>';
   $('sAreteBook').innerHTML=h;
 }
@@ -1248,7 +1282,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.6.3 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.7 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
