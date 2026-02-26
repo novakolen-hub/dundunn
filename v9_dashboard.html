@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.3.4</title>
+<title>V9 Trading Dashboard v11.4</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -178,6 +178,12 @@ function toggleBookOuter(){
   var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';
   if(arrow)arrow.style.transform=isHidden?'rotate(0deg)':'rotate(-90deg)';
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
+}
+function toggleSec(k){
+  var body=document.getElementById('secBody_'+k);var arrow=document.getElementById('secArrow_'+k);if(!body)return;
+  var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';
+  if(arrow)arrow.style.transform=isHidden?'rotate(0deg)':'rotate(-90deg)';
+  try{localStorage.setItem('sec_col_'+k,isHidden?'0':'1');}catch(e){}
 }
 function toggleAreteSection(k){
   var body=document.getElementById('areteBody_'+k);var arrow=document.getElementById('areteArrow_'+k);if(!body)return;
@@ -649,7 +655,9 @@ function nTags(hl,rel){
 function rEcon(d){
   var eco=d.ecoEvents||[];
   if(!eco.length){$('sEcon').innerHTML='';return;}
-  var h='<h2>Economic Calendar</h2><div class="info-box" style="padding:0">';
+  var isCol=false;try{isCol=localStorage.getItem('sec_col_econ')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'econ\')"><span id="secArrow_econ" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Economic Calendar <span class="dim" style="font-size:12px;font-weight:400">('+eco.length+')</span></h2>';
+  h+='<div id="secBody_econ" style="'+(isCol?'display:none':'')+'"><div class="info-box" style="padding:0">';
   var impactColor={High:'#f85149',Medium:'#e3b341',Low:'#7d8590'};
   var impactDot={High:'🔴',Medium:'🟡',Low:'⚪'};
   for(var i=0;i<eco.length;i++){
@@ -674,13 +682,12 @@ function rEcon(d){
     if(ev.tickers) h+='<span class="b">→ '+e(ev.tickers)+'</span>';
     h+='</div></div></div>';
   }
-  h+='</div>';
+  h+='</div></div>';
   $('sEcon').innerHTML=h;
 }
 function rEarnings(d){
   var earn=d.earnings||[];
   if(!earn.length){$('sEarnings').innerHTML='';return;}
-  // Build watchlist highlight sets
   var wlData=d.watchlistSymbols||{};
   var allKnown={};
   var ap=wlData.autoPass||[],c22=wlData.conf22||[],all=wlData.all||[];
@@ -689,24 +696,37 @@ function rEarnings(d){
   for(var i=0;i<all.length;i++) if(!allKnown[all[i]]) allKnown[all[i]]='wl';
   var pos=d.positions||[];
   for(var i=0;i<pos.length;i++) if(pos[i].ticker) allKnown[pos[i].ticker]='auto';
-  var h='<h2>Earnings This Week <span class="dim" style="font-size:12px;font-weight:400">('+earn.length+')</span></h2>';
-  h+='<div class="info-box" style="padding:0"><table><tr><th>Ticker</th><th>Time</th><th>Est</th></tr>';
+  var isCol=false;try{isCol=localStorage.getItem('sec_col_earn')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'earn\')"><span id="secArrow_earn" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Earnings This Week <span class="dim" style="font-size:12px;font-weight:400">('+earn.length+')</span></h2>';
+  h+='<div id="secBody_earn" style="'+(isCol?'display:none':'')+'">';
+  h+='<div class="info-box" style="padding:0"><table><tr><th>Ticker</th><th>Time</th><th>Est</th><th>Actual</th></tr>';
   var lastDay='';
   for(var i=0;i<earn.length;i++){
     var er=earn[i],sym=er.symbol||'',tier=allKnown[sym];
     var rowStyle=tier==='auto'?'background:#0d2010':tier==='conf'?'background:#0d1a2a':tier==='wl'?'background:#0d1117':'';
     var symCol=tier==='auto'?'#3fb950':tier==='conf'?'#58a6ff':'#c9d1d9';
     if(er.day&&er.day!==lastDay){
-      h+='<tr><td colspan="3" style="background:#161b22;color:#7d8590;font-size:10px;font-weight:700;padding:4px 8px;letter-spacing:1px">'+e(er.day).toUpperCase()+'</td></tr>';
+      h+='<tr><td colspan="4" style="background:#161b22;color:#7d8590;font-size:10px;font-weight:700;padding:4px 8px;letter-spacing:1px">'+e(er.day).toUpperCase()+'</td></tr>';
       lastDay=er.day;
     }
     h+='<tr style="'+rowStyle+'">';
     h+='<td style="font-weight:700;color:'+symCol+'">'+tkLink(sym)+'</td>';
     h+='<td class="dim" style="font-size:11px;white-space:nowrap">'+e(er.time||'—')+'</td>';
     h+='<td class="dim" style="font-size:11px">'+e(er.note||'')+'</td>';
+    // Actuals column
+    var actStr='';
+    if(er.epsActual!=null){
+      var beat=er.epsEstimate!=null&&er.epsActual>parseFloat(String(er.epsEstimate));
+      var miss=er.epsEstimate!=null&&er.epsActual<parseFloat(String(er.epsEstimate));
+      var ac=beat?'#3fb950':miss?'#f85149':'#c9d1d9';
+      actStr='<span style="color:'+ac+';font-weight:700">$'+er.epsActual+'</span>';
+      if(beat)actStr+=' <span style="font-size:9px;color:#3fb950">✓ Beat</span>';
+      if(miss)actStr+=' <span style="font-size:9px;color:#f85149">✗ Miss</span>';
+    }
+    h+='<td style="font-size:11px">'+actStr+'</td>';
     h+='</tr>';
   }
-  h+='</table></div>';
+  h+='</table></div></div>';
   $('sEarnings').innerHTML=h;
 }
 function rNews(d){
@@ -1193,7 +1213,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.3.4 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.4 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
