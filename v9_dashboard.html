@@ -1051,7 +1051,7 @@ function rRatios(d){
     var sc=cn>0.01?'g':cn<-0.01?'r':'dim';
     h+='<div class="ratio-row"><div style="display:flex;justify-content:space-between;align-items:baseline">';
     h+='<span class="white bold">'+e(r[i].sym)+'</span><span>'+pct(r[i].chg)+' <span class="'+sc+' bold" style="font-size:12px">'+e(sig)+'</span></span></div>';
-    if(ref){h+='<div style="font-size:11px;color:#7d8590;margin-top:1px">'+e(ref.what)+'</div>';h+='<div style="font-size:11px;margin-top:2px">'';
+    if(ref){h+='<div style="font-size:11px;color:#7d8590;margin-top:1px">'+e(ref.what)+'</div>';h+='<div style="font-size:11px;margin-top:2px">';
       for(var t=0;t<Math.min(ref.tickers.length,4);t++)h+=tkLink(ref.tickers[t])+' ';
       h+='</div>';}
     h+='</div>';}
