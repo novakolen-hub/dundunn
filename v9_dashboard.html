@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.5.2</title>
+<title>V9 Trading Dashboard v11.5.3</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -180,7 +180,16 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleSec(k){
-  var body=document.getElementById('secBody_'+k);var arrow=document.getElementById('secArrow_'+k);if(!body)return;
+  var body=document.getElementById('secBody_'+k);var arrow=document.getElementById('secArrow_'+k);
+  // Special: intertk toggles all .intertk-row elements
+  if(k==='intertk'){
+    var rows=document.querySelectorAll('.intertk-row');var isHidden=rows.length&&rows[0].style.display==='none';
+    rows.forEach(function(r){r.style.display=isHidden?'':'none';});
+    if(arrow)arrow.style.transform=isHidden?'rotate(0deg)':'rotate(-90deg)';
+    try{localStorage.setItem('sec_col_'+k,isHidden?'0':'1');}catch(e){}
+    return;
+  }
+  if(!body)return;
   var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';
   if(arrow)arrow.style.transform=isHidden?'rotate(0deg)':'rotate(-90deg)';
   try{localStorage.setItem('sec_col_'+k,isHidden?'0':'1');}catch(e){}
@@ -1025,8 +1034,12 @@ var IM_REF={
 function rRatios(d){
   var r=gS(d,'INTERMARKET RATIOS');if(!r.length){$('sRatios').innerHTML='';return}
   var nar=d.dashboardNarrative||'',sec=parseN(nar),imRead=gN(sec,['INTERMARKET READ','INTERMARKET','RATIOS','CROSS-MARKET','MACRO']);
-  var h='<h2>Intermarket</h2>';
+  var isCol=false;try{isCol=localStorage.getItem('sec_col_inter')==='1';}catch(e){}
+  var tkCol=false;try{tkCol=localStorage.getItem('sec_col_intertk')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'inter\')"><span id="secArrow_inter" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Intermarket</h2>';
+  h+='<div id="secBody_inter" style="'+(isCol?'display:none':'')+'">';
   if(imRead)h+='<div class="story-box" style="border-color:#e3b341">'+fmt(imRead)+'</div>';
+  h+='<div style="text-align:right;margin-bottom:4px"><span style="cursor:pointer;font-size:10px;color:#58a6ff" onclick="toggleSec(\'intertk\')"><span id="secArrow_intertk" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(tkCol?'-90':'0')+'deg);font-size:8px">▼</span> Tickers</span></div>';
   h+='<div class="info-box">';
   for(var i=0;i<r.length;i++){var cn=parseFloat(String(r[i].chg).replace('%',''));var desc=r[i].desc||'',sig='',ref=IM_REF[r[i].sym]||null;
     if(ref){sig=cn>0.01?ref.up:cn<-0.01?ref.dn:'flat';}
@@ -1034,11 +1047,11 @@ function rRatios(d){
     var sc=cn>0.01?'g':cn<-0.01?'r':'dim';
     h+='<div class="ratio-row"><div style="display:flex;justify-content:space-between;align-items:baseline">';
     h+='<span class="white bold">'+e(r[i].sym)+'</span><span>'+pct(r[i].chg)+' <span class="'+sc+' bold" style="font-size:12px">'+e(sig)+'</span></span></div>';
-    if(ref){h+='<div style="font-size:11px;color:#7d8590;margin-top:1px">'+e(ref.what)+'</div>';h+='<div style="font-size:11px;margin-top:2px">';
+    if(ref){h+='<div style="font-size:11px;color:#7d8590;margin-top:1px">'+e(ref.what)+'</div>';h+='<div class="intertk-row" style="font-size:11px;margin-top:2px;'+(tkCol?'display:none':'')+'">';
       for(var t=0;t<Math.min(ref.tickers.length,4);t++)h+=tkLink(ref.tickers[t])+' ';
       h+='</div>';}
     h+='</div>';}
-  h+='</div>';$('sRatios').innerHTML=h;
+  h+='</div></div>';$('sRatios').innerHTML=h;
 }
 // ═══ COACHING ═══
 // ═══════ INSTITUTIONAL PULSE ═══════
@@ -1219,7 +1232,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.5.2 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.5.3 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
