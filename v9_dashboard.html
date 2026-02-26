@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.3.3</title>
+<title>V9 Trading Dashboard v11.3.4</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -172,6 +172,13 @@ function initNewsRead(){
     });
   });
 }
+function toggleBookOuter(){
+  if(!_bookUnlocked)return;
+  var body=document.getElementById('bookContent');var arrow=document.getElementById('bookArrow');if(!body)return;
+  var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';
+  if(arrow)arrow.style.transform=isHidden?'rotate(0deg)':'rotate(-90deg)';
+  try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
+}
 function toggleAreteSection(k){
   var body=document.getElementById('areteBody_'+k);var arrow=document.getElementById('areteArrow_'+k);if(!body)return;
   var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';
@@ -199,7 +206,7 @@ var _bookUnlocked=false;
 function unlockBook(){
   var pin=document.getElementById('bookPinInput').value;
   try{var stored=localStorage.getItem('v9_book_pin')||'1234';
-    if(pin===stored){_bookUnlocked=true;document.getElementById('bookLock').style.display='none';document.getElementById('bookContent').style.display='';
+    if(pin===stored){_bookUnlocked=true;if(_lastD)rBook(_lastD);
     }else{var msg=document.getElementById('pinMsg');if(msg){msg.textContent='Wrong PIN';msg.style.color='#f85149';}}
   }catch(e){}
 }
@@ -304,6 +311,10 @@ function rGP(d){
     svg+='</svg>';
     h+=svg;
   }
+  // Gameplan Status from Opus narrative
+  var nar=d.dashboardNarrative||'',sec=parseN(nar);
+  var gps=gN(sec,['GAMEPLAN STATUS','GAMEPLAN','GP STATUS']);
+  if(gps){h+='<div style="margin-top:10px;padding-top:8px;border-top:1px solid #1c2333;font-size:13px;line-height:1.7"><span style="color:'+col+';font-weight:700;font-size:14px">GP-'+e(gp)+'</span> '+fmt(gps)+'</div>';}
   h+='</div>';$('sGP').innerHTML=h;
 }
 
@@ -583,9 +594,7 @@ function rStory(d){
   var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
   var retro=gN(sec,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
   if(retro)h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6"><p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">📋 Previous Story Update</p>'+fmt(retro)+'</div>';
-  var gps=gN(sec,['GAMEPLAN STATUS','GAMEPLAN','GP STATUS']);
-  if(gps){h+='<h3>Gameplan Status</h3><div class="info-box" style="border-color:'+bc(d.breadthScore||0)+';font-size:13px;line-height:1.7"><span class="'+cl+' bold" style="font-size:14px">GP-'+gp+'</span> '+fmt(gps)+'</div>';}
-  h+='</div>';$('sStory').innerHTML=h;
+  $('sStory').innerHTML=h;
 }
 
 // ═══ INVERSE ETFs ═══
@@ -802,7 +811,10 @@ function getAlertMap(d){
 function rBook(d){
   var pos=d.positions||[],paper=d.paperPositions||[];
   var alertMap=getAlertMap(d);
-  var h='<h2><span class="tag tag-live">YOUR BOOK</span> Positions ('+(pos.length+paper.length)+')</h2>';
+  var bookCol=false;try{bookCol=localStorage.getItem('book_col_outer')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleBookOuter()">';
+  h+='<span id="bookArrow" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(bookCol&&_bookUnlocked?'-90':'0')+'deg)">▼</span> ';
+  h+='<span class="tag tag-live">YOUR BOOK</span> Positions ('+(pos.length+paper.length)+')</h2>';
   if(!pos.length&&!paper.length){h+='<div class="info-box"><p class="dim">No positions loaded.</p></div>';$('sBook').innerHTML=h;return}
   if(!_bookUnlocked){
     h+='<div id="bookLock" class="info-box" style="text-align:center;padding:20px">';
@@ -837,7 +849,7 @@ function rBook(d){
     '<p><b style="color:#c9d1d9">Beta:</b> How much a stock moves relative to SPY. Beta 1.5 means if SPY drops 1%, expect ~1.5% drop. High-beta positions (>1.3) need wider stops and smaller size. The portfolio beta matters — if all positions are high-beta tech, a single SPY selloff hits everything.</p>'+
     '<p><b style="color:#c9d1d9">IV 5-Day Change:</b> Rising IV = market pricing bigger moves ahead (wider ranges, more volatility). Falling IV = calming down (tighter ranges). Rising IV with falling price = fear building. Falling IV with rising price = healthy, orderly rally.</p>'+
     '<p><b style="color:#c9d1d9">V9 Connection:</b> Check IVR before sizing: High IVR stock + Gameplan B = reduce size by 25%. The options data on each position card gives you the vol context to set appropriate stops and targets — don\'t fight the math.</p>');
-  h+='<div id="bookContent">'+bc+'</div>';
+  h+='<div id="bookContent" style="'+(bookCol?'display:none':'')+'">'+bc+'</div>';
   $('sBook').innerHTML=h;
 }
 // ═══ ARETE BOOK (carries/swings + day trade carry-overs — separate from your book) ═══
@@ -1181,7 +1193,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.3.3 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.3.4 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
