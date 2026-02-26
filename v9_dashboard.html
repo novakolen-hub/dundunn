@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.3</title>
+<title>V9 Trading Dashboard v11.3.1</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -69,8 +69,10 @@
   .inst-item .inst-hint{font-size:10px;color:#7d8590}
   .inst-box{background:#0f1318;border:1px solid #1c2333;border-left:3px solid #d29922;padding:14px 16px;border-radius:0 8px 8px 0;margin:8px 0}
   .inst-sub{background:#0f1318;border:1px solid #1c2333;border-left:3px solid #30363d;padding:14px 16px;border-radius:0 8px 8px 0;margin:8px 0}
-  .coach-learn{background:#13111a;border:1px solid #2d1f4e;border-radius:6px;padding:12px 14px;margin-top:10px;font-size:12px;line-height:1.65;color:#8b949e}
-  .coach-learn .cl-title{color:#d2a8ff;font-weight:700;font-size:13px;margin-bottom:6px}
+  .coach-learn{background:#13111a;border:1px solid #2d1f4e;border-radius:6px;padding:0;margin-top:10px;font-size:12px;line-height:1.65;color:#8b949e;overflow:hidden}
+  .coach-learn .cl-title{color:#d2a8ff;font-weight:700;font-size:13px;padding:10px 14px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px}
+  .coach-learn .cl-title:hover{background:#1a1528}
+  .coach-learn .cl-body{padding:0 14px 12px 14px}
   .coach-learn p{margin-bottom:6px}
   .tmr{display:flex;gap:8px;align-items:center;padding:4px 10px;background:#0d1117;border:1px solid #1c2333;border-radius:6px;font-size:10px;margin-bottom:8px;flex-wrap:wrap}
   .tmr .ti{display:flex;align-items:center;gap:4px}.tmr .tl{color:#7d8590}.tmr .tv{color:#c9d1d9;font-family:'JetBrains Mono',monospace;font-weight:600}.tmr .sp{color:#30363d}
@@ -175,6 +177,23 @@ function toggleAreteSection(k){
   var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';
   if(arrow)arrow.style.transform=isHidden?'rotate(0deg)':'rotate(-90deg)';
   try{localStorage.setItem('arete_col_'+k,isHidden?'0':'1');}catch(e){}
+}
+function toggleLearn(id){
+  var body=document.getElementById('lb_'+id);var arrow=document.getElementById('la_'+id);if(!body)return;
+  var vis=body.style.display!=='none';body.style.display=vis?'none':'';
+  if(arrow)arrow.style.transform=vis?'rotate(-90deg)':'rotate(0deg)';
+  try{localStorage.setItem('learn_'+id,vis?'1':'0');}catch(e){}
+}
+var _learnId=0;
+function learnBox(title,content){
+  var id='l'+(_learnId++);
+  var isCol=true;try{isCol=localStorage.getItem('learn_'+id)!=='0';}catch(e){}
+  var h='<div class="coach-learn">';
+  h+='<div class="cl-title" onclick="toggleLearn(\''+id+'\')">';
+  h+='<span id="la_'+id+'" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg);font-size:10px">▼</span> 📖 '+title+'</div>';
+  h+='<div class="cl-body" id="lb_'+id+'" style="'+(isCol?'display:none':'')+'">';
+  h+=content+'</div></div>';
+  return h;
 }
 var _bookUnlocked=false;
 function unlockBook(){
@@ -806,6 +825,19 @@ function rBook(d){
   if(paper.length){bc+='<h3 style="margin-top:12px">📋 Paper Trades ('+paper.length+')</h3><div class="info-box" style="border-color:#30363d">';for(var i=0;i<paper.length;i++)bc+=posCard(paper[i],null);bc+='</div>';}
   else{bc+='<h3 style="margin-top:12px">📋 Paper Trades</h3><div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:12px">No paper trades active.</p></div>';}
   bc+=rRiskHtml(d);
+  // Learn boxes before closing book content
+  bc+=learnBox('Learn: Stock Technical Analysis',
+    '<p><b style="color:#c9d1d9">VWAP (Volume-Weighted Avg Price):</b> The institutional fair value for the day. Price above VWAP = buyers in control, below = sellers. The aVWAP (anchored) from your entry shows whether the trade thesis is intact — price below your entry aVWAP means the trade is underwater vs institutional flow.</p>'+
+    '<p><b style="color:#c9d1d9">EMA Stack (8/21/50):</b> When 8 > 21 > 50, momentum is bullish and stacked. When they compress or cross, momentum is shifting. The 8 EMA is your intraday momentum guide — pullbacks to 8 EMA in an uptrend are entries, breaks below are warnings.</p>'+
+    '<p><b style="color:#c9d1d9">Relative Strength (RS):</b> A stock outperforming SPY even on red days shows institutional accumulation. RS is the foundation of the RS Override setup — when breadth says sit out but a stock keeps making highs, institutions are telling you something.</p>'+
+    '<p><b style="color:#c9d1d9">Support/Resistance:</b> Prior day high/low, opening range (first 15 min), and round numbers create levels where orders cluster. Breakouts through resistance on volume = continuation. Failed breakdowns at support = reversal opportunity.</p>'+
+    '<p><b style="color:#c9d1d9">V9 Connection:</b> Every position card shows key levels (stop, target, aVWAP). Compare current price to these levels: above aVWAP + above 8 EMA = hold/add. Below both = review for exit. The system removes emotion — levels tell you what to do.</p>');
+  bc+=learnBox('Learn: Options & Your Positions',
+    '<p><b style="color:#c9d1d9">IVR (IV Rank):</b> Shows where a stock\'s current implied volatility sits vs its 52-week range. Low IVR (<30%) = options are cheap, expected moves are small. High IVR (>50%) = options are expensive, market expects big moves. This directly affects your stop distances.</p>'+
+    '<p><b style="color:#c9d1d9">Expected Move (EM):</b> Calculated from IV — tells you how much a stock is "supposed" to move by expiration. If your target is beyond the EM, you\'re fighting probability. Set realistic targets within 1x EM for day trades, 1.5-2x for swings.</p>'+
+    '<p><b style="color:#c9d1d9">Beta:</b> How much a stock moves relative to SPY. Beta 1.5 means if SPY drops 1%, expect ~1.5% drop. High-beta positions (>1.3) need wider stops and smaller size. The portfolio beta matters — if all positions are high-beta tech, a single SPY selloff hits everything.</p>'+
+    '<p><b style="color:#c9d1d9">IV 5-Day Change:</b> Rising IV = market pricing bigger moves ahead (wider ranges, more volatility). Falling IV = calming down (tighter ranges). Rising IV with falling price = fear building. Falling IV with rising price = healthy, orderly rally.</p>'+
+    '<p><b style="color:#c9d1d9">V9 Connection:</b> Check IVR before sizing: High IVR stock + Gameplan B = reduce size by 25%. The options data on each position card gives you the vol context to set appropriate stops and targets — don\'t fight the math.</p>');
   h+='<div id="bookContent">'+bc+'</div>';
   $('sBook').innerHTML=h;
 }
@@ -1010,11 +1042,11 @@ function rInst(d){
   h+='<div class="inst-item"><span class="inst-lbl">IWM IVR</span>'+gauge(vol.iwm_ivr,0,100,ivrT,'%')+'</div>';
   h+='</div>';
   if(nar.vol_context){h+='<p style="font-size:12px;color:#c9d1d9;margin-top:10px;line-height:1.6">'+e(nar.vol_context)+'</p>';}
-  h+='<div class="coach-learn"><div class="cl-title">📖 Learn: IV Rank & Vol Regime</div>';
-  h+='<p><b style="color:#c9d1d9">What it is:</b> IV Rank shows where current implied volatility sits vs its 52-week range. 0% = lowest IV all year, 100% = highest.</p>';
-  h+='<p><b style="color:#c9d1d9">Why it matters:</b> Low IVR (under 20%) means options are cheap and expected moves are small — tighter stops, smaller targets. High IVR (over 50%) means the market is pricing in big swings — wider stops, potentially bigger wins but more whipsaw.</p>';
-  h+='<p><b style="color:#c9d1d9">V9 Connection:</b> When VIX is elevated (>20) with high IVR, reduce position size even if breadth says Gameplan A. The vol environment amplifies both gains AND losses. Normal VIX + low IVR = standard sizing per gameplan.</p>';
-  h+='</div></div>';
+  h+=learnBox('Learn: IV Rank & Vol Regime',
+    '<p><b style="color:#c9d1d9">What it is:</b> IV Rank shows where current implied volatility sits vs its 52-week range. 0% = lowest IV all year, 100% = highest.</p>'+
+    '<p><b style="color:#c9d1d9">Why it matters:</b> Low IVR (under 20%) means options are cheap and expected moves are small — tighter stops, smaller targets. High IVR (over 50%) means the market is pricing in big swings — wider stops, potentially bigger wins but more whipsaw.</p>'+
+    '<p><b style="color:#c9d1d9">V9 Connection:</b> When VIX is elevated (>20) with high IVR, reduce position size even if breadth says Gameplan A. The vol environment amplifies both gains AND losses. Normal VIX + low IVR = standard sizing per gameplan.</p>');
+  h+='</div>';
   // IV TREND (5-day change)
   var spy5d=vol.spy_iv_5d_chg,qqq5d=vol.qqq_iv_5d_chg,iwm5d=vol.iwm_iv_5d_chg;
   if(spy5d!=null||qqq5d!=null){
@@ -1023,9 +1055,10 @@ function rInst(d){
     h+='<div class="inst-grid">';
     function ivChg(lbl,v){
       if(v==null)return'<div class="inst-item"><span class="inst-lbl">'+lbl+'</span><span class="dim">N/A</span></div>';
-      var c=v>3?'#f85149':v>0?'#d29922':v>-3?'#3fb950':'#58a6ff';
+      var c=v>3?'#f85149':v>0?'#e3b341':v<-3?'#58a6ff':'#3fb950';
       var arrow=v>0?'▲':'▼';
-      return'<div class="inst-item"><span class="inst-lbl">'+lbl+'</span><span style="font-size:15px;font-weight:700;color:'+c+'">'+arrow+(v>0?'+':'')+v+'%</span></div>';
+      var ac=v>0?'#f85149':'#3fb950';
+      return'<div class="inst-item"><span class="inst-lbl">'+lbl+'</span><span style="font-size:15px;font-weight:700;color:'+ac+'">'+arrow+(v>0?'+':'')+v+'%</span></div>';
     }
     h+=ivChg('SPY',spy5d)+ivChg('QQQ',qqq5d)+ivChg('IWM',iwm5d);
     h+='</div>';
@@ -1070,11 +1103,11 @@ function rInst(d){
       h+='<span style="font-size:15px;font-weight:700;color:'+vvCol+'">'+term.vvix+'</span>';
       h+='<span style="font-size:10px;color:#7d8590">'+(term.vvix_warning||'')+' — vol of VIX, >120 elevated, >140 extreme</span></div>';}
     if(nar.term_structure_context){h+='<p style="font-size:12px;color:#c9d1d9;margin-top:10px;line-height:1.6">'+e(nar.term_structure_context)+'</p>';}
-    h+='<div class="coach-learn"><div class="cl-title">📖 Learn: VIX Term Structure</div>';
-    h+='<p><b style="color:#c9d1d9">What it is:</b> The VIX term structure shows implied volatility across different time horizons (1-day → 9-day → 30-day → 3-month → 6-month). Normally, longer-dated vol is higher than shorter (contango).</p>';
-    h+='<p><b style="color:#c9d1d9">Backwardation:</b> When VIX (30-day) exceeds VIX3M (3-month), it means the market expects MORE volatility NOW than later. This is a fear signal. When VIX9D also exceeds VIX, the curve is fully inverted — historically this precedes major selloffs.</p>';
-    h+='<p><b style="color:#c9d1d9">V9 Connection:</b> Inverted term structure = treat even Gameplan A with caution, tighten stops, take profits faster. Contango = normal environment, trust your gameplan sizing. VVIX >120 = VIX could spike — set mental stop for the session.</p>';
-    h+='</div></div>';
+    h+=learnBox('Learn: VIX Term Structure',
+      '<p><b style="color:#c9d1d9">What it is:</b> The VIX term structure shows implied volatility across different time horizons (1-day → 9-day → 30-day → 3-month → 6-month). Normally, longer-dated vol is higher than shorter (contango).</p>'+
+      '<p><b style="color:#c9d1d9">Backwardation:</b> When VIX (30-day) exceeds VIX3M (3-month), it means the market expects MORE volatility NOW than later. This is a fear signal. When VIX9D also exceeds VIX, the curve is fully inverted — historically this precedes major selloffs.</p>'+
+      '<p><b style="color:#c9d1d9">V9 Connection:</b> Inverted term structure = treat even Gameplan A with caution, tighten stops, take profits faster. Contango = normal environment, trust your gameplan sizing. VVIX >120 = VIX could spike — set mental stop for the session.</p>');
+    h+='</div>';
   }
   // EXPECTED MOVE
   var em=ip.data.expected_move||{};
@@ -1087,11 +1120,11 @@ function rInst(d){
     h+='<div class="inst-item"><span class="inst-lbl">Weekly</span><span style="font-size:18px;font-weight:700;color:#c9d1d9">±$'+em.weekly_pts+'</span><span class="inst-hint">'+em.weekly_pct+'% expected range</span></div>';
     h+='</div>';
     if(nar.expected_move_context){h+='<p style="font-size:12px;color:#c9d1d9;margin-top:8px;line-height:1.6">'+e(nar.expected_move_context)+'</p>';}
-    h+='<div class="coach-learn"><div class="cl-title">📖 Learn: Expected Move</div>';
-    h+='<p><b style="color:#c9d1d9">What it is:</b> The expected daily move is calculated from the current IV index: Price × IV ÷ √252. It tells you how much SPY is "supposed" to move today according to the options market.</p>';
-    h+='<p><b style="color:#c9d1d9">How to use it:</b> If SPY has already moved more than the expected daily move by midday, mean reversion becomes more likely. If it hasn\'t moved much by 10am AZ, the expected move may compress further (low-range day).</p>';
-    h+='<p><b style="color:#c9d1d9">V9 Connection:</b> Set your intraday targets relative to the expected move. If EM is ±$3 on SPY, a $5 target on a single SPY trade is ambitious. Use EM to calibrate realistic profit targets and stop distances.</p>';
-    h+='</div></div>';
+    h+=learnBox('Learn: Expected Move',
+      '<p><b style="color:#c9d1d9">What it is:</b> The expected daily move is calculated from the current IV index: Price × IV ÷ √252. It tells you how much SPY is "supposed" to move today according to the options market.</p>'+
+      '<p><b style="color:#c9d1d9">How to use it:</b> If SPY has already moved more than the expected daily move by midday, mean reversion becomes more likely. If it hasn\'t moved much by 10am AZ, the expected move may compress further (low-range day).</p>'+
+      '<p><b style="color:#c9d1d9">V9 Connection:</b> Set your intraday targets relative to the expected move. If EM is ±$3 on SPY, a $5 target on a single SPY trade is ambitious. Use EM to calibrate realistic profit targets and stop distances.</p>');
+    h+='</div>';
   }
   // SENTIMENT
   h+='<div class="inst-sub">';
@@ -1118,11 +1151,11 @@ function rInst(d){
   h+='<span style="font-size:11px;color:#7d8590">'+(pc.sentiment||'')+' | Calls:'+(pc.call_vol!=null?pc.call_vol.toLocaleString():'?')+' Puts:'+(pc.put_vol!=null?pc.put_vol.toLocaleString():'?')+'</span>';
   h+='</div>';
   if(nar.sentiment_context){h+='<p style="font-size:12px;color:#c9d1d9;margin-top:8px;line-height:1.6">'+e(nar.sentiment_context)+'</p>';}
-  h+='<div class="coach-learn"><div class="cl-title">📖 Learn: Sentiment Divergences</div>';
-  h+='<p><b style="color:#c9d1d9">What to watch:</b> When Fear & Greed shows Extreme Fear but NAAIM stays >70%, it means retail is panicking while professional money managers remain long. This is a textbook "wall of worry" — historically bullish.</p>';
-  h+='<p><b style="color:#c9d1d9">Danger zone:</b> When BOTH retail (F&G >75) and pros (NAAIM >100%) are euphoric, positioning is crowded. Mean reversion risk is high.</p>';
-  h+='<p><b style="color:#c9d1d9">V9 Connection:</b> Sentiment doesn\'t override breadth — you still follow the gameplan. But extreme fear + strong breadth = lean aggressive on A/B setups. Extreme greed + weakening breadth = tighten stops, take profits faster.</p>';
-  h+='</div></div>';
+  h+=learnBox('Learn: Sentiment Divergences',
+    '<p><b style="color:#c9d1d9">What to watch:</b> When Fear & Greed shows Extreme Fear but NAAIM stays >70%, it means retail is panicking while professional money managers remain long. This is a textbook "wall of worry" — historically bullish.</p>'+
+    '<p><b style="color:#c9d1d9">Danger zone:</b> When BOTH retail (F&G >75) and pros (NAAIM >100%) are euphoric, positioning is crowded. Mean reversion risk is high.</p>'+
+    '<p><b style="color:#c9d1d9">V9 Connection:</b> Sentiment doesn\'t override breadth — you still follow the gameplan. But extreme fear + strong breadth = lean aggressive on A/B setups. Extreme greed + weakening breadth = tighten stops, take profits faster.</p>');
+  h+='</div>';
   // COMBINED READ
   if(nar.combined_read||nar.trading_implication){
     h+='<div class="inst-box" style="border-left-color:#58a6ff">';
@@ -1150,7 +1183,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.3 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.3.1 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
