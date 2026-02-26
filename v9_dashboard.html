@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.5.4</title>
+<title>V9 Trading Dashboard v11.5.5</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -179,6 +179,17 @@ function toggleBookOuter(){
   if(arrow)arrow.style.transform=isHidden?'rotate(0deg)':'rotate(-90deg)';
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
+function toggleAll(collapse){
+  var keys=['econ','earn','inter','intertk','pulse'];
+  for(var i=0;i<keys.length;i++){
+    var body=document.getElementById('secBody_'+keys[i]);
+    var arrow=document.getElementById('secArrow_'+keys[i]);
+    if(!body)continue;
+    body.style.display=collapse?'none':'';
+    if(arrow)arrow.style.transform=collapse?'rotate(-90deg)':'rotate(0deg)';
+    try{localStorage.setItem('sec_col_'+keys[i],collapse?'1':'0');}catch(e){}
+  }
+}
 function toggleSec(k){
   var body=document.getElementById('secBody_'+k);var arrow=document.getElementById('secArrow_'+k);
   if(!body)return;
@@ -259,7 +270,7 @@ function initSparkTips(){
 
 function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),mn='Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase);
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>');}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span style="float:right;font-size:11px"><a href="#" onclick="toggleAll(true);return false" style="color:#58a6ff">Collapse All</a> · <a href="#" onclick="toggleAll(false);return false" style="color:#58a6ff">Expand All</a></span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1225,7 +1236,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.5.4 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.5.5 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
