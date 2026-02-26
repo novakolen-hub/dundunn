@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.4.3</title>
+<title>V9 Trading Dashboard v11.4.4</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -888,7 +888,7 @@ function areteCard(p){
   if(p.date)details.push(e(p.date));
   if(p.stop)details.push('SL: <span class="mono r">'+e(p.stop)+'</span>');
   if(details.length)h+='<div style="font-size:11px;margin-top:3px;color:#8b949e">'+details.join(' · ')+'</div>';
-  if(p.thesis){h+='<div style="font-size:11px;margin-top:3px;color:#c9d1d9">💡 '+e(p.thesis).replace(/\$([A-Z]{1,5})/g,function(m,tk){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+tk;return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="_blank" title="TV"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk">'+tk+'</a></span>';})+'</div>';}
+  if(p.thesis){h+='<div style="font-size:11px;margin-top:3px;color:#c9d1d9">💡 '+e(p.thesis).replace(/\*{0,2}\$([A-Z]{1,5})\*{0,2}/g,function(m,tk){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+tk;return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="_blank" title="TV"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk">'+tk+'</a></span>';})+'</div>';}
   if(p.note)h+='<div class="dim" style="font-size:11px;margin-top:2px;font-style:italic">'+e(p.note)+'</div>';
   var op=_to[p.ticker];if(op){var oH='';if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';if(oH)h+='<p style="font-size:11px;margin:2px 0 0">📊 '+oH+'</p>';}
   h+=posNewsHtml(p.ticker);
@@ -1214,7 +1214,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.4.3 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.4.4 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
@@ -1222,7 +1222,7 @@ function parseN(t){var s={},l=t.split('\n'),k='',b=[];for(var i=0;i<l.length;i++
 function gN(sec,keys){for(var i=0;i<keys.length;i++){var v=sec[keys[i]];if(v)return v;}
   // Fuzzy match: check if any sec key CONTAINS any of our search keys
   var sk=Object.keys(sec);for(var i=0;i<keys.length;i++){for(var j=0;j<sk.length;j++){if(sk[j].indexOf(keys[i])>=0||keys[i].indexOf(sk[j])>=0){if(sec[sk[j]])return sec[sk[j]];}}}return'';}
-function fmt(t){if(!t)return'';var h=e(t);h=h.replace(/\*\*(.+?)\*\*/g,'<span class="white bold">$1</span>');h=h.replace(/\$([A-Z]{1,5})/g,function(m,tk){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+tk;return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="_blank" title="TV"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk">'+tk+'</a></span>';});h=h.replace(/\n/g,'<br>');return h;}
+function fmt(t){if(!t)return'';var h=e(t);h=h.replace(/\*{0,2}\$([A-Z]{1,5})\*{0,2}/g,function(m,tk){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+tk;return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="_blank" title="TV"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk">'+tk+'</a></span>';});h=h.replace(/\*\*(.+?)\*\*/g,'<span class="white bold">$1</span>');h=h.replace(/\n/g,'<br>');return h;}
 
 poll();setInterval(poll,60000);
 window.addEventListener('scroll',function(){var b=document.getElementById('backToTop');if(b)b.style.display=window.scrollY>300?'flex':'none';});
