@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>V9 Trading Dashboard v11.5.5</title>
+<title>V9 Trading Dashboard v11.5.6</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -91,8 +91,8 @@
 <div id="sStory"></div>
 <div id="sBreadth"></div>
 <div id="sSess"></div>
-<div id="sGrowth"></div>
-<div id="sDefense"></div>
+<div id="sSectors"></div>
+<div id="sRatios"></div>
 <div id="sInverse"></div>
 <div id="sEcon"></div>
 <div id="sEarnings"></div>
@@ -103,7 +103,6 @@
 <div id="sBook"></div>
 <div id="sAreteBook"></div>
 <div id="sSetups"></div>
-<div id="sRatios"></div>
 <hr class="divider">
 <div id="sCoach"></div>
 <div class="footer" id="foot">THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard · Polling 60s</small></div>
@@ -180,7 +179,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['econ','earn','inter','intertk','pulse'];
+  var keys=['sectors','econ','earn','inter','intertk','pulse'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
@@ -596,12 +595,16 @@ function rSess(d){
 function rSectors(d){
   var hm=d.sectorHeatmap||[],gr=hm.filter(function(x){return x.type==='G'}).sort(function(a,b){return b.chg-a.chg}),df=hm.filter(function(x){return x.type==='D'}).sort(function(a,b){return b.chg-a.chg});
   var gg=gr.filter(function(x){return x.chg>0.05}).length,dg=df.filter(function(x){return x.chg>0.05}).length;
-  var h='<h2>Sectors — Growth ('+gg+'/'+gr.length+')</h2><div class="heatmap">';
+  var isCol=false;try{isCol=localStorage.getItem('sec_col_sectors')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'sectors\')"><span id="secArrow_sectors" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Sectors <span class="dim" style="font-size:12px;font-weight:400">('+gg+'/'+gr.length+' growth · '+dg+'/'+df.length+' defensive)</span></h2>';
+  h+='<div id="secBody_sectors" style="'+(isCol?'display:none':'')+'">';
+  h+='<h3>Growth ('+gg+'/'+gr.length+')</h3><div class="heatmap">';
   for(var i=0;i<gr.length;i++){var nm=SN[gr[i].sym]||'';h+='<div class="'+hc(gr[i].chg)+'">'+e(gr[i].sym)+'<br>'+(gr[i].chg>0?'+':'')+gr[i].chg.toFixed(2)+'%'+(nm?'<br><span style="font-size:9px;opacity:.7">'+e(nm)+'</span>':'')+'</div>';}
-  h+='</div>';$('sGrowth').innerHTML=h;
-  var hd='<h2>Sectors — Defensive ('+dg+'/'+df.length+')</h2><div class="heatmap" style="grid-template-columns:repeat('+Math.min(df.length,5)+',1fr)">';
-  for(var i=0;i<df.length;i++){var nm=SN[df[i].sym]||'';hd+='<div class="'+hc(df[i].chg)+'">'+e(df[i].sym)+'<br>'+(df[i].chg>0?'+':'')+df[i].chg.toFixed(2)+'%'+(nm?'<br><span style="font-size:9px;opacity:.7">'+e(nm)+'</span>':'')+'</div>';}
-  hd+='</div>';$('sDefense').innerHTML=hd;
+  h+='</div>';
+  h+='<h3 style="margin-top:10px">Defensive ('+dg+'/'+df.length+')</h3><div class="heatmap" style="grid-template-columns:repeat('+Math.min(df.length,5)+',1fr)">';
+  for(var i=0;i<df.length;i++){var nm=SN[df[i].sym]||'';h+='<div class="'+hc(df[i].chg)+'">'+e(df[i].sym)+'<br>'+(df[i].chg>0?'+':'')+df[i].chg.toFixed(2)+'%'+(nm?'<br><span style="font-size:9px;opacity:.7">'+e(nm)+'</span>':'')+'</div>';}
+  h+='</div></div>';
+  $('sSectors').innerHTML=h;
 }
 
 // ═══ THE STORY + GAMEPLAN STATUS (colored) ═══
@@ -1236,7 +1239,7 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','STORY UPDATE','RETROSPECTIVE','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.5.5 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.5.6 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
