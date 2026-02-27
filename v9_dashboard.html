@@ -906,12 +906,12 @@ function posCard(p,alert,areteInfo){
   if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
   if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
   if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
-  var flags='';
-  if(q.vwapF&&q.vwapF!=='—')flags+='<span title="VWAP">V</span>';
-  if(q.rsF&&q.rsF!=='—')flags+='<span title="Rel Strength">R</span>';
-  if(q.rsiF&&q.rsiF!=='—')flags+='<span title="RSI">S</span>';
-  if(q.rvolF&&q.rvolF!=='—')flags+='<span title="RVOL">V</span>';
-  if(flags)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:0 3px;font-size:10px;font-weight:700;color:#58a6ff">'+flags+'</span>';
+  var _fl=[];
+  if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');
+  if(q.rsF&&q.rsF!=='—')_fl.push('RS');
+  if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');
+  if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
+  if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
   if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
   // Arete cross-reference
   if(areteInfo){
@@ -1069,12 +1069,12 @@ function areteCard(p){
   if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
   if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
   if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
-  var flags='';
-  if(q.vwapF&&q.vwapF!=='—')flags+='<span title="VWAP">V</span>';
-  if(q.rsF&&q.rsF!=='—')flags+='<span title="Rel Strength">R</span>';
-  if(q.rsiF&&q.rsiF!=='—')flags+='<span title="RSI">S</span>';
-  if(q.rvolF&&q.rvolF!=='—')flags+='<span title="RVOL">V</span>';
-  if(flags)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:0 3px;font-size:10px;font-weight:700;color:#58a6ff">'+flags+'</span>';
+  var _fl=[];
+  if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');
+  if(q.rsF&&q.rsF!=='—')_fl.push('RS');
+  if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');
+  if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
+  if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
   if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
   // Row 6: news
   h+=posNewsHtml(tk);
@@ -1197,12 +1197,12 @@ function rAreteBook(d){
         if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
         if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
         // Flags
-        var flags='';
-        if(q.vwapF&&q.vwapF!=='—')flags+='<span title="VWAP">V</span>';
-        if(q.rsF&&q.rsF!=='—')flags+='<span title="Rel Strength">R</span>';
-        if(q.rsiF&&q.rsiF!=='—')flags+='<span title="RSI">S</span>';
-        if(q.rvolF&&q.rvolF!=='—')flags+='<span title="RVOL">V</span>';
-        if(flags)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:0 3px;font-size:10px;font-weight:700;color:#58a6ff">'+flags+'</span>';
+        var _fl=[];
+        if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');
+        if(q.rsF&&q.rsF!=='—')_fl.push('RS');
+        if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');
+        if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
+        if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
         if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
         // Row 3: confluence setup if present
         if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
