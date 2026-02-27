@@ -645,8 +645,72 @@ function rStory(d){
 }
 
 // ═══ INVERSE ETFs ═══
-var INV_DESC={'SOXS':'3x inv semis (SOX)','SQQQ':'3x inv Nasdaq-100','TECS':'3x inv tech (XLK)','TSXD':'1x inv Tesla','UVXY':'1.5x VIX futures','SPXS':'3x inv S&P 500','SDOW':'3x inv Dow','TZA':'3x inv Russell 2000','SH':'1x inv S&P 500','PSQ':'1x inv Nasdaq-100','DOG':'1x inv Dow','YANG':'3x inv China (FXI)','TBT':'2x inv 20yr bonds'};
-function rInv(d){if((d.gpLetter||'C')!=='D'){$('sInverse').innerHTML='';return}var inv=gS(d,'INVERSE ETFs (GP-D)');if(!inv.length){$('sInverse').innerHTML='';return}var h='<h2 style="color:#f85149">Inverse ETFs — GP-D</h2><div class="info-box"><table><tr><th>ETF</th><th>Last</th><th>Chg%</th><th>Tracks</th></tr>';for(var i=0;i<inv.length;i++){var desc=inv[i].desc||(INV_DESC[inv[i].sym]||'');h+='<tr><td class="r bold tc">'+e(inv[i].sym)+'</td><td>'+e(inv[i].val)+'</td><td>'+pct(inv[i].chg)+'</td><td class="dim">'+e(desc)+'</td></tr>';}h+='</table></div>';$('sInverse').innerHTML=h;}
+var INV_INFO={
+  'SOXS':{tracks:'3x inverse Semiconductors (SOX)',underlying:'SMH',use:'Semi weakness, chip export fears, NVDA/AMD breakdowns',when:'SOX breaking support, semis lagging QQQ, tariff/export ban news'},
+  'SQQQ':{tracks:'3x inverse Nasdaq-100',underlying:'QQQ',use:'Broad tech selloff, growth rotation, risk-off days',when:'QQQ below VWAP + breadth deteriorating, tech leading decline'},
+  'TECS':{tracks:'3x inverse Technology (XLK)',underlying:'XLK',use:'Tech sector weakness, narrowing leadership',when:'XLK underperforming SPY, tech breadth collapsing'},
+  'TSXD':{tracks:'1x inverse Tesla',underlying:'TSLA',use:'TSLA-specific bearish catalyst, earnings miss, delivery miss',when:'TSLA breaking key levels, negative headline risk'},
+  'UVXY':{tracks:'1.5x VIX Short-Term Futures',underlying:'VIX',use:'Volatility spike, fear event, hedging positions',when:'VIX term structure inverting, backwardation forming, pre-event hedge'},
+  'SPXS':{tracks:'3x inverse S&P 500',underlying:'SPY',use:'Broad market selloff',when:'SPY breaking support, breadth deeply negative'},
+  'TZA':{tracks:'3x inverse Russell 2000',underlying:'IWM',use:'Small cap weakness, credit tightening',when:'IWM diverging from SPY, small caps leading decline'},
+  'SH':{tracks:'1x inverse S&P 500',underlying:'SPY',use:'Conservative hedge, overnight protection',when:'Uncertain market, want limited downside exposure'}
+};
+function rInv(d){
+  if((d.gpLetter||'C')!=='D'){$('sInverse').innerHTML='';return}
+  var inv=gS(d,'INVERSE ETFs (GP-D)');
+  if(!inv.length){$('sInverse').innerHTML='';return}
+  var bs=d.breadthScore!=null?parseFloat(d.breadthScore):0;
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_inv');if(_v!==null)isCol=_v==='1';}catch(e){}
+  var h='<h2 style="color:#f85149;cursor:pointer;user-select:none" onclick="toggleSec(\'inv\')"><span id="secArrow_inv" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 🔻 Inverse ETFs — GP-D</h2>';
+  h+='<div id="secBody_inv" style="'+(isCol?'display:none':'')+'">';
+  h+='<div style="background:#1a0d0d;border:1px solid #da3633;border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:12px;line-height:1.6">';
+  h+='<span style="color:#f85149;font-weight:700">GP-D Active</span> — Breadth at <span class="r bold">'+bs.toFixed(1)+'</span>. ';
+  h+='Inverse ETFs are the primary instruments. Size $8-12K per position, treat as day trades with tight stops. ';
+  h+='Exit when breadth recovers above -3.';
+  h+='</div>';
+  for(var i=0;i<inv.length;i++){
+    var etf=inv[i],info=INV_INFO[etf.sym]||{};
+    var chgN=parseFloat(String(etf.chg).replace('%',''))||0;
+    var bCol=chgN>0.05?'#238636':chgN<-0.05?'#da3633':'#f85149';
+    // Check if underlying is weak (bullish for inverse)
+    var underQ=info.underlying?_tq[info.underlying]||{}:{};
+    var underChg=underQ.chg?parseFloat(String(underQ.chg).replace('%','')):0;
+    var signal=underChg<-0.5?'Underlying weak — favorable':'';
+    if(underChg>0.5)signal='Underlying green — caution';
+    h+='<div class="pos-block" style="border-left:3px solid '+bCol+';padding:8px 10px;margin-bottom:4px">';
+    // Row 1: ticker, price, change
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<span>'+tkLink(etf.sym,1);
+    h+=' <span class="tag" style="background:#1a0d0d;color:#f85149;border:1px solid #da3633;font-size:10px">INVERSE</span>';
+    h+='</span>';
+    h+='<span class="mono" style="font-size:13px">'+e(etf.val)+' '+pct(etf.chg)+'</span></div>';
+    // Row 2: what it tracks
+    if(info.tracks)h+='<div style="font-size:11px;margin-top:3px;color:#8b949e">'+e(info.tracks)+'</div>';
+    // Row 3: underlying status
+    if(info.underlying&&underQ.last){
+      var uc=underChg>0.01?'g':underChg<-0.01?'r':'dim';
+      h+='<div style="font-size:11px;margin-top:2px">Underlying: '+tkLink(info.underlying)+' <span class="mono '+uc+'">'+e(underQ.last)+' '+pct(underQ.chg)+'</span></div>';
+    }
+    // Row 4: enriched data if available from _tq
+    var q=_tq[etf.sym]||{};
+    var eH='';
+    if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
+    if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
+    if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+    // Row 5: when to use
+    if(info.when)h+='<div style="font-size:11px;margin-top:3px;color:#7d8590">📋 <span style="color:#c9d1d9">When:</span> '+e(info.when)+'</div>';
+    // Row 6: signal
+    if(signal){
+      var sigCol=signal.indexOf('favorable')>=0?'#238636':'#d29922';
+      h+='<div style="margin-top:4px;padding:3px 8px;background:#0d1117;border:1px solid '+sigCol+';border-radius:4px;font-size:11px;color:'+sigCol+'">'+e(signal)+'</div>';
+    }
+    // News
+    h+=posNewsHtml(etf.sym);
+    h+='</div>';
+  }
+  h+='</div>';
+  $('sInverse').innerHTML=h;
+}
 
 // ═══ NEWS ═══
 var NT=[
