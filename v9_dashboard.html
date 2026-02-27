@@ -922,7 +922,9 @@ function rBook(d){
   var bookCol=false;try{bookCol=localStorage.getItem('book_col_outer')==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleBookOuter()">';
   h+='<span id="bookArrow" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(bookCol&&_bookUnlocked?'-90':'0')+'deg)">▼</span> ';
-  h+='<span class="tag tag-live">YOUR BOOK</span> Positions ('+(pos.length+paper.length)+')</h2>';
+  h+='<span class="tag tag-live">YOUR BOOK</span> Positions ('+(pos.length+paper.length)+')';
+  if(d.positionsUpdated)h+=' <span class="dim" style="font-size:10px;font-weight:400">Updated '+e(d.positionsUpdated)+'</span>';
+  h+='</h2>';
   if(!pos.length&&!paper.length){h+='<div class="info-box"><p class="dim">No positions loaded.</p></div>';$('sBook').innerHTML=h;return}
   if(!_bookUnlocked){
     h+='<div id="bookLock" class="info-box" style="text-align:center;padding:20px">';
@@ -973,6 +975,8 @@ function rBook(d){
 // ═══ ARETE BOOK (from Arete Trades tab — reference only) ═══
 function areteCard(p){
   var tk=p.ticker,q=_tq[tk]||{},op=_to[tk]||{};
+  // Fallback: if no quote data but position has curPrice from Arete sheet
+  if(!q.last && p.curPrice) q = {last: p.curPrice, chg: ''};
   // Border color by change
   var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
   var bCol=chgN>0.05?'#238636':chgN<-0.05?'#da3633':'#9e6a03';
@@ -1032,7 +1036,9 @@ function rAreteBook(d){
   var outerCol=true;try{var _ov=localStorage.getItem('arete_col_outer');if(_ov!==null)outerCol=_ov==='1';}catch(e){}
   var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\'outer\')">';
   h+='<span id="areteArrow_outer" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(outerCol?'-90':'0')+'deg)">▼</span> ';
-  h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book ('+totalCount+')</h2>';
+  h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book ('+totalCount+')';
+  if(d.areteUpdated)h+=' <span class="dim" style="font-size:10px;font-weight:400">Updated '+e(d.areteUpdated)+'</span>';
+  h+='</h2>';
   h+='<div id="areteBody_outer" style="'+(outerCol?'display:none':'')+'">';
   h+='<p class="dim" style="font-size:11px;margin-bottom:6px">Arete Discord positions — reference only, not your trades.</p>';
   var groups={};var order=['Swing','DTC','Option','Long'];
