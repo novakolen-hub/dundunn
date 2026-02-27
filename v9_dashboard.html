@@ -88,6 +88,7 @@
 <p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
 <div id="sGP"></div>
+<div id="sHidden" style="display:none"></div>
 <div id="sStory"></div>
 <div id="sBreadth"></div>
 <div id="sSess"></div>
@@ -141,7 +142,7 @@ function poll(){
   }).catch(function(err){_e++;var ld=$('loader');if(ld)ld.innerHTML='<div style="color:#f85149;padding:16px;font-size:13px">❌ '+err.message+'<br><br><span class="dim">Check: did you deploy a NEW version? The endpoint URL may have changed.<br>Current EP: '+EP.substring(0,60)+'...</span></div>';$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
 }
 
-function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rFoot(d);initSparkTips();initNewsRead();}
+function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();}
 function buildTkNews(d){
   _tkNews={};var news=d.news||[];var now=Date.now()/1000;
   for(var i=0;i<news.length;i++){var n=news[i];if(n.time&&(now-n.time)>86400)continue;var nt=nTags(n.headline||'',n.related||'');
@@ -1613,6 +1614,28 @@ function rInst(d){
 function rCoach(d){
   // Bottom Line & Daily Edge now render inside MY BOOK (PIN-locked)
   $('sCoach').innerHTML='';
+}
+function rHidden(d){
+  var items=[];
+  var gp=d.gpLetter||'C';
+  // Check each section that conditionally hides
+  if(!d.dashboardNarrative)items.push({name:'Story',reason:'No Opus narrative yet'});
+  if(gp!=='D')items.push({name:'Inverse ETFs',reason:'GP-'+gp+' (shows on GP-D)'});
+  if(!(d.ecoEvents||[]).length)items.push({name:'Econ Calendar',reason:'No events today'});
+  if(!(d.earnings||[]).length)items.push({name:'Earnings',reason:'No earnings this week'});
+  if(!d.instPulse||!d.instPulse.data)items.push({name:'Inst Pulse',reason:'Bridge offline'});
+  if(!(d.news||[]).length)items.push({name:'News',reason:'No RSS data'});
+  if(!(d.aretePositions||[]).length&&!(d.areteWatching||[]).length)items.push({name:'Arete Book',reason:'No Arete data'});
+  if(!(gS(d,'INTERMARKET RATIOS')||[]).length)items.push({name:'Intermarket',reason:'No ratio data'});
+  if(!items.length){$('sHidden').style.display='none';return}
+  var h='<div style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 0">';
+  for(var i=0;i<items.length;i++){
+    h+='<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#161b22;border:1px solid #30363d;color:#7d8590;white-space:nowrap" title="'+e(items[i].reason)+'">';
+    h+='⏸ '+e(items[i].name)+'</span>';
+  }
+  h+='</div>';
+  $('sHidden').innerHTML=h;
+  $('sHidden').style.display='';
 }
 
 function rFoot(d){
