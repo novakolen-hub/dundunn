@@ -645,7 +645,8 @@ function rStory(d){
 }
 
 // ═══ INVERSE ETFs ═══
-function rInv(d){if((d.gpLetter||'C')!=='D'){$('sInverse').innerHTML='';return}var inv=gS(d,'INVERSE ETFs (GP-D)');if(!inv.length){$('sInverse').innerHTML='';return}var h='<h2 style="color:#f85149">Inverse ETFs — GP-D</h2><div class="info-box"><table><tr><th>ETF</th><th>Last</th><th>Chg%</th><th>Tracks</th></tr>';for(var i=0;i<inv.length;i++)h+='<tr><td class="r bold tc">'+e(inv[i].sym)+'</td><td>'+e(inv[i].val)+'</td><td>'+pct(inv[i].chg)+'</td><td class="dim">'+e(inv[i].desc)+'</td></tr>';h+='</table></div>';$('sInverse').innerHTML=h;}
+var INV_DESC={'SOXS':'3x inv semis (SOX)','SQQQ':'3x inv Nasdaq-100','TECS':'3x inv tech (XLK)','TSXD':'1x inv Tesla','UVXY':'1.5x VIX futures','SPXS':'3x inv S&P 500','SDOW':'3x inv Dow','TZA':'3x inv Russell 2000','SH':'1x inv S&P 500','PSQ':'1x inv Nasdaq-100','DOG':'1x inv Dow','YANG':'3x inv China (FXI)','TBT':'2x inv 20yr bonds'};
+function rInv(d){if((d.gpLetter||'C')!=='D'){$('sInverse').innerHTML='';return}var inv=gS(d,'INVERSE ETFs (GP-D)');if(!inv.length){$('sInverse').innerHTML='';return}var h='<h2 style="color:#f85149">Inverse ETFs — GP-D</h2><div class="info-box"><table><tr><th>ETF</th><th>Last</th><th>Chg%</th><th>Tracks</th></tr>';for(var i=0;i<inv.length;i++){var desc=inv[i].desc||(INV_DESC[inv[i].sym]||'');h+='<tr><td class="r bold tc">'+e(inv[i].sym)+'</td><td>'+e(inv[i].val)+'</td><td>'+pct(inv[i].chg)+'</td><td class="dim">'+e(desc)+'</td></tr>';}h+='</table></div>';$('sInverse').innerHTML=h;}
 
 // ═══ NEWS ═══
 var NT=[
