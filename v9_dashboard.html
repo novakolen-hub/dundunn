@@ -128,6 +128,28 @@ function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 var _ic={};
 var _icSlugs={};
 var _tq={};
+var _spark={};
+function sparkSvg(tk,w,h){
+  w=w||80;h=h||22;
+  var pts=_spark[tk];if(!pts||!pts.length)return'';
+  // Filter nulls, need at least 2 points
+  var vals=[];for(var i=0;i<pts.length;i++){if(pts[i]!==null&&pts[i]>0)vals.push({i:i,v:pts[i]});}
+  if(vals.length<2)return'';
+  var mn=vals[0].v,mx=vals[0].v;
+  for(var i=1;i<vals.length;i++){if(vals[i].v<mn)mn=vals[i].v;if(vals[i].v>mx)mx=vals[i].v;}
+  var range=mx-mn;if(range<0.01)range=0.01;
+  var pad=2;
+  var xScale=(w-pad*2)/(pts.length-1);
+  var yScale=(h-pad*2)/range;
+  var d='';
+  for(var i=0;i<vals.length;i++){
+    var x=pad+vals[i].i*xScale;
+    var y=h-pad-(vals[i].v-mn)*yScale;
+    d+=(i===0?'M':'L')+x.toFixed(1)+','+y.toFixed(1);
+  }
+  var col=vals[vals.length-1].v>=vals[0].v?'#3fb950':'#f85149';
+  return'<svg width="'+w+'" height="'+h+'" style="vertical-align:middle;margin-left:6px"><polyline points="" fill="none"/><path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
 var _to={};
 var _tkNews={};
 var _lastD={};
@@ -202,7 +224,7 @@ function poll(){
   }).catch(function(err){_e++;var ld=$('loader');if(ld)ld.innerHTML='<div style="color:#f85149;padding:16px;font-size:13px">❌ '+err.message+'<br><br><span class="dim">Check: did you deploy a NEW version? The endpoint URL may have changed.<br>Current EP: '+EP.substring(0,60)+'...</span></div>';$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
 }
 
-function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();}
+function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;if(d.sparkData)_spark=d.sparkData;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();}
 function buildTkNews(d){
   _tkNews={};var news=d.news||[];var now=Date.now()/1000;
   for(var i=0;i<news.length;i++){var n=news[i];if(n.time&&(now-n.time)>604800)continue;var nt=nTags(n.headline||'',n.related||'');
@@ -748,7 +770,7 @@ function rInv(d){
     h+='<span>'+tkLink(etf.sym,1);
     h+=' <span class="tag" style="background:#1a0d0d;color:#f85149;border:1px solid #da3633;font-size:10px">INVERSE</span>';
     h+='</span>';
-    h+='<span class="mono" style="font-size:13px">'+e(etf.val)+' '+pct(etf.chg)+'</span></div>';
+    h+='<span class="mono" style="font-size:13px">'+e(etf.val)+' '+pct(etf.chg)+sparkSvg(etf.sym)+'</span></div>';
     // Row 2: what it tracks
     if(info.tracks)h+='<div style="font-size:11px;margin-top:3px;color:#8b949e">'+e(info.tracks)+'</div>';
     // Row 3: underlying status
@@ -1028,7 +1050,7 @@ function posCard(p,alert,areteInfo){
   var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
   var h='<div class="pos-block"><div style="display:flex;justify-content:space-between;align-items:center">';
   h+='<span>'+tkLink(tk,1);
-  h+=' <span class="mono dim" style="font-size:11px">$'+e(p.last)+'</span> <span style="font-size:10px">'+pct(p.dayPLPct)+'</span>';
+  h+=' <span class="mono dim" style="font-size:11px">$'+e(p.last)+'</span> <span style="font-size:10px">'+pct(p.dayPLPct)+'</span>'+sparkSvg(tk);
   if(p.accountType)h+=' <span class="tag tag-acct">'+e(p.accountType)+'</span>';
   if(p.tag)h+=' <span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e">'+e(p.tag)+'</span>';
   // RS inline
@@ -1200,7 +1222,7 @@ function areteCard(p){
   h+='<span class="mono" style="font-size:12px">';
   if(q.last)h+=e(q.last)+' ';
   if(q.chg)h+=pct(q.chg);
-  h+='</span></div>';
+  h+=sparkSvg(tk)+'</span></div>';
   // Row 2: entry, date, stop details
   var details=[];
   if(p.entry)details.push('Entry: <span class="mono">'+e(p.entry)+'</span>');
@@ -1339,7 +1361,7 @@ function rAreteBook(d){
         h+='<span class="mono" style="font-size:12px">';
         if(q.last)h+=e(q.last)+' ';
         if(q.chg)h+=pct(q.chg);
-        h+='</span></div>';
+        h+=sparkSvg(tk)+'</span></div>';
         // Row 2: options data (if available from tastytrade bridge)
         var oH='';
         if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';
@@ -1450,7 +1472,7 @@ function rWatching(d){
     h+='<span class="mono" style="font-size:12px">';
     if(q.last)h+=e(q.last)+' ';
     if(q.chg)h+=pct(q.chg);
-    h+='</span></div>';
+    h+=sparkSvg(tk)+'</span></div>';
     // Row 2: RVOL, gap, 52w, EMA50, flags
     var eH='';
     if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
@@ -1829,7 +1851,7 @@ function rFocused(d){
     h+='<span class="mono" style="font-size:13px">';
     if(q.last)h+=e(q.last)+' ';
     if(q.chg)h+=pct(q.chg);
-    h+='</span></div>';
+    h+=sparkSvg(tk)+'</span></div>';
     // Position info if held
     var pos=posMap[tk]||areteMap[tk];
     if(pos){
