@@ -1026,6 +1026,40 @@ function areteCard(p){
   if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
   // Row 6: news
   h+=posNewsHtml(tk);
+  // Row 7: Bias signal summary
+  var bull=0,bear=0,reasons=[];
+  var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;
+  var _rv=q.rvol?parseFloat(q.rvol):NaN;
+  var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;
+  var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;
+  var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
+  if(!isNaN(_rs)){if(_rs>1){bull++;reasons.push('RS+');}else if(_rs<-1){bear++;reasons.push('RS−');}}
+  if(!isNaN(_rv)&&_rv>=1.5){bull++;reasons.push('RVOL '+_rv.toFixed(1)+'x');}
+  if(!isNaN(_gp)){if(_gp>0.3){bull++;reasons.push('gap↑');}else if(_gp<-0.3){bear++;reasons.push('gap↓');}}
+  if(!isNaN(_w5)){if(_w5>70){bull++;reasons.push('near 52wH');}else if(_w5<30){bear++;reasons.push('near 52wL');}}
+  if(!isNaN(_ed)){if(_ed>0){bull++;reasons.push('>EMA50');}else if(_ed<-2){bear++;reasons.push('<EMA50');}}
+  if(q.vwapF&&q.vwapF!=='—'){bull++;reasons.push('VWAP✓');}
+  if(q.rsF&&q.rsF!=='—'){bull++;reasons.push('RSflag');}
+  if(chgN>0.5){bull++;reasons.push('price↑');}else if(chgN<-0.5){bear++;reasons.push('price↓');}
+  if(bull>0||bear>0){
+    var net=bull-bear;
+    var biasIcon=net>=2?'🟢 ↑':net<=-2?'🔴 ↓':'⚪ →';
+    var biasCol=net>=2?'#238636':net<=-2?'#da3633':'#7d8590';
+    var verd='';
+    if(net>=3)verd='Strong bullish stack — watch for entry';
+    else if(net===2)verd='Leaning bullish — needs catalyst';
+    else if(net===1)verd='Slight bullish lean — be selective';
+    else if(net===0)verd='Mixed signals — wait for clarity';
+    else if(net===-1)verd='Slight bearish lean — caution';
+    else if(net===-2)verd='Leaning bearish — avoid or short setup';
+    else verd='Strong bearish stack — short or avoid';
+    h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid '+biasCol+';border-radius:4px;font-size:11px">';
+    h+='<span style="font-size:13px">'+biasIcon+'</span> ';
+    h+='<span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> ';
+    h+='<span class="dim">'+reasons.join(' · ')+'</span>';
+    h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div>';
+    h+='</div>';
+  }
   h+='</div>';return h;
 }
 function rAreteBook(d){
