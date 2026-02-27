@@ -886,15 +886,33 @@ function newsItem(n,nt,autoPass,conf22){
 // ═══ YOUR BOOK (positions + Opus alerts merged) ═══
 // Helper to render a position card
 function posCard(p,alert,areteInfo){
+  var tk=p.ticker,q=_tq[tk]||{},op=_to[tk]||{};
+  var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
   var h='<div class="pos-block"><div style="display:flex;justify-content:space-between;align-items:center">';
-  h+='<span>'+tkLink(p.ticker,1);
+  h+='<span>'+tkLink(tk,1);
   h+=' <span class="mono dim" style="font-size:11px">$'+e(p.last)+'</span> <span style="font-size:10px">'+pct(p.dayPLPct)+'</span>';
   if(p.accountType)h+=' <span class="tag tag-acct">'+e(p.accountType)+'</span>';
   if(p.tag)h+=' <span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e">'+e(p.tag)+'</span>';
+  // RS inline
+  if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
   h+='</span><span class="'+pc(p.totalPL)+' bold mono" style="font-size:14px">'+e(p.totalPL)+'</span></div>';
   h+='<p style="font-size:12px;color:#7d8590;margin:2px 0">'+e(p.side)+' '+e(p.shares)+'sh @ $'+e(p.avgCost)+' → $'+e(p.last)+'</p>';
   h+='<p style="font-size:12px;margin:0">Day: <span class="'+pc(p.dayPL)+' bold">'+e(p.dayPL)+' ('+e(p.dayPLPct)+')</span> · Total: <span class="'+pc(p.totalPL)+' bold">'+e(p.totalPLPct)+'</span></p>';
-  var op=_to[p.ticker];if(op){var oH='';if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';if(oH)h+='<p style="font-size:11px;margin:2px 0 0">📊 '+oH+'</p>';}
+  // Options data
+  if(op){var oH='';if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';if(oH)h+='<p style="font-size:11px;margin:2px 0 0">📊 '+oH+'</p>';}
+  // Enriched data (RVOL, gap, 52w, EMA50, flags)
+  var eH='';
+  if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
+  if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
+  if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
+  if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
+  var flags='';
+  if(q.vwapF&&q.vwapF!=='—')flags+='<span title="VWAP">V</span>';
+  if(q.rsF&&q.rsF!=='—')flags+='<span title="Rel Strength">R</span>';
+  if(q.rsiF&&q.rsiF!=='—')flags+='<span title="RSI">S</span>';
+  if(q.rvolF&&q.rvolF!=='—')flags+='<span title="RVOL">V</span>';
+  if(flags)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:0 3px;font-size:10px;font-weight:700;color:#58a6ff">'+flags+'</span>';
+  if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
   // Arete cross-reference
   if(areteInfo){
     h+='<div style="margin-top:4px;padding:4px 8px;background:#1f1a0f;border:1px solid #9e6a03;border-radius:4px;font-size:11px">';
@@ -906,7 +924,41 @@ function posCard(p,alert,areteInfo){
     if(areteInfo.note)h+='<div class="dim" style="font-style:italic;margin-top:1px">'+e(areteInfo.note)+'</div>';
     h+='</div>';
   }
-  h+=posNewsHtml(p.ticker);
+  h+=posNewsHtml(tk);
+  // Bias signal
+  var bull=0,bear=0,reasons=[];
+  var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;
+  var _rv=q.rvol?parseFloat(q.rvol):NaN;
+  var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;
+  var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;
+  var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
+  if(!isNaN(_rs)){if(_rs>1){bull++;reasons.push('RS+');}else if(_rs<-1){bear++;reasons.push('RS−');}}
+  if(!isNaN(_rv)&&_rv>=1.5){bull++;reasons.push('RVOL '+_rv.toFixed(1)+'x');}
+  if(!isNaN(_gp)){if(_gp>0.3){bull++;reasons.push('gap↑');}else if(_gp<-0.3){bear++;reasons.push('gap↓');}}
+  if(!isNaN(_w5)){if(_w5>70){bull++;reasons.push('near 52wH');}else if(_w5<30){bear++;reasons.push('near 52wL');}}
+  if(!isNaN(_ed)){if(_ed>0){bull++;reasons.push('>EMA50');}else if(_ed<-2){bear++;reasons.push('<EMA50');}}
+  if(q.vwapF&&q.vwapF!=='—'){bull++;reasons.push('VWAP✓');}
+  if(q.rsF&&q.rsF!=='—'){bull++;reasons.push('RSflag');}
+  if(chgN>0.5){bull++;reasons.push('price↑');}else if(chgN<-0.5){bear++;reasons.push('price↓');}
+  if(bull>0||bear>0){
+    var net=bull-bear;
+    var biasIcon=net>=2?'🟢 ↑':net<=-2?'🔴 ↓':'⚪ →';
+    var biasCol=net>=2?'#238636':net<=-2?'#da3633':'#7d8590';
+    var verd='';
+    if(net>=3)verd='Strong bullish stack — watch for entry';
+    else if(net===2)verd='Leaning bullish — needs catalyst';
+    else if(net===1)verd='Slight bullish lean — be selective';
+    else if(net===0)verd='Mixed signals — wait for clarity';
+    else if(net===-1)verd='Slight bearish lean — caution';
+    else if(net===-2)verd='Leaning bearish — avoid or short setup';
+    else verd='Strong bearish stack — short or avoid';
+    h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid '+biasCol+';border-radius:4px;font-size:11px">';
+    h+='<span style="font-size:13px">'+biasIcon+'</span> ';
+    h+='<span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> ';
+    h+='<span class="dim">'+reasons.join(' · ')+'</span>';
+    h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div>';
+    h+='</div>';
+  }
   if(alert){var acl=String(alert.action||'').match(/trim|exit|review|broken|stop/i)?'r':String(alert.action||'').match(/hold|monitor/i)?'y':'b';
     h+='<p style="font-size:12px;margin-top:4px"><span class="'+acl+' bold">→ '+e(alert.action)+'</span></p>';}
   h+='</div>';return h;
