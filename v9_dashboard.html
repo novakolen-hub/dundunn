@@ -100,6 +100,7 @@
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
 <div id="sGP"></div>
 <div id="sHidden" style="display:none"></div>
+<div id="sBrief"></div>
 <div id="sStory"></div>
 <div id="sBreadth"></div>
 <div id="sSess"></div>
@@ -258,7 +259,7 @@ function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.t
   var _ae=document.activeElement;
   var _noteId=_ae&&_ae.id&&_ae.id.startsWith('note_')?_ae.id:null;
   var _noteCur=_noteId?_ae.selectionStart:0;
-  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
+  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBrief(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
   // Restore textarea focus
   if(_noteId){var _el=document.getElementById(_noteId);if(_el){_el.focus();_el.selectionStart=_el.selectionEnd=_noteCur;}}
 }
@@ -304,7 +305,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused'];
+  var keys=['brief','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
@@ -470,7 +471,197 @@ function rGP(d){
   h+='</div>';$('sGP').innerHTML=h;
 }
 
-// ═══ BREADTH — SVG sparkline chart (like TradingView sidebar) ═══
+// ═══ 5-MINUTE BRIEF ═══
+function rBrief(d){
+  var gp=d.gpLetter||'C',sc=d.breadthScore!=null?parseFloat(d.breadthScore):0;
+  var nar=d.dashboardNarrative||'',sec=parseN(nar);
+  var ip=d.instPulse?d.instPulse.data:null;
+  var isCol=false;try{var _v=localStorage.getItem('sec_col_brief');if(_v!==null)isCol=_v==='1';}catch(e){}
+  
+  var h='<div style="margin:8px 0 12px 0">';
+  h+='<h2 style="cursor:pointer;user-select:none;font-size:15px" onclick="toggleSec(\'brief\')"><span id="secArrow_brief" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> ⚡ 5-Minute Brief</h2>';
+  h+='<div id="secBody_brief" style="'+(isCol?'display:none':'')+'">';
+  
+  // Container
+  h+='<div style="background:#111820;border:1px solid #1c3a5e;border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.7">';
+  
+  // 1. GAMEPLAN + VERDICT
+  var gpCol=GP_COLOR[gp]||'#7d8590';
+  var gpLab={A:'Hunt Mode — full size, high conviction setups',B:'Sniper Mode — selective, reduced size',C:'Bench — sit on hands, no edge',D:'Short Mode — inverse ETFs or cash'}[gp]||'';
+  // Trajectory from history
+  var hist=d.history||[];
+  var traj='';
+  if(hist.length>=3){
+    var recent=hist.slice(-3);
+    var scores=recent.map(function(h){return parseFloat(h.v)||0;});
+    if(scores[2]>scores[0]+1.5)traj='improving ↑';
+    else if(scores[2]<scores[0]-1.5)traj='fading ↓';
+    else traj='stable →';
+  }
+  h+='<div style="margin-bottom:8px">';
+  h+='<span style="color:'+gpCol+';font-weight:700;font-size:14px">GP-'+e(gp)+'</span> ';
+  h+='<span class="mono" style="color:'+gpCol+'">'+sc.toFixed(1)+' pts</span>';
+  if(traj)h+=' <span class="dim">· '+traj+'</span>';
+  h+='<div style="color:#c9d1d9;margin-top:2px">'+gpLab+'</div>';
+  // Pull one-liner from Story if available
+  var story=gN(sec,['THE STORY','STORY','MARKET STORY']);
+  if(story){
+    var firstSentence=story.split(/[.!]\s/)[0];
+    if(firstSentence&&firstSentence.length>10&&firstSentence.length<200)h+='<div class="dim" style="margin-top:2px;font-style:italic">'+fmt(firstSentence+'.')+'</div>';
+  }
+  h+='</div>';
+  
+  // 2. REGIME CHECK
+  if(ip){
+    var vr=ip.vol_regime||{};
+    h+='<div style="margin-bottom:8px;padding:6px 10px;background:#0d1117;border-radius:4px;border-left:3px solid #d29922">';
+    h+='<span style="color:#d29922;font-weight:700;font-size:11px">REGIME</span> ';
+    // VIX
+    if(vr.vix!=null){
+      var vx=parseFloat(vr.vix);
+      var vc=vx>=30?'r':vx>=20?'y':'g';
+      var vl=vx>=30?'Panic':vx>=25?'High Fear':vx>=20?'Elevated':vx>=15?'Normal':'Complacent';
+      h+='<span class="'+vc+' mono">VIX '+vx.toFixed(1)+'</span> <span class="dim">('+vl+')</span> ';
+    }
+    // Term structure
+    if(ip.term_structure){
+      var ts=ip.term_structure;
+      var tsState=ts.state||'';
+      var tsc=tsState==='CONTANGO'?'g':tsState==='FLAT'?'y':tsState==='BACKWARDATION'?'r':'r';
+      h+='· <span class="'+tsc+'">'+e(tsState)+'</span> ';
+    }
+    // SPY IVR
+    if(vr.spy_ivr!=null)h+='· <span class="dim">SPY IVR '+parseFloat(vr.spy_ivr).toFixed(0)+'</span> ';
+    // Sizing implication
+    var sizeNote='';
+    if(ip.term_structure&&(ip.term_structure.state==='BACKWARDATION'||ip.term_structure.state==='INVERTED'))sizeNote='⚠️ Reduce size, tighten stops';
+    else if(vr.vix!=null&&parseFloat(vr.vix)>=25)sizeNote='⚠️ High vol — smaller positions, wider stops';
+    else if(vr.spy_ivr!=null&&parseFloat(vr.spy_ivr)>=50)sizeNote='Elevated IVR — options expensive, consider spreads';
+    else sizeNote='Normal regime — full GP sizing OK';
+    h+='<div class="dim" style="margin-top:2px">→ '+sizeNote+'</div>';
+    h+='</div>';
+  }
+  
+  // 3. HOTTEST SETUP
+  var wt=d.watchlistTop||[];
+  if(wt.length){
+    // Sort by confluence score descending
+    var sorted=wt.slice().sort(function(a,b){return(parseFloat(b.confluence)||0)-(parseFloat(a.confluence)||0);});
+    var top=sorted[0];
+    if(top&&parseFloat(top.confluence)>0){
+      var tq_t=_tq[top.ticker]||{};
+      h+='<div style="margin-bottom:8px;padding:6px 10px;background:#0d1117;border-radius:4px;border-left:3px solid #58a6ff">';
+      h+='<span style="color:#58a6ff;font-weight:700;font-size:11px">HOTTEST SETUP</span> ';
+      h+=tkLink(top.ticker,1)+' ';
+      h+='<span class="mono dim" style="font-size:11px">'+e(tq_t.last||'')+'</span> ';
+      if(tq_t.chg)h+=pct(tq_t.chg)+' ';
+      h+='<span class="mono y">Conf: '+e(top.confluence)+'</span>';
+      if(top.setup)h+=' <span class="white">'+e(top.setup)+'</span>';
+      if(top.quality)h+=' <span class="dim">Qual: '+e(top.quality)+'</span>';
+      // Sector
+      if(top.sector)h+='<div class="dim" style="margin-top:2px">'+e(top.sector)+'</div>';
+      h+='</div>';
+    }
+  }
+  
+  // 4. CATALYST ALERT
+  var econ=gS(d,'ECONOMIC CALENDAR');
+  var earningsToday=d.earningsToday||[];
+  var catItems=[];
+  if(econ.length){
+    for(var ei=0;ei<Math.min(econ.length,3);ei++){
+      if(econ[ei].sym&&econ[ei].sym!=='Event')catItems.push(e(econ[ei].sym)+(econ[ei].val?' '+e(econ[ei].val):''));
+    }
+  }
+  if(earningsToday.length){
+    for(var eti=0;eti<Math.min(earningsToday.length,5);eti++){
+      catItems.push('📊 '+e(earningsToday[eti].ticker||earningsToday[eti]));
+    }
+  }
+  // Also check earnings from dedicated section
+  var earnWeek=d.earningsWeek||[];
+  if(!earningsToday.length&&earnWeek.length){
+    for(var ewi=0;ewi<Math.min(earnWeek.length,3);ewi++){
+      if(earnWeek[ewi].ticker)catItems.push('📊 '+e(earnWeek[ewi].ticker)+' ('+e(earnWeek[ewi].when||'this week')+')');
+    }
+  }
+  if(catItems.length){
+    h+='<div style="margin-bottom:8px;padding:6px 10px;background:#0d1117;border-radius:4px;border-left:3px solid #e3b341">';
+    h+='<span style="color:#e3b341;font-weight:700;font-size:11px">CATALYSTS</span> ';
+    h+='<span class="dim">'+catItems.join(' · ')+'</span></div>';
+  }
+  
+  // 5. ARETE SIGNAL
+  var arP=d.aretePositions||[],arW=d.areteWatching||[];
+  if(arP.length||arW.length){
+    h+='<div style="margin-bottom:8px;padding:6px 10px;background:#0d1117;border-radius:4px;border-left:3px solid #e3b341">';
+    h+='<span style="color:#e3b341;font-weight:700;font-size:11px">ARETE</span> ';
+    // Summarize: count by tag
+    var tagCounts={};
+    for(var ap=0;ap<arP.length;ap++){var t=arP[ap].tag||'Other';tagCounts[t]=(tagCounts[t]||0)+1;}
+    var tagParts=[];for(var tk2 in tagCounts)tagParts.push(tagCounts[tk2]+' '+tk2);
+    h+='<span class="dim">'+tagParts.join(', ')+'</span>';
+    if(arW.length)h+=' · <span class="dim">'+arW.length+' watching</span>';
+    // Show top 3 arete tickers with change
+    var arShow=arP.slice(0,3);
+    var arTks=[];
+    for(var as=0;as<arShow.length;as++){
+      var atk=arShow[as].ticker;
+      var aq=_tq[atk]||{};
+      arTks.push(e(atk)+(aq.chg?' '+pct(aq.chg):''));
+    }
+    if(arTks.length)h+='<div style="margin-top:2px">'+arTks.join(' · ')+'</div>';
+    h+='</div>';
+  }
+  
+  // 6. SECTOR STORY
+  var secs=gS(d,'GROWTH SECTORS').concat(gS(d,'DEFENSIVE SECTORS'));
+  if(secs.length){
+    var leaders=[],laggers=[];
+    for(var si=0;si<secs.length;si++){
+      var sv=parseFloat(String(secs[si].chg||'0').replace('%',''));
+      if(!isNaN(sv)){
+        if(sv>0.3)leaders.push({sym:secs[si].sym,chg:sv});
+        else if(sv<-0.3)laggers.push({sym:secs[si].sym,chg:sv});
+      }
+    }
+    leaders.sort(function(a,b){return b.chg-a.chg;});
+    laggers.sort(function(a,b){return a.chg-b.chg;});
+    if(leaders.length||laggers.length){
+      h+='<div style="margin-bottom:8px;padding:6px 10px;background:#0d1117;border-radius:4px;border-left:3px solid #3fb950">';
+      h+='<span style="color:#3fb950;font-weight:700;font-size:11px">SECTORS</span> ';
+      if(leaders.length){
+        h+='<span class="g">Leading:</span> ';
+        h+='<span class="dim">'+leaders.slice(0,4).map(function(l){return e(l.sym)+' +'+l.chg.toFixed(1)+'%';}).join(', ')+'</span>';
+      }
+      if(leaders.length&&laggers.length)h+=' · ';
+      if(laggers.length){
+        h+='<span class="r">Lagging:</span> ';
+        h+='<span class="dim">'+laggers.slice(0,4).map(function(l){return e(l.sym)+' '+l.chg.toFixed(1)+'%';}).join(', ')+'</span>';
+      }
+      h+='</div>';
+    }
+  }
+  
+  // 7. ONE THING — from narrative or synthesized
+  var oneThing=gN(sec,['ONE THING','KEY TAKEAWAY','BOTTOM LINE','CRITICAL']);
+  if(!oneThing){
+    // Synthesize from data
+    if(gp==='D')oneThing='Breadth negative — inverse ETFs or cash only. Protect capital.';
+    else if(gp==='C')oneThing='No edge. Breadth flat. Wait for a clear signal before entering.';
+    else if(ip&&ip.term_structure&&(ip.term_structure.state==='BACKWARDATION'||ip.term_structure.state==='INVERTED'))oneThing='VIX term structure warning — reduce size even on GP-'+gp+' setups.';
+    else if(gp==='A'&&traj==='improving ↑')oneThing='Strong breadth and improving — lean into highest-conviction setups with full size.';
+    else if(gp==='A'&&traj==='fading ↓')oneThing='GP-A but breadth fading — take profits on winners, tighten stops, don\'t add.';
+    else if(gp==='B')oneThing='Selective mode — only A+ setups. Wait for breadth confirmation before new entries.';
+  }
+  if(oneThing){
+    h+='<div style="padding:8px 10px;background:#1c2333;border-radius:4px;border:1px solid #30466e">';
+    h+='<span style="font-size:13px">💡</span> <span style="color:#e6edf3;font-weight:600">'+fmt(oneThing)+'</span></div>';
+  }
+  
+  h+='</div></div></div>';
+  $('sBrief').innerHTML=h;
+}
 function rBreadth(d){
   var score=parseFloat(d.breadthScore)||0,hist=d.history||[];
   var cls=bCls(score),col=GP_COLOR[d.gpLetter||'C']||'#e3b341';
