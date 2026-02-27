@@ -1872,12 +1872,24 @@ function rFocused(d){
       h+='<span style="font-size:13px">'+biasIcon+'</span> <span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> <span class="dim">'+reasons.join(' · ')+'</span>';
       h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div></div>';
     }
+    // Notes scratch pad
+    var noteKey='v9_note_'+tk;
+    var noteVal='';try{noteVal=localStorage.getItem(noteKey)||'';}catch(e){}
+    h+='<div style="margin-top:6px">';
+    h+='<textarea id="note_'+tk+'" placeholder="Notes: levels, thesis, plan..." style="width:100%;box-sizing:border-box;background:#161b22;border:1px solid #30363d;border-radius:4px;color:#c9d1d9;font-size:11px;font-family:inherit;padding:6px 8px;resize:vertical;min-height:28px;max-height:120px" oninput="try{localStorage.setItem(\''+noteKey+'\',this.value)}catch(e){}" onclick="event.stopPropagation()">'+e(noteVal)+'</textarea>';
+    h+='</div>';
     // Unfocus button
-    h+='<div style="margin-top:6px;text-align:right"><span style="font-size:10px;color:#7d8590;cursor:pointer;border:1px solid #30363d;border-radius:4px;padding:1px 8px" onclick="event.stopPropagation();_focusedTickers.delete(\''+tk+'\');saveFocused();R(_lastD);">✕ unfocus</span></div>';
+    h+='<div style="margin-top:4px;text-align:right"><span style="font-size:10px;color:#7d8590;cursor:pointer;border:1px solid #30363d;border-radius:4px;padding:1px 8px" onclick="event.stopPropagation();_focusedTickers.delete(\''+tk+'\');saveFocused();R(_lastD);">✕ unfocus</span></div>';
     h+='</div>';
   }
   h+='</div>';
+  // Save active note before DOM replacement
+  var activeNote=document.activeElement;
+  var activeNoteId=activeNote&&activeNote.id&&activeNote.id.startsWith('note_')?activeNote.id:null;
+  var activeCursor=activeNoteId?activeNote.selectionStart:0;
   $('sFocused').innerHTML=h;
+  // Restore focus if user was typing
+  if(activeNoteId){var el=document.getElementById(activeNoteId);if(el){el.focus();el.selectionStart=el.selectionEnd=activeCursor;}}
 }
 function rHidden(d){
   var items=[];
