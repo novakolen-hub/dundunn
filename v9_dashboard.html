@@ -181,7 +181,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['sectors','econ','earn','inter','intertk','pulse','news','watch','setups'];
+  var keys=['sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
@@ -709,6 +709,13 @@ function rInv(d){
     h+=posNewsHtml(etf.sym);
     h+='</div>';
   }
+  h+=learnBox('Learn: Inverse & Leveraged ETFs',
+    '<p><b style="color:#c9d1d9">What they are:</b> Inverse ETFs profit when their underlying index falls. Leveraged inverse ETFs (2x, 3x) amplify the move. SQQQ returns 3x the <i>daily</i> inverse of Nasdaq-100 — if QQQ drops 1%, SQQQ gains ~3%.</p>'+
+    '<p><b style="color:#c9d1d9">Daily reset (critical):</b> Leveraged ETFs reset daily. They track the <i>daily</i> return, not cumulative. Over multiple days, compounding creates "volatility decay" — in choppy markets, both bull and bear leveraged ETFs can lose money. This means 3x inverse ETFs are <b>day trade instruments</b>, not swing holds.</p>'+
+    '<p><b style="color:#c9d1d9">Example:</b> If QQQ drops 2% on Monday then gains 2% on Tuesday, it\'s at 99.96% (not 100%). But SQQQ would be at ~99.64% — the 3x leverage amplified the decay. Over a week of chop, you can be right on direction and still lose.</p>'+
+    '<p><b style="color:#c9d1d9">UVXY is different:</b> UVXY tracks VIX short-term futures, not an equity index. It spikes during fear events but has severe long-term decay from contango roll. Use it for intraday vol spikes only, never hold overnight unless term structure is in backwardation.</p>'+
+    '<p><b style="color:#c9d1d9">V9 Connection:</b> Only trade inverse ETFs on GP-D (breadth ≤ -3). Size $8-12K per position. Treat as day trades — enter on morning weakness confirmation, exit same day. If breadth recovers above -3, close all inverse positions immediately. Never average down on leveraged products.</p>'+
+    '<p><b style="color:#c9d1d9">Key rules:</b> (1) Don\'t hold 3x overnight — decay kills edge. (2) Watch the underlying, not the inverse — trade the thesis on QQQ/SMH, execute via SQQQ/SOXS. (3) Set hard stops — 3x leverage means 3x losses too. (4) UVXY only for intraday vol spikes, check term structure first.</p>');
   h+='</div>';
   $('sInverse').innerHTML=h;
 }
