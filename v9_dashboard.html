@@ -136,6 +136,16 @@ function pct(v){var s=String(v||''),n=parseFloat(s.replace('%',''));if(isNaN(n))
 function pc(v){var n=parseFloat(String(v).replace(/[$,+]/g,''));return n>0?'g':n<0?'r':'dim'}
 function sd(s){return String(s||'').replace(/^\$/,'')}
 function qBadge(tk){var q=_tq[tk];if(!q||!q.last)return'';var ch=q.chg?pct(q.chg):'';return' <span class="mono dim" style="font-size:11px">'+e(q.last)+'</span>'+(ch?' <span style="font-size:10px">'+ch+'</span>':'');}
+function levelsHtml(tk){
+  var q=_tq[tk]||{},h='',lvls=[];
+  var last=parseFloat(q.last)||0;if(!last)return'';
+  if(q.vwap){var v=parseFloat(q.vwap);if(v>0){var d=((last-v)/v*100);var c=d>0?'g':d<-0.3?'r':'y';lvls.push('<span class="'+c+'">VWAP '+v.toFixed(2)+' <span class="dim">('+(d>0?'+':'')+d.toFixed(1)+'%)</span></span>');}}
+  if(q.ema9){var v=parseFloat(q.ema9);if(v>0)lvls.push('<span class="dim">9e '+v.toFixed(2)+'</span>');}
+  if(q.ema20){var v=parseFloat(q.ema20);if(v>0)lvls.push('<span class="dim">20e '+v.toFixed(2)+'</span>');}
+  if(q.orHi&&q.orLo){var hi=parseFloat(q.orHi),lo=parseFloat(q.orLo);if(hi>0&&lo>0)lvls.push('<span class="dim">OR '+lo.toFixed(2)+'–'+hi.toFixed(2)+'</span>');}
+  if(!lvls.length)return'';
+  return'<div style="font-size:10px;margin-top:2px;color:#8b949e">📐 '+lvls.join(' · ')+'</div>';
+}
 function tA(ep){if(!ep)return'';var s=Math.floor(Date.now()/1000)-ep;if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d'}
 function hc(v){if(v>=2)return'hm-hot2';if(v>=.5)return'hm-hot1';if(v>-.5)return'hm-flat';if(v>-1.5)return'hm-cold1';if(v>-2.5)return'hm-cold2';return'hm-cold3'}
 function bc(s){var n=parseFloat(s);return n>=9.5?'#00C853':n>=3?'#2196F3':n>=-3?'#FF9800':'#F44336'}
@@ -752,6 +762,7 @@ function rInv(d){
     if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
     if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
     if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+    h+=levelsHtml(etf.sym);
     // Row 5: when to use
     if(info.when)h+='<div style="font-size:11px;margin-top:3px;color:#7d8590">📋 <span style="color:#c9d1d9">When:</span> '+e(info.when)+'</div>';
     // Row 6: signal
@@ -1040,6 +1051,7 @@ function posCard(p,alert,areteInfo){
   if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
   if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
   if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+  h+=levelsHtml(tk);
   // Arete cross-reference
   if(areteInfo){
     h+='<div style="margin-top:4px;padding:4px 8px;background:#1f1a0f;border:1px solid #9e6a03;border-radius:4px;font-size:11px">';
@@ -1218,6 +1230,7 @@ function areteCard(p){
   if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
   if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
   if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+  h+=levelsHtml(tk);
   // Row 6: news
   h+=posNewsHtml(tk);
   // Row 7: Bias signal summary
@@ -1348,6 +1361,7 @@ function rAreteBook(d){
         if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
         if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
         if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+        h+=levelsHtml(tk);
         // Row 3: confluence setup if present
         if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
         // Row 4: news
@@ -1450,6 +1464,7 @@ function rWatching(d){
     if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
     if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
     if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+    h+=levelsHtml(tk);
     // Row 3: setup + quality from confluence
     if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
     // Row 4: options data
@@ -1836,6 +1851,7 @@ function rFocused(d){
     if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');if(q.rsF&&q.rsF!=='—')_fl.push('RS');if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
     if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
     if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+    h+=levelsHtml(tk);
     // Setup + quality
     if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
     // Options
