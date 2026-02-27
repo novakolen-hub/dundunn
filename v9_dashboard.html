@@ -109,6 +109,7 @@
 <div id="sInst"></div>
 <div id="sNews"></div>
 <hr class="divider">
+<div id="sFocused"></div>
 <div id="sWatching"></div>
 <div id="sAreteBook"></div>
 <div id="sSetups"></div>
@@ -151,7 +152,7 @@ function poll(){
   }).catch(function(err){_e++;var ld=$('loader');if(ld)ld.innerHTML='<div style="color:#f85149;padding:16px;font-size:13px">❌ '+err.message+'<br><br><span class="dim">Check: did you deploy a NEW version? The endpoint URL may have changed.<br>Current EP: '+EP.substring(0,60)+'...</span></div>';$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
 }
 
-function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();}
+function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();}
 function buildTkNews(d){
   _tkNews={};var news=d.news||[];var now=Date.now()/1000;
   for(var i=0;i<news.length;i++){var n=news[i];if(n.time&&(now-n.time)>604800)continue;var nt=nTags(n.headline||'',n.related||'');
@@ -194,7 +195,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv'];
+  var keys=['sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
@@ -1710,6 +1711,114 @@ function rInst(d){
 function rCoach(d){
   // Bottom Line & Daily Edge now render inside MY BOOK (PIN-locked)
   $('sCoach').innerHTML='';
+}
+function rFocused(d){
+  if(!_focusedTickers||!_focusedTickers.size){$('sFocused').innerHTML='';return}
+  var tks=Array.from(_focusedTickers);
+  // Build source map: where does each ticker come from?
+  var posMap={};(d.positions||[]).forEach(function(p){posMap[p.ticker||p.sym]=p;});
+  var areteMap={};(d.aretePositions||[]).forEach(function(p){areteMap[p.ticker]=p;});
+  var myWatch=new Set(d.myWatching||[]);
+  var areteWatch=new Set((d.areteWatching||[]).map(function(w){return w.ticker||w;}));
+  var cm_map={};if(d.confluence){d.confluence.forEach(function(c){if(c.ticker)cm_map[c.ticker]=c;});}
+  // Opus watching notes
+  var opusMap={};
+  var nar=d.dashboardNarrative||'',sec=parseN(nar);
+  var wn=gN(sec,['WATCHING NOTES']);
+  if(wn){wn.split('\n').forEach(function(ln){
+    ln=ln.trim();if(!ln||ln.indexOf('—')<0)return;
+    var parts=ln.split('—'),tk=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim().toUpperCase();
+    var rest=(parts[1]||'').trim(),segs=rest.split('|');
+    opusMap[tk]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};
+  });}
+  var isCol=false;try{var _v=localStorage.getItem('sec_col_focused');if(_v!==null)isCol=_v==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none;color:#0969da" onclick="toggleSec(\'focused\')"><span id="secArrow_focused" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 🔍 Focused <span class="dim" style="font-size:12px;font-weight:400">('+tks.length+')</span> <span style="font-size:10px;color:#7d8590;font-weight:400;cursor:pointer" onclick="event.stopPropagation();_focusedTickers.clear();saveFocused();R(_lastD);">clear all</span></h2>';
+  h+='<div id="secBody_focused" style="'+(isCol?'display:none':'')+'">';
+  for(var i=0;i<tks.length;i++){
+    var tk=tks[i],q=_tq[tk]||{},op=_to[tk]||{},cm=cm_map[tk]||{},opus=opusMap[tk]||{};
+    var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
+    var bCol=chgN>0.05?'#238636':chgN<-0.05?'#da3633':'#30363d';
+    // Source tag
+    var src=[];
+    if(posMap[tk])src.push('<span class="tag" style="background:#238636;color:#fff;border:0;font-size:9px">POSITION</span>');
+    if(areteMap[tk])src.push('<span class="tag" style="background:#1f6feb;color:#fff;border:0;font-size:9px">ARETE</span>');
+    if(myWatch.has(tk))src.push('<span class="tag" style="background:#6e40c9;color:#fff;border:0;font-size:9px">WATCHING</span>');
+    if(areteWatch.has(tk))src.push('<span class="tag" style="background:#1f6feb33;color:#58a6ff;border:1px solid #1f6feb;font-size:9px">ARETE WATCH</span>');
+    if(!src.length)src.push('<span class="tag" style="font-size:9px">TICKER</span>');
+    h+='<div class="pos-block card-focus" style="border-left:3px solid '+bCol+';padding:12px!important;margin-bottom:4px">';
+    // Row 1: ticker, source tags, price
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">';
+    h+='<span>'+tkLink(tk,1)+' '+src.join(' ');
+    if(cm.conf){var ccc=cm.conf>=28?'g':cm.conf>=24?'y':'dim';h+=' <span class="mono '+ccc+'" style="font-size:11px" title="Confluence">⚡'+cm.conf.toFixed(0)+'</span>';}
+    if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
+    h+='</span>';
+    h+='<span class="mono" style="font-size:13px">';
+    if(q.last)h+=e(q.last)+' ';
+    if(q.chg)h+=pct(q.chg);
+    h+='</span></div>';
+    // Position info if held
+    var pos=posMap[tk]||areteMap[tk];
+    if(pos){
+      var pnl=pos.pnl||pos.unrealPnl||'';var pnlN=parseFloat(String(pnl).replace(/[$,]/g,''));
+      var pc=!isNaN(pnlN)?(pnlN>=0?'g':'r'):'dim';
+      var info=[];
+      if(pos.qty)info.push(pos.qty+' shs');
+      if(pos.avgCost)info.push('avg $'+parseFloat(pos.avgCost).toFixed(2));
+      if(pnl)info.push('<span class="'+pc+'">P/L '+e(String(pnl))+'</span>');
+      if(info.length)h+='<div style="font-size:11px;margin-top:2px">'+info.join(' · ')+'</div>';
+    }
+    // Enriched data row
+    var eH='';
+    if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
+    if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
+    if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
+    if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
+    var _fl=[];
+    if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');if(q.rsF&&q.rsF!=='—')_fl.push('RS');if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
+    if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
+    if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+    // Setup + quality
+    if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
+    // Options
+    var oH='';
+    if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';
+    if(oH)h+='<div style="font-size:11px;margin-top:2px">📊 '+oH+'</div>';
+    // Opus analysis
+    if(opus.bias||opus.levels||opus.thesis){
+      var biasUp=opus.bias.toUpperCase();
+      var obCol=biasUp.indexOf('LONG')>=0?'#238636':biasUp.indexOf('SHORT')>=0?'#da3633':'#7d8590';
+      var obIcon=biasUp.indexOf('LONG')>=0?'🟢':biasUp.indexOf('SHORT')>=0?'🔴':'⚪';
+      h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid #30363d;border-radius:4px;font-size:11px">';
+      if(opus.bias)h+='<span style="color:'+obCol+'">'+obIcon+' '+e(opus.bias)+'</span>';
+      if(opus.levels)h+=' <span style="color:#58a6ff">📍 '+e(opus.levels)+'</span>';
+      if(opus.thesis)h+='<div style="color:#c9d1d9;margin-top:2px">'+e(opus.thesis)+'</div>';
+      h+='</div>';
+    }
+    // News
+    h+=posNewsHtml(tk);
+    // Bias signal
+    var bull=0,bear=0,reasons=[];
+    var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;var _rv=q.rvol?parseFloat(q.rvol):NaN;var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
+    if(!isNaN(_rs)){if(_rs>1){bull++;reasons.push('RS+');}else if(_rs<-1){bear++;reasons.push('RS−');}}
+    if(!isNaN(_rv)&&_rv>=1.5){bull++;reasons.push('RVOL '+_rv.toFixed(1)+'x');}
+    if(!isNaN(_gp)){if(_gp>0.3){bull++;reasons.push('gap↑');}else if(_gp<-0.3){bear++;reasons.push('gap↓');}}
+    if(!isNaN(_w5)){if(_w5>70){bull++;reasons.push('near 52wH');}else if(_w5<30){bear++;reasons.push('near 52wL');}}
+    if(!isNaN(_ed)){if(_ed>0){bull++;reasons.push('>EMA50');}else if(_ed<-2){bear++;reasons.push('<EMA50');}}
+    if(q.vwapF&&q.vwapF!=='—'){bull++;reasons.push('VWAP✓');}if(q.rsF&&q.rsF!=='—'){bull++;reasons.push('RSflag');}
+    if(chgN>0.5){bull++;reasons.push('price↑');}else if(chgN<-0.5){bear++;reasons.push('price↓');}
+    if(bull>0||bear>0){
+      var net=bull-bear;var biasIcon=net>=2?'🟢 ↑':net<=-2?'🔴 ↓':'⚪ →';var biasCol=net>=2?'#238636':net<=-2?'#da3633':'#7d8590';
+      var verd='';if(net>=3)verd='Strong bullish stack';else if(net===2)verd='Leaning bullish';else if(net===1)verd='Slight bullish lean';else if(net===0)verd='Mixed signals';else if(net===-1)verd='Slight bearish lean';else if(net===-2)verd='Leaning bearish';else verd='Strong bearish stack';
+      h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid '+biasCol+';border-radius:4px;font-size:11px">';
+      h+='<span style="font-size:13px">'+biasIcon+'</span> <span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> <span class="dim">'+reasons.join(' · ')+'</span>';
+      h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div></div>';
+    }
+    // Unfocus button
+    h+='<div style="margin-top:6px;text-align:right"><span style="font-size:10px;color:#7d8590;cursor:pointer;border:1px solid #30363d;border-radius:4px;padding:1px 8px" onclick="event.stopPropagation();_focusedTickers.delete(\''+tk+'\');saveFocused();R(_lastD);">✕ unfocus</span></div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  $('sFocused').innerHTML=h;
 }
 function rHidden(d){
   var items=[];
