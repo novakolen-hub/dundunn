@@ -154,11 +154,14 @@ function poll(){
 function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();}
 function buildTkNews(d){
   _tkNews={};var news=d.news||[];var now=Date.now()/1000;
-  for(var i=0;i<news.length;i++){var n=news[i];if(n.time&&(now-n.time)>86400)continue;var nt=nTags(n.headline||'',n.related||'');
-    for(var k=0;k<nt.tickers.length;k++){var tk=nt.tickers[k];if(!_tkNews[tk])_tkNews[tk]=[];if(_tkNews[tk].length<3)_tkNews[tk].push(n);}}
+  for(var i=0;i<news.length;i++){var n=news[i];if(n.time&&(now-n.time)>604800)continue;var nt=nTags(n.headline||'',n.related||'');
+    for(var k=0;k<nt.tickers.length;k++){var tk=nt.tickers[k];if(!_tkNews[tk])_tkNews[tk]=[];if(_tkNews[tk].length<5)_tkNews[tk].push(n);}}
 }
 function posNewsHtml(tk){
-  var tn=_tkNews[tk];if(!tn||!tn.length)return'';
+  var tn=_tkNews[tk]||[];
+  var slug=_icSlugs?_icSlugs[tk]:'';
+  var icUrl=slug?'https://www.investing.com'+slug+'-news':'https://www.investing.com/search/?q='+tk+'&tab=news';
+  if(!tn.length)return'<div style="margin-top:4px;font-size:10px"><a href="'+e(icUrl)+'" target="_blank" class="pos-news-link" style="color:#58a6ff">📰 '+e(tk)+' news on Investing.com →</a></div>';
   var h='<div style="margin-top:4px;border-top:1px solid #1c2333;padding-top:3px">';
   for(var ni=0;ni<tn.length;ni++){var age=tA(tn[ni].time),src=tn[ni].source||tn[ni].feed||'',url=tn[ni].url||'';var isR=readUrls.has(url);
     h+='<div class="pos-news-item" style="font-size:11px;line-height:1.4;margin-top:2px'+(isR?';text-decoration:line-through;opacity:0.4':'')+'">';
@@ -166,6 +169,7 @@ function posNewsHtml(tk){
     h+='<a href="'+e(url)+'" target="_blank" class="pos-news-link" style="color:#79c0ff">'+e(tn[ni].headline)+'</a>';
     h+=' <span style="color:#58a6ff;font-size:9px">'+e(src)+'</span>';
     h+=' <span class="dim" style="font-size:9px">'+age+'</span></div>';}
+  h+='<div style="font-size:10px;margin-top:2px"><a href="'+e(icUrl)+'" target="_blank" class="pos-news-link" style="color:#58a6ff">more on Investing.com →</a></div>';
   return h+'</div>';
 }
 function rTimer(d){var t=d.timerState||d;function cd(s){if(s===undefined||s===null)return'<span class="dim">--</span>';if(s<=0)return'<span class="g">RUN</span>';var m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r;}$('t1m').innerHTML=cd(t.sec1m!==undefined?t.sec1m:d.sec1m);$('t5m').innerHTML=cd(t.sec5m!==undefined?t.sec5m:d.sec5m);$('t30m').innerHTML=cd(t.sec30m!==undefined?t.sec30m:d.sec30m);$('tQ').innerHTML=((d.quotaCount||t.quotaCount||t.fetchCount)||'--')+'<span class="dim" style="font-size:9px">/20K</span>';var cst=d.dashboardCost||'';var cum=d.dashboardCostCum||'';if(cst||cum){var disp=cum?'$'+parseFloat(cum).toFixed(2):cst;$('tCost').innerHTML='<span class="y">'+e(disp)+'</span>';var tip='Last: '+cst;if(d.dashboardTokens)tip+=' ('+d.dashboardTokens+')';if(cum)tip+='\nSession total: $'+parseFloat(cum).toFixed(4);$('tCost').title=tip;}else{$('tCost').innerHTML='<span class="dim">--</span>';}$('tPh').textContent=sL(d.phase)||'--';}
