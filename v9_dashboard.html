@@ -1331,34 +1331,110 @@ function rWatching(d){
   var isCol=true;try{var _v=localStorage.getItem('sec_col_watch');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 👀 Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span></h2>';
   h+='<div id="secBody_watch" style="'+(isCol?'display:none':'')+'">';
+  // Build Opus analysis map from narrative
+  var opusMap={};
   var nar=d.dashboardNarrative||'',sec=parseN(nar);
   var wn=gN(sec,['WATCHING NOTES']);
-  h+='<h3>My Watching ('+mw.length+')</h3>';
   if(wn){
     var wLines=wn.split('\n');
     for(var i=0;i<wLines.length;i++){
       var ln=wLines[i].trim();if(!ln||ln.indexOf('—')<0)continue;
       var parts=ln.split('—');
-      var tk=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim();
+      var tk=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim().toUpperCase();
       var rest=(parts[1]||'').trim();
       var segs=rest.split('|');
-      var bias=(segs[0]||'').trim().toUpperCase();
-      var lvl=(segs[1]||'').trim();
-      var thesis=(segs[2]||'').trim();
-      var bc=bias.indexOf('LONG')>=0?'#0d5e2e':bias.indexOf('SHORT')>=0?'#6e1b1b':'#2a2a3a';
-      var btx=bias.indexOf('LONG')>=0?'🟢':bias.indexOf('SHORT')>=0?'🔴':'⚪';
-      h+='<div style="background:'+bc+';border:1px solid #333;border-radius:8px;padding:10px 12px;margin-bottom:6px">';
-      h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
-      h+=tkLink(tk,1)+qBadge(tk);
-      h+=' <span style="font-size:11px;opacity:0.8">'+btx+' '+e(bias)+'</span>';
-      if(lvl)h+=' <span style="color:#58a6ff;font-size:12px">📍'+e(lvl)+'</span>';
+      opusMap[tk]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};
+    }
+  }
+  // Confluence map
+  var cm_map={};
+  if(d.confluence){for(var ci=0;ci<d.confluence.length;ci++){var cc=d.confluence[ci];if(cc.ticker)cm_map[cc.ticker]=cc;}}
+  for(var i=0;i<mw.length;i++){
+    var tk=mw[i],q=_tq[tk]||{},op=_to[tk]||{},opus=opusMap[tk]||{},cm=cm_map[tk]||{};
+    var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
+    var bCol=chgN>0.05?'#238636':chgN<-0.05?'#da3633':'#30363d';
+    h+='<div class="pos-block" style="border-left:3px solid '+bCol+';padding:8px 10px;margin-bottom:4px">';
+    // Row 1: ticker, price, change, RS, confluence
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<span>'+tkLink(tk,1);
+    if(cm.conf){var ccc=cm.conf>=28?'g':cm.conf>=24?'y':'dim';h+=' <span class="mono '+ccc+'" style="font-size:11px" title="Confluence">⚡'+cm.conf.toFixed(0)+'</span>';}
+    if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
+    h+='</span>';
+    h+='<span class="mono" style="font-size:12px">';
+    if(q.last)h+=e(q.last)+' ';
+    if(q.chg)h+=pct(q.chg);
+    h+='</span></div>';
+    // Row 2: RVOL, gap, 52w, EMA50, flags
+    var eH='';
+    if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
+    if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
+    if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
+    if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
+    var _fl=[];
+    if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');
+    if(q.rsF&&q.rsF!=='—')_fl.push('RS');
+    if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');
+    if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
+    if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
+    if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+    // Row 3: setup + quality from confluence
+    if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
+    // Row 4: options data
+    var oH='';
+    if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';
+    if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';
+    if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';
+    if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';
+    if(oH)h+='<div style="font-size:11px;margin-top:2px">📊 '+oH+'</div>';
+    // Row 5: Opus analysis (bias, levels, thesis) — merged from narrative
+    if(opus.bias||opus.levels||opus.thesis){
+      var biasUp=opus.bias.toUpperCase();
+      var obCol=biasUp.indexOf('LONG')>=0?'#238636':biasUp.indexOf('SHORT')>=0?'#da3633':'#7d8590';
+      var obIcon=biasUp.indexOf('LONG')>=0?'🟢':biasUp.indexOf('SHORT')>=0?'🔴':'⚪';
+      h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid #30363d;border-radius:4px;font-size:11px">';
+      if(opus.bias)h+='<span style="color:'+obCol+'">'+obIcon+' '+e(opus.bias)+'</span>';
+      if(opus.levels)h+=' <span style="color:#58a6ff">📍 '+e(opus.levels)+'</span>';
+      if(opus.thesis)h+='<div style="color:#c9d1d9;margin-top:2px">'+e(opus.thesis)+'</div>';
       h+='</div>';
-      if(thesis)h+='<div style="color:#aaa;font-size:11px;margin-top:4px">'+e(thesis)+'</div>';
-      h+='</div>';}
-  } else {
-    h+='<div class="info-box" style="display:flex;flex-wrap:wrap;gap:6px">';
-    for(var i=0;i<mw.length;i++)h+=tkLink(mw[i])+qBadge(mw[i]);
-    h+='</div>';}
+    }
+    // Row 6: news
+    h+=posNewsHtml(tk);
+    // Row 7: Bias signal
+    var bull=0,bear=0,reasons=[];
+    var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;
+    var _rv=q.rvol?parseFloat(q.rvol):NaN;
+    var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;
+    var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;
+    var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
+    if(!isNaN(_rs)){if(_rs>1){bull++;reasons.push('RS+');}else if(_rs<-1){bear++;reasons.push('RS−');}}
+    if(!isNaN(_rv)&&_rv>=1.5){bull++;reasons.push('RVOL '+_rv.toFixed(1)+'x');}
+    if(!isNaN(_gp)){if(_gp>0.3){bull++;reasons.push('gap↑');}else if(_gp<-0.3){bear++;reasons.push('gap↓');}}
+    if(!isNaN(_w5)){if(_w5>70){bull++;reasons.push('near 52wH');}else if(_w5<30){bear++;reasons.push('near 52wL');}}
+    if(!isNaN(_ed)){if(_ed>0){bull++;reasons.push('>EMA50');}else if(_ed<-2){bear++;reasons.push('<EMA50');}}
+    if(q.vwapF&&q.vwapF!=='—'){bull++;reasons.push('VWAP✓');}
+    if(q.rsF&&q.rsF!=='—'){bull++;reasons.push('RSflag');}
+    if(chgN>0.5){bull++;reasons.push('price↑');}else if(chgN<-0.5){bear++;reasons.push('price↓');}
+    if(bull>0||bear>0){
+      var net=bull-bear;
+      var biasIcon=net>=2?'🟢 ↑':net<=-2?'🔴 ↓':'⚪ →';
+      var biasCol=net>=2?'#238636':net<=-2?'#da3633':'#7d8590';
+      var verd='';
+      if(net>=3)verd='Strong bullish stack — watch for entry';
+      else if(net===2)verd='Leaning bullish — needs catalyst';
+      else if(net===1)verd='Slight bullish lean — be selective';
+      else if(net===0)verd='Mixed signals — wait for clarity';
+      else if(net===-1)verd='Slight bearish lean — caution';
+      else if(net===-2)verd='Leaning bearish — avoid or short setup';
+      else verd='Strong bearish stack — short or avoid';
+      h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid '+biasCol+';border-radius:4px;font-size:11px">';
+      h+='<span style="font-size:13px">'+biasIcon+'</span> ';
+      h+='<span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> ';
+      h+='<span class="dim">'+reasons.join(' · ')+'</span>';
+      h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
   h+='</div>';
   $('sWatching').innerHTML=h;
 }
