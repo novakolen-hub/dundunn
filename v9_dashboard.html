@@ -48,7 +48,12 @@
   .score-big{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700}
   .divider{border:0;border-top:1px solid #1c2333;margin:20px 0}
   .footer{text-align:center;color:#30363d;font-size:11px;margin-top:24px;font-family:'JetBrains Mono',monospace}
-  .pos-block{border-bottom:1px solid #161b22;padding:8px 0}.pos-block:last-child{border-bottom:0}
+  .pos-block{border-bottom:1px solid #161b22;padding:8px 0;cursor:pointer;transition:background .15s,border-color .15s}.pos-block:last-child{border-bottom:0}
+  .pos-block.card-focus{background:#e6edf3!important;border-color:#58a6ff!important}
+  .pos-block.card-focus,.pos-block.card-focus *{color:#0d1117!important}
+  .pos-block.card-focus .dim,.pos-block.card-focus .inst-hint{color:#3b4045!important}
+  .pos-block.card-focus .g{color:#116329!important}.pos-block.card-focus .r{color:#a40e26!important}.pos-block.card-focus .y{color:#7a5b00!important}.pos-block.card-focus .b{color:#0550ae!important}
+  .pos-block.card-focus .tag{background:#d0d7de!important;color:#0d1117!important;border-color:#8b949e!important}
   .gauge{display:flex;align-items:center;gap:8px;margin:4px 0}
   .gauge-bar{flex:1;height:8px;background:#161b22;border-radius:4px;overflow:hidden}
   .gauge-fill{height:100%;border-radius:4px}
@@ -1764,6 +1769,14 @@ poll=function(){
 };
 poll();setInterval(poll,60000);
 window.addEventListener('scroll',function(){var b=document.getElementById('backToTop');if(b)b.style.display=window.scrollY>300?'flex':'none';});
+// Card focus: click any pos-block to highlight it white, click again to unhighlight
+document.addEventListener('click',function(ev){
+  var card=ev.target.closest('.pos-block');
+  if(!card)return;
+  // Don't toggle if clicking a link, button, or toggle
+  if(ev.target.closest('a,button,.tag'))return;
+  card.classList.toggle('card-focus');
+});
 </script>
 </body>
 </html>
