@@ -1275,14 +1275,14 @@ function rAreteBook(d){
     var colKey='arete_col_'+k;var isCol=true;try{var _sv=localStorage.getItem(colKey);if(_sv!==null)isCol=_sv==='1';}catch(e){}
     h+='<h3 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\''+k+'\')">';
     h+='<span id="areteArrow_'+k+'" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> ';
-    h+=e(k)+' ('+groups[k].length+')</h3>';
+    h+=e(k)+' ('+groups[k].length+')'+sortPill()+'</h3>';
     h+='<div id="areteBody_'+k+'" class="info-box" style="border-color:#9e6a03;'+(isCol?'display:none':'')+'">';
     for(var i=0;i<groups[k].length;i++)h+=areteCard(groups[k][i]);h+='</div>';}
   if(aw.length){
     var awCol=true;try{var _awv=localStorage.getItem('arete_col_Watching');if(_awv!==null)awCol=_awv==='1';}catch(e){}
     h+='<h3 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\'Watching\')">';
     h+='<span id="areteArrow_Watching" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(awCol?'-90':'0')+'deg)">▼</span> ';
-    h+='Watching ('+aw.length+')</h3>';
+    h+='Watching ('+aw.length+')'+sortPill()+'</h3>';
     h+='<div id="areteBody_Watching" style="'+(awCol?'display:none':'')+'">';
     // Build confluence lookup from watchlistTop
     var _confMap={};var wt=d.watchlistTop||[];
