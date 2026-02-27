@@ -1101,7 +1101,7 @@ function rBook(d){
   var bookCol=false;try{bookCol=localStorage.getItem('book_col_outer')==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleBookOuter()">';
   h+='<span id="bookArrow" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(bookCol&&_bookUnlocked?'-90':'0')+'deg)">▼</span> ';
-  h+='<span class="tag tag-live">YOUR BOOK</span> Positions ('+(pos.length+paper.length)+')';
+  h+='<span class="tag tag-live">YOUR BOOK</span> Positions ('+(pos.length+paper.length)+')'+sortPill();
   if(d.positionsUpdated)h+=' <span class="dim" style="font-size:10px;font-weight:400">Updated '+e(d.positionsUpdated)+'</span>';
   h+='</h2>';
   if(!pos.length&&!paper.length){h+='<div class="info-box"><p class="dim">No positions loaded.</p></div>';$('sBook').innerHTML=h;return}
@@ -1264,7 +1264,7 @@ function rAreteBook(d){
   var outerCol=true;try{var _ov=localStorage.getItem('arete_col_outer');if(_ov!==null)outerCol=_ov==='1';}catch(e){}
   var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\'outer\')">';
   h+='<span id="areteArrow_outer" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(outerCol?'-90':'0')+'deg)">▼</span> ';
-  h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book ('+totalCount+')';
+  h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book ('+totalCount+')'+sortPill();
   if(d.areteUpdated)h+=' <span class="dim" style="font-size:10px;font-weight:400">Updated '+e(d.areteUpdated)+'</span>';
   h+='</h2>';
   h+='<div id="areteBody_outer" style="'+(outerCol?'display:none':'')+'">';
@@ -1516,7 +1516,7 @@ function rSetups(d){
   var nar=d.dashboardNarrative||'',sec=parseN(nar),ts=gN(sec,['TOP SETUPS','SETUPS','WATCHLIST','SETUPS & WATCHLIST','ACTIONABLE','TRADE IDEAS','OPPORTUNITIES']);
   if(!w.length&&!ts){$('sSetups').innerHTML='';return}
   var isCol=true;try{var _v=localStorage.getItem('sec_col_setups');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Setups & Watchlist</h2>';
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Setups & Watchlist'+sortPill()+'</h2>';
   h+='<div id="secBody_setups" style="'+(isCol?'display:none':'')+'">';
   // Opus narrative first
   if(ts)h+='<div class="alert-box">'+fmt(ts)+'</div>';
@@ -1791,7 +1791,7 @@ function rFocused(d){
     opusMap[tk]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};
   });}
   var isCol=false;try{var _v=localStorage.getItem('sec_col_focused');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none;color:#0969da" onclick="toggleSec(\'focused\')"><span id="secArrow_focused" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 🔍 Focused <span class="dim" style="font-size:12px;font-weight:400">('+tks.length+')</span> <span style="font-size:10px;color:#7d8590;font-weight:400;cursor:pointer" onclick="event.stopPropagation();_focusedTickers.clear();saveFocused();R(_lastD);">clear all</span></h2>';
+  var h='<h2 style="cursor:pointer;user-select:none;color:#0969da" onclick="toggleSec(\'focused\')"><span id="secArrow_focused" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 🔍 Focused <span class="dim" style="font-size:12px;font-weight:400">('+tks.length+')</span>'+sortPill()+' <span style="font-size:10px;color:#7d8590;font-weight:400;cursor:pointer" onclick="event.stopPropagation();_focusedTickers.clear();saveFocused();R(_lastD);">clear all</span></h2>';
   h+='<div id="secBody_focused" style="'+(isCol?'display:none':'')+'">';
   for(var i=0;i<tks.length;i++){
     var tk=tks[i],q=_tq[tk]||{},op=_to[tk]||{},cm=cm_map[tk]||{},opus=opusMap[tk]||{};
