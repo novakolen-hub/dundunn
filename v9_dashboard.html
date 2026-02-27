@@ -624,7 +624,22 @@ function rStory(d){
   var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
   var h='<h2>The Story</h2><p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
   var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
+  // Retrospective: first check current narrative for explicit retro section
   var retro=gN(sec,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
+  // If no explicit retro but we have a first-of-day narrative that differs from current, extract its story
+  if(!retro && d.firstNarrativeOfDay && d.firstNarrativeOfDay !== nar){
+    var firstSec=parseN(d.firstNarrativeOfDay);
+    var firstStory=gN(firstSec,['THE STORY','STORY','MARKET STORY']);
+    if(firstStory){
+      retro=firstStory;
+      var firstTs=d.firstNarrativeTs||'';
+      var firstSess=d.firstNarrativeSession||'';
+      h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6">';
+      h+='<p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">📋 First Story of Day <span class="dim" style="font-weight:400;font-size:10px">'+e(firstTs)+(firstSess?' · '+e(firstSess):'')+'</span></p>';
+      h+=fmt(retro)+'</div>';
+      retro=null; // already rendered
+    }
+  }
   if(retro)h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6"><p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">📋 Previous Story Update</p>'+fmt(retro)+'</div>';
   $('sStory').innerHTML=h;
 }
@@ -1265,9 +1280,20 @@ function rInst(d){
   var vol=ip.data.vol_regime||{},fg=ip.data.fear_greed||{},
       pc=(ip.data.put_call&&ip.data.put_call.cboe)?ip.data.put_call.cboe:{},
       nm=ip.data.aaii||{},nar=ip.narrative||{};
+  var prev=d.instPulsePrev||{};
   var pTs=ip.data.timestamp?new Date(ip.data.timestamp):null;
   var tsStr=pTs?pTs.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Phoenix'}):'';
-  // gauge helper: value, min, max, thresholds [{v,c,l}], unit
+  // Delta helper: returns styled arrow + change string
+  function delta(cur,prevVal,unit,invert){
+    if(cur==null||prevVal==null)return'';
+    var diff=parseFloat(cur)-parseFloat(prevVal);
+    if(isNaN(diff)||Math.abs(diff)<0.01)return'';
+    // invert: for VIX/Put-Call, up is bad (red), down is good (green)
+    var col=invert?(diff>0?'#f85149':'#3fb950'):(diff>0?'#3fb950':'#f85149');
+    var arrow=diff>0?'▲':'▼';
+    return' <span style="font-size:9px;color:'+col+'" title="vs yesterday">'+arrow+(diff>0?'+':'')+diff.toFixed(1)+(unit||'')+'</span>';
+  }
+  // gauge helper
   function gauge(val,min,max,thresholds,unit){
     if(val===null||val===undefined)return'<span class="dim">N/A</span>';
     var pct=Math.max(0,Math.min(100,((val-min)/(max-min))*100));
@@ -1288,16 +1314,26 @@ function rInst(d){
   h+='<p class="dim" style="font-size:11px;margin-top:-4px;margin-bottom:10px">What big money is doing — positioning, flows, sentiment, and credit stress.';
   if(tsStr)h+=' <span class="mono" style="font-size:10px">Updated '+tsStr+'</span>';
   h+='</p>';
+  // ── COMBINED READ (moved to top) ──
+  if(nar.combined_read||nar.trading_implication){
+    h+='<div class="inst-box" style="border-left-color:#58a6ff">';
+    h+='<p style="color:#58a6ff;font-weight:700;font-size:13px;margin-bottom:6px">🔗 Combined Read</p>';
+    if(nar.combined_read)h+='<p style="font-size:13px;color:#c9d1d9;line-height:1.6">'+e(nar.combined_read)+'</p>';
+    if(nar.trading_implication){
+      h+='<div style="background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 14px;margin-top:8px">';
+      h+='<span style="color:#d29922;font-weight:700;font-size:12px">→ TODAY: </span>';
+      h+='<span style="font-size:12px;color:#e6edf3">'+e(nar.trading_implication)+'</span></div>';}
+    h+='</div>';}
   // VOL REGIME
   h+='<div class="inst-box">';
   h+='<p style="color:#d29922;font-weight:700;font-size:13px;margin-bottom:8px">📈 Vol Regime: <span style="color:'+
     (vol.regime==='HIGH_FEAR'||vol.regime==='ELEVATED'?'#f85149':vol.regime==='COMPLACENT'?'#3fb950':'#e3b341')+'">'+
     (vol.regime||'UNKNOWN').replace(/_/g,' ')+'</span></p>';
   h+='<div class="inst-grid">';
-  h+='<div class="inst-item"><span class="inst-lbl">VIX</span>'+gauge(vol.vix,0,50,vixT,'')+'</div>';
-  h+='<div class="inst-item"><span class="inst-lbl">SPY IVR</span>'+gauge(vol.spy_ivr,0,100,ivrT,'%')+'</div>';
-  h+='<div class="inst-item"><span class="inst-lbl">QQQ IVR</span>'+gauge(vol.qqq_ivr,0,100,ivrT,'%')+'</div>';
-  h+='<div class="inst-item"><span class="inst-lbl">IWM IVR</span>'+gauge(vol.iwm_ivr,0,100,ivrT,'%')+'</div>';
+  h+='<div class="inst-item"><span class="inst-lbl">VIX'+delta(vol.vix,prev.vix,'',true)+'</span>'+gauge(vol.vix,0,50,vixT,'')+'</div>';
+  h+='<div class="inst-item"><span class="inst-lbl">SPY IVR'+delta(vol.spy_ivr,prev.spy_ivr,'%',true)+'</span>'+gauge(vol.spy_ivr,0,100,ivrT,'%')+'</div>';
+  h+='<div class="inst-item"><span class="inst-lbl">QQQ IVR'+delta(vol.qqq_ivr,prev.qqq_ivr,'%',true)+'</span>'+gauge(vol.qqq_ivr,0,100,ivrT,'%')+'</div>';
+  h+='<div class="inst-item"><span class="inst-lbl">IWM IVR'+delta(vol.iwm_ivr,prev.iwm_ivr,'%',true)+'</span>'+gauge(vol.iwm_ivr,0,100,ivrT,'%')+'</div>';
   h+='</div>';
   if(nar.vol_context){h+='<p style="font-size:12px;color:#c9d1d9;margin-top:10px;line-height:1.6">'+e(nar.vol_context)+'</p>';}
   h+=learnBox('Learn: IV Rank & Vol Regime',
@@ -1389,11 +1425,11 @@ function rInst(d){
   // Fear & Greed gauge
   var fgScore=fg.score!=null?parseFloat(fg.score):null;
   h+='<div class="inst-grid">';
-  h+='<div class="inst-item"><span class="inst-lbl">Fear & Greed Index</span>'+gauge(fgScore,0,100,fgT,'')+'<span class="inst-hint">'+(fg.rating||fg.zone||'')+'</span></div>';
+  h+='<div class="inst-item"><span class="inst-lbl">Fear & Greed Index'+delta(fgScore,prev.fg_score,'',false)+'</span>'+gauge(fgScore,0,100,fgT,'')+'<span class="inst-hint">'+(fg.rating||fg.zone||'')+'</span></div>';
   // NAAIM
   var naaimVal=nm.exposure!=null?parseFloat(nm.exposure):null;
   var naaimCol=naaimVal==null?'#7d8590':naaimVal>80?'#3fb950':naaimVal<40?'#f85149':'#e3b341';
-  h+='<div class="inst-item"><span class="inst-lbl">NAAIM Exposure</span>';
+  h+='<div class="inst-item"><span class="inst-lbl">NAAIM Exposure'+delta(naaimVal,prev.naaim,'%',false)+'</span>';
   h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0">';
   h+='<span style="font-size:16px;font-weight:700;color:'+naaimCol+'">'+(naaimVal!=null?naaimVal.toFixed(1)+'%':'N/A')+'</span>';
   h+='<span style="font-size:10px;color:#7d8590">'+(nm.sentiment||'')+'</span></div>';
@@ -1403,7 +1439,7 @@ function rInst(d){
   var pcVal=pc.total_pc!=null?parseFloat(pc.total_pc):null;
   var pcCol=pcVal==null?'#7d8590':pcVal>1.1?'#f85149':pcVal<0.7?'#3fb950':'#e3b341';
   h+='<div style="display:flex;align-items:center;gap:12px;margin:10px 0 6px">';
-  h+='<span class="inst-lbl" style="min-width:80px">SPY Put/Call</span>';
+  h+='<span class="inst-lbl" style="min-width:80px">SPY Put/Call'+delta(pcVal,prev.put_call,'',true)+'</span>';
   h+='<span style="font-size:16px;font-weight:700;color:'+pcCol+'">'+(pcVal!=null?pcVal.toFixed(2):'N/A')+'</span>';
   h+='<span style="font-size:11px;color:#7d8590">'+(pc.sentiment||'')+' | Calls:'+(pc.call_vol!=null?pc.call_vol.toLocaleString():'?')+' Puts:'+(pc.put_vol!=null?pc.put_vol.toLocaleString():'?')+'</span>';
   h+='</div>';
@@ -1413,16 +1449,7 @@ function rInst(d){
     '<p><b style="color:#c9d1d9">Danger zone:</b> When BOTH retail (F&G >75) and pros (NAAIM >100%) are euphoric, positioning is crowded. Mean reversion risk is high.</p>'+
     '<p><b style="color:#c9d1d9">V9 Connection:</b> Sentiment doesn\'t override breadth — you still follow the gameplan. But extreme fear + strong breadth = lean aggressive on A/B setups. Extreme greed + weakening breadth = tighten stops, take profits faster.</p>');
   h+='</div>';
-  // COMBINED READ
-  if(nar.combined_read||nar.trading_implication){
-    h+='<div class="inst-box" style="border-left-color:#58a6ff">';
-    h+='<p style="color:#58a6ff;font-weight:700;font-size:13px;margin-bottom:6px">🔗 Combined Read</p>';
-    if(nar.combined_read)h+='<p style="font-size:13px;color:#c9d1d9;line-height:1.6">'+e(nar.combined_read)+'</p>';
-    if(nar.trading_implication){
-      h+='<div style="background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 14px;margin-top:8px">';
-      h+='<span style="color:#d29922;font-weight:700;font-size:12px">→ TODAY: </span>';
-      h+='<span style="font-size:12px;color:#e6edf3">'+e(nar.trading_implication)+'</span></div>';}
-    h+='</div>';}
+  // (Combined Read moved to top of section)
   h+='</div>';
   $('sInst').innerHTML=h;
 }
