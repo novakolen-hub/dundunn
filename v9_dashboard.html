@@ -144,6 +144,46 @@ function sL(p){return{PM:'Pre-Market',OPEN:'Morning',CORE:'Core',AH:'After Hours
 function gS(d,n){return(d.market&&d.market[n])||[]}
 function fS(a,s){for(var i=0;i<a.length;i++)if(a[i].sym===s)return a[i];return null}
 function bCls(s){var n=parseFloat(s);return n>=9.5?'g':n>=3?'y':n>=-3?'dim':'r'}
+// Card sorting
+var _cardSort=(function(){try{return localStorage.getItem('v9_card_sort')||'default';}catch(e){return'default';}})();
+function cycleSort(){
+  var modes=['default','movers','bias','confluence'];
+  var idx=modes.indexOf(_cardSort);
+  _cardSort=modes[(idx+1)%modes.length];
+  try{localStorage.setItem('v9_card_sort',_cardSort);}catch(e){}
+  if(_lastD)R(_lastD);
+}
+function sortLabel(){return{default:'Default ↕',movers:'▲ Movers',bias:'🎯 Bias',confluence:'⚡ Confluence'}[_cardSort]||'Default';}
+function cardBiasScore(tk){
+  var q=_tq[tk]||{},bull=0,bear=0;
+  var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;
+  var _rv=q.rvol?parseFloat(q.rvol):NaN;
+  var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;
+  var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;
+  var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
+  var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
+  if(!isNaN(_rs)){if(_rs>1)bull++;else if(_rs<-1)bear++;}
+  if(!isNaN(_rv)&&_rv>=1.5)bull++;
+  if(!isNaN(_gp)){if(_gp>0.3)bull++;else if(_gp<-0.3)bear++;}
+  if(!isNaN(_w5)){if(_w5>70)bull++;else if(_w5<30)bear++;}
+  if(!isNaN(_ed)){if(_ed>0)bull++;else if(_ed<-2)bear++;}
+  if(q.vwapF&&q.vwapF!=='—')bull++;if(q.rsF&&q.rsF!=='—')bull++;
+  if(chgN>0.5)bull++;else if(chgN<-0.5)bear++;
+  return bull-bear;
+}
+function sortTickers(tks,confMap){
+  if(_cardSort==='default')return tks;
+  var arr=tks.slice();
+  if(_cardSort==='movers'){
+    arr.sort(function(a,b){var qa=_tq[a]||{},qb=_tq[b]||{};return Math.abs(parseFloat(String(qb.chg||'0').replace('%','')))-Math.abs(parseFloat(String(qa.chg||'0').replace('%','')));});
+  } else if(_cardSort==='bias'){
+    arr.sort(function(a,b){return Math.abs(cardBiasScore(b))-Math.abs(cardBiasScore(a));});
+  } else if(_cardSort==='confluence'){
+    arr.sort(function(a,b){var ca=confMap[a]?confMap[a].conf||0:0;var cb=confMap[b]?confMap[b].conf||0:0;return cb-ca;});
+  }
+  return arr;
+}
+function sortPill(){return ' <span style="font-size:10px;color:#58a6ff;cursor:pointer;border:1px solid #1f6feb33;border-radius:4px;padding:1px 6px;font-weight:400" onclick="event.stopPropagation();cycleSort();">'+sortLabel()+'</span>';}
 
 function poll(){
   fetch(EP+'?mode=dashboard&t='+Date.now()).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){
@@ -1084,6 +1124,21 @@ function rBook(d){
   // Build Arete cross-reference lookup
   var _areteMap={};
   var arP=d.aretePositions||[];for(var ai=0;ai<arP.length;ai++){if(arP[ai].ticker)_areteMap[arP[ai].ticker]=arP[ai];}
+  // Position heat strip
+  if(pos.length>1){
+    var totalVal=0;for(var hi=0;hi<pos.length;hi++)totalVal+=Math.abs(parseFloat(String(pos[hi].mktVal||'0').replace(/[$,]/g,'')))||1;
+    bc+='<div style="display:flex;border-radius:4px;overflow:hidden;height:22px;margin-bottom:8px;border:1px solid #21262d">';
+    for(var hi=0;hi<pos.length;hi++){
+      var hp=pos[hi];
+      var hVal=Math.abs(parseFloat(String(hp.mktVal||'0').replace(/[$,]/g,'')))||1;
+      var hPct=Math.max(hVal/totalVal*100,4);
+      var hPL=parseFloat(String(hp.totalPLPct||hp.dayPLPct||'0').replace(/[%$,]/g,''))||0;
+      var hBg=hPL>2?'#238636':hPL>0?'#2ea04380':hPL>-2?'#da363380':'#da3633';
+      bc+='<div style="width:'+hPct.toFixed(1)+'%;background:'+hBg+';display:flex;align-items:center;justify-content:center;overflow:hidden;border-right:1px solid #0b0e14" title="'+e(hp.ticker)+' '+e(hp.totalPLPct||hp.dayPLPct||'')+'">';
+      bc+='<span style="font-size:9px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5);white-space:nowrap">'+e(hp.ticker)+'</span></div>';
+    }
+    bc+='</div>';
+  }
   if(pos.length){bc+='<div class="info-box">';for(var i=0;i<pos.length;i++)bc+=posCard(pos[i],alertMap[pos[i].ticker]||null,_areteMap[pos[i].ticker]||null);bc+='</div>';}
   if(paper.length){bc+='<h3 style="margin-top:12px">📋 Paper Trades ('+paper.length+')</h3><div class="info-box" style="border-color:#30363d">';for(var i=0;i<paper.length;i++)bc+=posCard(paper[i],null,_areteMap[paper[i].ticker]||null);bc+='</div>';}
   else{bc+='<h3 style="margin-top:12px">📋 Paper Trades</h3><div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:12px">No paper trades active.</p></div>';}
@@ -1232,6 +1287,8 @@ function rAreteBook(d){
     // Build confluence lookup from watchlistTop
     var _confMap={};var wt=d.watchlistTop||[];
     for(var ci=0;ci<wt.length;ci++){if(wt[ci].ticker)_confMap[wt[ci].ticker]={conf:wt[ci].confluence,qual:wt[ci].quality,setup:wt[ci].setup,sect:wt[ci].sector};}
+    // Sort tickers before grouping
+    if(_cardSort!=='default')aw=sortTickers(aw,_confMap);
     // Group by sector
     var secGroups={},secOrder=[];
     for(var i=0;i<aw.length;i++){var tk=aw[i];var sec=_SEC[tk]||(_confMap[tk]&&_confMap[tk].sect?_confMap[tk].sect:'')||'Other';
@@ -1343,7 +1400,7 @@ function rWatching(d){
   var mw=d.myWatching||[];
   if(!mw.length){$('sWatching').innerHTML='';return}
   var isCol=true;try{var _v=localStorage.getItem('sec_col_watch');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 👀 Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span></h2>';
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 👀 Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span>'+sortPill()+'</h2>';
   h+='<div id="secBody_watch" style="'+(isCol?'display:none':'')+'">';
   // Build Opus analysis map from narrative
   var opusMap={};
@@ -1363,6 +1420,8 @@ function rWatching(d){
   // Confluence map
   var cm_map={};
   if(d.confluence){for(var ci=0;ci<d.confluence.length;ci++){var cc=d.confluence[ci];if(cc.ticker)cm_map[cc.ticker]=cc;}}
+  // Sort tickers
+  mw=sortTickers(mw,cm_map);
   for(var i=0;i<mw.length;i++){
     var tk=mw[i],q=_tq[tk]||{},op=_to[tk]||{},opus=opusMap[tk]||{},cm=cm_map[tk]||{};
     var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
