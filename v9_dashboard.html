@@ -130,7 +130,7 @@ var _tq={};
 var _to={};
 var _tkNews={};
 var _lastD={};
-function tkLink(tk,lg){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="_blank" title="TradingView"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk"'+(lg?' style="font-size:15px"':'')+'>'+e(tk)+'</a></span>';}
+function tkLink(tk,lg){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="_blank" title="TradingView"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk" data-tk="'+e(tk)+'"'+(lg?' style="font-size:15px"':'')+'>'+e(tk)+'</a></span>';}
 function pct(v){var s=String(v||''),n=parseFloat(s.replace('%',''));if(isNaN(n))return'<span class="dim">—</span>';if(Math.abs(n)<0.5&&s.indexOf('%')<0)n*=100;var c=n>0.01?'g':n<-0.01?'r':'dim';return'<span class="'+c+'">'+(n>0?'+':'')+n.toFixed(2)+'%</span>'}
 function pc(v){var n=parseFloat(String(v).replace(/[$,+]/g,''));return n>0?'g':n<0?'r':'dim'}
 function sd(s){return String(s||'').replace(/^\$/,'')}
@@ -151,7 +151,7 @@ function poll(){
   }).catch(function(err){_e++;var ld=$('loader');if(ld)ld.innerHTML='<div style="color:#f85149;padding:16px;font-size:13px">❌ '+err.message+'<br><br><span class="dim">Check: did you deploy a NEW version? The endpoint URL may have changed.<br>Current EP: '+EP.substring(0,60)+'...</span></div>';$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
 }
 
-function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();}
+function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();}
 function buildTkNews(d){
   _tkNews={};var news=d.news||[];var now=Date.now()/1000;
   for(var i=0;i<news.length;i++){var n=news[i];if(n.time&&(now-n.time)>604800)continue;var nt=nTags(n.headline||'',n.related||'');
@@ -1778,12 +1778,24 @@ poll=function(){
 poll();setInterval(poll,60000);
 window.addEventListener('scroll',function(){var b=document.getElementById('backToTop');if(b)b.style.display=window.scrollY>300?'flex':'none';});
 // Card focus: click any pos-block to highlight it white, click again to unhighlight
+var _focusedTickers=(function(){try{var s=localStorage.getItem('v9_card_focus');return s?new Set(JSON.parse(s)):new Set();}catch(e){return new Set();}})();
+function saveFocused(){try{localStorage.setItem('v9_card_focus',JSON.stringify(Array.from(_focusedTickers)));}catch(e){}}
+function reapplyFocus(){
+  document.querySelectorAll('.pos-block').forEach(function(card){
+    var link=card.querySelector('a[data-tk]');
+    if(link&&_focusedTickers.has(link.getAttribute('data-tk')))card.classList.add('card-focus');
+  });
+}
 document.addEventListener('click',function(ev){
   var card=ev.target.closest('.pos-block');
   if(!card)return;
-  // Don't toggle if clicking a link, button, or toggle
-  if(ev.target.closest('a,button,.tag'))return;
+  if(ev.target.closest('a,button'))return;
+  var link=card.querySelector('a[data-tk]');
+  if(!link)return;
+  var tk=link.getAttribute('data-tk');
   card.classList.toggle('card-focus');
+  if(card.classList.contains('card-focus')){_focusedTickers.add(tk);}else{_focusedTickers.delete(tk);}
+  saveFocused();
 });
 </script>
 </body>
