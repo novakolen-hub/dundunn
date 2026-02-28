@@ -2202,17 +2202,26 @@ function isAZMarketHours(){
   return azMin>=375&&azMin<=975;
 }
 var _offHoursShown=false;
+var _initialFetchDone=false;
 var _origPoll=poll;
 poll=function(){
   if(!isAZMarketHours()){
+    // Always do one initial fetch to load cached data
+    if(!_initialFetchDone){
+      _initialFetchDone=true;
+      _origPoll();
+    }
     if(!_offHoursShown){
       _offHoursShown=true;
-      var st=$('st');if(st)st.textContent='Off-Hours';
-      var pl=$('pl');if(pl)pl.className='pulse pulse-off';
+      setTimeout(function(){
+        var st=$('st');if(st)st.textContent='Off-Hours (cached)';
+        var pl=$('pl');if(pl)pl.className='pulse pulse-off';
+      },3000);
     }
     return;
   }
   _offHoursShown=false;
+  _initialFetchDone=true;
   _origPoll();
 };
 poll();setInterval(poll,60000);
