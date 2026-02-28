@@ -471,8 +471,9 @@ function rGP(d){
   h+='</div>';$('sGP').innerHTML=h;
 }
 
-// ═══ 5-MINUTE BRIEF ═══
-function rBrief(d){
+// ═══ 5-MINUTE BRIEF (hidden) ═══
+function rBrief(d){$('sBrief').innerHTML='';return;
+
   var gp=d.gpLetter||'C',sc=d.breadthScore!=null?parseFloat(d.breadthScore):0;
   var nar=d.dashboardNarrative||'',sec=parseN(nar);
   var ip=d.instPulse?d.instPulse.data:null;
