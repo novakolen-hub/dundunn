@@ -47,6 +47,20 @@
   .tracker-bar{flex:1;border-radius:2px 2px 0 0;min-width:16px;position:relative}
   .score-big{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700}
   .divider{border:0;border-top:1px solid #1c2333;margin:20px 0}
+  .tag-sub{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;font-weight:700;letter-spacing:0.3px}
+  .tag-sub-improving{background:#0d2818;color:#56d364;border:1px solid #238636}
+  .tag-sub-stable{background:#161b22;color:#7d8590;border:1px solid #30363d}
+  .tag-sub-fading{background:#1f1315;color:#ffa198;border:1px solid #f85149}
+  .tag-sub-choppy{background:#1a1a0f;color:#e3b341;border:1px solid #e3b341}
+  .traj-arrow{font-size:14px;margin-left:2px}
+  .traj-up{color:#56d364}.traj-down{color:#f85149}.traj-flat{color:#7d8590}.traj-chop{color:#e3b341}
+  .inplay-card{background:#0f1318;border:1px solid #1c2333;border-radius:6px;padding:8px 12px;margin:4px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .inplay-reason{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .reason-gap{background:#1a0d2e;color:#d2a8ff;border:1px solid #6e40c9}
+  .reason-rvol{background:#0d2818;color:#56d364;border:1px solid #238636}
+  .reason-catalyst{background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03}
+  .reason-newsvol{background:#0a2e15;color:#3fb950;border:1px solid #238636}
+  .q-aplus{color:#56d364}.q-solid{color:#58a6ff}.q-playbook{color:#e3b341}.q-watch{color:#7d8590}.q-skip{color:#484f58}
   .footer{text-align:center;color:#30363d;font-size:11px;margin-top:24px;font-family:'JetBrains Mono',monospace}
   .pos-block{border-bottom:1px solid #161b22;padding:8px 0}.pos-block:last-child{border-bottom:0}
   .gauge{display:flex;align-items:center;gap:8px;margin:4px 0}
@@ -104,6 +118,7 @@
 <div id="sGrowth"></div>
 <div id="sDefense"></div>
 <div id="sStory"></div>
+<div id="sInPlay"></div>
 <div id="sInverse"></div>
 <div id="sEcon"></div>
 <div id="sEarnings"></div>
@@ -149,16 +164,16 @@ function poll(){
 function R(d){
   if(d.pulseMode){
     // Weekend Pulse mode — hide market sections, show pulse
-    var mktDivs=['sGP','sBreadth','sSess','sGrowth','sDefense','sStory','sInverse','sEcon','sEarnings','sInst','sNews','sBook','sAreteBook','sWatching','sSetups','sPortRisk','sRatios','sCoach'];
+    var mktDivs=['sGP','sBreadth','sSess','sGrowth','sDefense','sStory','sInPlay','sInverse','sEcon','sEarnings','sInst','sNews','sBook','sAreteBook','sWatching','sSetups','sPortRisk','sRatios','sCoach'];
     for(var i=0;i<mktDivs.length;i++){var el=$(mktDivs[i]);if(el)el.style.display='none';}
     $('sPulse').style.display='block';
     rPulseHdr(d);rPulseLayout(d);rFoot(d);
   } else {
     // Normal market mode — hide pulse, show market
     $('sPulse').style.display='none';
-    var mktDivs=['sGP','sBreadth','sSess','sGrowth','sDefense','sStory','sInverse','sEcon','sEarnings','sInst','sNews','sBook','sAreteBook','sWatching','sSetups','sPortRisk','sRatios','sCoach'];
+    var mktDivs=['sGP','sBreadth','sSess','sGrowth','sDefense','sStory','sInPlay','sInverse','sEcon','sEarnings','sInst','sNews','sBook','sAreteBook','sWatching','sSetups','sPortRisk','sRatios','sCoach'];
     for(var i=0;i<mktDivs.length;i++){var el=$(mktDivs[i]);if(el)el.style.display='';}
-    rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rBook(d);rAreteBook(d);rWatching(d);rSetups(d);rRisk(d);rRatios(d);rCoach(d);rFoot(d);initSparkTips();initNewsRead();
+    rHdr(d);rGP(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInPlay(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rBook(d);rAreteBook(d);rWatching(d);rSetups(d);rRisk(d);rRatios(d);rCoach(d);rFoot(d);initSparkTips();initNewsRead();
   }
 }
 var readUrls=new Set();
@@ -211,7 +226,8 @@ function initSparkTips(){
 
 function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),mn='Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase);
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>');}
+var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' \u00B7 '+d.gpSubMode.subMode):'';
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' \u00B7 Score: '+(d.breadthScore||'\u2014')+' \u00B7 '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>');}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -220,13 +236,31 @@ var GP_BG={A:'#0d2818',B:'#0d1a2e',C:'#1f1a0f',D:'#1f1315'};
 // ═══ GAMEPLAN — horizontal timeline bar (like TradingView sidebar) ═══
 function rGP(d){
   var gp=d.gpLetter||'C',sc=d.breadthScore||'—';
-  var lab={A:'Hunt Mode · $15-20K',B:'Sniper Mode · $8-12K',C:'Bench Mode · No Trades',D:'Short Mode · Inverse ETFs'};
+  var lab={A:'Hunt Mode · $15-20K',B:'Sniper Mode · $8-12K',C:'Selective · Check Sub-Mode',D:'Short Mode · Inverse ETFs'};
   var col=GP_COLOR[gp]||'#7d8590',bg=GP_BG[gp]||'#161b22';
   var h='<h2>Gameplan</h2><div class="gp-box" style="border-left:3px solid '+col+';border-radius:0 8px 8px 0;padding:12px 14px">';
   // Header row: tag + label
   h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
   h+='<span class="tag tag-gp" style="background:'+bg+';color:'+col+';border:1px solid '+col+'">GP-'+e(gp)+' · '+e(sc)+' pts · '+e(sL(d.phase))+'</span>';
   h+='<span class="white bold" style="font-size:13px">'+e(lab[gp])+'</span></div>';
+  // Sub-mode badge with trajectory
+  var sm=d.gpSubMode;
+  if(sm&&sm.subMode){
+    var traj=sm.trajectory||'Stable';
+    var trajCls='tag-sub-stable',trajArr='\u2192',trajAC='traj-flat';
+    if(traj==='Improving'){trajCls='tag-sub-improving';trajArr='\u25B2';trajAC='traj-up';}
+    else if(traj==='Fading'){trajCls='tag-sub-fading';trajArr='\u25BC';trajAC='traj-down';}
+    else if(traj==='Choppy'){trajCls='tag-sub-choppy';trajArr='\u2194';trajAC='traj-chop';}
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">';
+    h+='<span class="tag-sub '+trajCls+'">'+e(sm.subMode)+'</span>';
+    h+='<span class="traj-arrow '+trajAC+'">'+trajArr+'</span>';
+    if(sm.desc)h+='<span class="dim" style="font-size:12px">'+e(sm.desc)+'</span>';
+    h+='</div>';
+    if(sm.sizingAdj==='reduce')h+='<p class="y" style="font-size:11px;margin-top:4px">\u26A0 Momentum fading \u2014 reduce new entries, tighten stops</p>';
+    else if(sm.sizingAdj==='small')h+='<p style="color:#FF9800;font-size:11px;margin-top:4px">\u25C9 C-Recovery: Tier 1-2 max ($3-6K), select setups only</p>';
+    else if(sm.sizingAdj==='bench')h+='<p class="dim" style="font-size:11px;margin-top:4px">\u25FB Bench or very selective \u2014 no momentum for setups</p>';
+    else if(sm.sizingAdj==='caution')h+='<p class="y" style="font-size:11px;margin-top:4px">\u26A1 Choppy conditions \u2014 standard size but watch closely</p>';
+  }
   // SPY/QQQ/VIX line
   var bn=gS(d,'BENCHMARKS'),spy=fS(bn,'SPY'),qqq=fS(bn,'QQQ'),bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd2,'$VIX');
   var mline='';if(spy)mline+='SPY '+e(spy.val)+' ('+pct(spy.chg)+') · ';if(qqq)mline+='QQQ '+e(qqq.val)+' ('+pct(qqq.chg)+') · ';if(vix)mline+='VIX '+e(vix.val);
@@ -559,6 +593,36 @@ function rStory(d){
   h+='</div>';$('sStory').innerHTML=h;
 }
 
+// ═══ IN PLAY TODAY (v90.5) ═══
+function rInPlay(d){
+  var items=d.inPlayToday;
+  if(!items||items.length===0){$('sInPlay').innerHTML='';return;}
+  var h='<h2 style="color:#d2a8ff">\uD83D\uDD25 In Play Today <span class="dim" style="font-size:11px;font-weight:400">('+items.length+' tickers)</span></h2>';
+  h+='<div style="margin:4px 0">';
+  var qCls={'A+':'q-aplus','Solid':'q-solid','Playbook':'q-playbook','Watch':'q-watch','Skip':'q-skip'};
+  for(var i=0;i<Math.min(items.length,15);i++){
+    var it=items[i],sym=it.symbol||'',qc=qCls[it.quality||'']||'q-watch';
+    h+='<div class="inplay-card">';
+    h+='<a href="https://www.tradingview.com/chart/?symbol='+encodeURIComponent(sym)+'" target="_blank" class="bold white mono" style="font-size:14px;min-width:52px">'+e(sym)+'</a>';
+    h+='<span class="dim mono" style="font-size:12px">'+e(String(it.last||''))+'</span>';
+    var np=parseFloat(it.netPct)||0;
+    h+='<span class="mono" style="font-size:12px;'+(np>=0?'color:#3fb950':'color:#f85149')+'">'+(np>=0?'+':'')+e(it.netPct||'0')+'%</span>';
+    h+='<span class="mono '+qc+'" style="font-size:10px;font-weight:700">'+e(it.quality||'')+'\u00B7'+e(String(it.confluence||''))+'</span>';
+    if(it.setup)h+='<span class="tag" style="background:#0d1a2e;color:#58a6ff;border:1px solid #1f6feb;font-size:9px">'+e(it.setup)+'</span>';
+    var reasons=it.reasons||[];
+    for(var r=0;r<reasons.length;r++){
+      var rText=reasons[r],rc='reason-rvol';
+      if(rText.indexOf('GAP')===0)rc='reason-gap';
+      else if(rText.indexOf('CATALYST')===0)rc='reason-catalyst';
+      else if(rText.indexOf('NEWS')===0)rc='reason-newsvol';
+      h+='<span class="inplay-reason '+rc+'">'+e(rText)+'</span>';
+    }
+    if(it.isPosition)h+='<span class="tag-live" style="font-size:8px">POSITION</span>';
+    h+='</div>';
+  }
+  h+='</div>';$('sInPlay').innerHTML=h;
+}
+
 // ═══ INVERSE ETFs ═══
 function rInv(d){if((d.gpLetter||'C')!=='D'){$('sInverse').innerHTML='';return}var inv=gS(d,'INVERSE ETFs (GP-D)');if(!inv.length){$('sInverse').innerHTML='';return}var h='<h2 style="color:#f85149">Inverse ETFs — GP-D</h2><div class="info-box"><table><tr><th>ETF</th><th>Last</th><th>Chg%</th><th>Tracks</th></tr>';for(var i=0;i<inv.length;i++)h+='<tr><td class="r bold tc">'+e(inv[i].sym)+'</td><td>'+e(inv[i].val)+'</td><td>'+pct(inv[i].chg)+'</td><td class="dim">'+e(inv[i].desc)+'</td></tr>';h+='</table></div>';$('sInverse').innerHTML=h;}
 
@@ -860,8 +924,8 @@ function rSetups(d){
   if(ts)h+='<div class="alert-box">'+fmt(ts)+'</div>';
   // Confluence table
   if(w.length){h+='<div class="info-box"><table><tr><th>Ticker</th><th>Last</th><th>Conf</th><th>Qual</th><th>Setup</th><th style="font-size:10px">Section</th></tr>';
-    for(var i=0;i<Math.min(w.length,15);i++){var it=w[i],cc=it.confluence>=28?'g':it.confluence>=24?'y':'dim';
-      h+='<tr><td class="tc">'+tkLink(it.ticker)+'</td><td>'+e(it.last)+'</td><td class="'+cc+' bold mono">'+it.confluence.toFixed(1)+'</td><td class="dim">'+e(it.quality)+'</td><td class="dim">'+e(it.setup)+'</td><td class="dim" style="font-size:11px">'+e(it.section)+'</td></tr>';}
+    for(var i=0;i<Math.min(w.length,15);i++){var it=w[i],cc=it.confluence>=28?'g':it.confluence>=24?'b':it.confluence>=20?'y':it.confluence>=16?'dim':'r';var qc=it.quality==='A+'?'q-aplus':it.quality==='Solid'?'q-solid':it.quality==='Playbook'?'q-playbook':it.quality==='Watch'?'q-watch':'q-skip';
+      h+='<tr><td class="tc">'+tkLink(it.ticker)+'</td><td>'+e(it.last)+'</td><td class="'+cc+' bold mono">'+it.confluence.toFixed(1)+'</td><td class="'+qc+' bold" style="font-size:11px">'+e(it.quality)+'</td><td class="dim">'+e(it.setup)+'</td><td class="dim" style="font-size:11px">'+e(it.section)+'</td></tr>';}
     h+='</table></div>';}
   $('sSetups').innerHTML=h;
 }
@@ -1214,7 +1278,8 @@ function rFoot(d){
   if(nar){var sec=parseN(nar);var matched=['WATCHING NOTES','THE STORY','STORY','GAMEPLAN STATUS','GAMEPLAN','GP STATUS','SESSION ANALYSIS','SESSION','POSITION ALERTS','POSITIONS','PORTFOLIO RISK','CORRELATION','TOP SETUPS','SETUPS','INTERMARKET READ','INTERMARKET','BOTTOM LINE','COACHING','COACH','DAILY EDGE','DAILY EDUCATION','EDUCATION','EDGE'];var sk=Object.keys(sec),um=[];for(var i=0;i<sk.length;i++){var found=false;for(var j=0;j<matched.length;j++){if(sk[i]===matched[j]||sk[i].indexOf(matched[j])>=0||matched[j].indexOf(sk[i])>=0){found=true;break;}}if(!found&&sec[sk[i]])um.push(sk[i]);}
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  var fSm=(d.gpSubMode&&d.gpSubMode.subMode)?' \u00B7 '+e(d.gpSubMode.subMode):'';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.15 \u00B7 '+sL(d.phase)+' \u00B7 GP-'+(d.gpLetter||'C')+fSm+(d._timing?' \u00B7 <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
