@@ -138,6 +138,8 @@
 <script>
 var EP='https://script.google.com/macros/s/AKfycbyA45O4vPIEOTdOW601PmdkdnOpTDSzu44qaSPq-PDBhElHlzThmyqdvD8MO7IZqmLq/exec';
 var _d,_n=0,_e=0;
+var _tvWin=null;
+function openTV(url){if(_tvWin&&!_tvWin.closed){_tvWin.location.href=url;_tvWin.focus();}else{_tvWin=window.open(url,'tv');}return false;}
 var SN={SOXX:'Semis',SMH:'Semis',XLK:'Tech',XLY:'Cons Disc',XLF:'Financials',XLI:'Industrials',XLC:'Comm Svcs',IWM:'Small Cap',XLU:'Utilities',XLP:'Staples',XLV:'Healthcare',XLE:'Energy',XLB:'Materials'};
 var _SEC={NVDA:'Semis',AMD:'Semis',AVGO:'Semis',TSM:'Semis',MU:'Semis',MRVL:'Semis',INTC:'Semis',QCOM:'Semis',ARM:'Semis',KLAC:'Semis',LRCX:'Semis',AMAT:'Semis',ASML:'Semis',ADI:'Semis',SMCI:'Semis',SMTC:'Semis',ONTO:'Semis',ACLS:'Semis',MSFT:'Software',ORCL:'Software',CRM:'Software',NOW:'Software',ADBE:'Software',PLTR:'Software',SNOW:'Software',DDOG:'Software',MDB:'Software',NET:'Software',PANW:'Software',CRWD:'Software',ZS:'Software',FTNT:'Software',AAPL:'Mega Tech',GOOGL:'Mega Tech',GOOG:'Mega Tech',AMZN:'Mega Tech',META:'Mega Tech',NFLX:'Mega Tech',TSLA:'Mega Tech',CRDO:'Networking',ALAB:'Networking',CSCO:'Networking',JNPR:'Networking',CIEN:'Networking',ANET:'Networking',GLW:'Networking',COHR:'Networking',LITE:'Networking',RMBS:'Networking',EQIX:'Data Centers',SKYT:'Data Centers',IREN:'Data Centers',NBIS:'Data Centers',APLD:'Data Centers',JPM:'Financials',GS:'Financials',MS:'Financials',BAC:'Financials',V:'Financials',MA:'Financials',BLK:'Financials',COIN:'Crypto',MSTR:'Crypto',HOOD:'Crypto',IONQ:'Quantum',QBTS:'Quantum',RGTI:'Quantum',RKLB:'Space',OKLO:'Space',LMT:'Defense',RTX:'Defense',NOC:'Defense',XOM:'Energy',CVX:'Energy',SLB:'Energy',OXY:'Energy',LLY:'Pharma',UNH:'Healthcare',JNJ:'Healthcare',PFE:'Pharma',ABBV:'Pharma',BA:'Aero',CAT:'Industrial',DE:'Industrial',WMT:'Retail',COST:'Retail',HD:'Retail',LOW:'Retail',TGT:'Retail',UBER:'Transport',ABNB:'Travel',SQ:'Fintech',SHOP:'E-Commerce',DIS:'Media',BABA:'China',JD:'China',PDD:'China',BIDU:'China',RIVN:'EV',SPOT:'Media'};
 var GPC={A:'g',B:'b',C:'y',D:'r'};
@@ -171,7 +173,7 @@ function sparkSvg(tk,w,h){
 var _to={};
 var _tkNews={};
 var _lastD={};
-function tkLink(tk,lg){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="tv" title="TradingView"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk" data-tk="'+e(tk)+'"'+(lg?' style="font-size:15px"':'')+'>'+e(tk)+'</a></span>';}
+function tkLink(tk,lg){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" onclick="return openTV(this.href)" title="TradingView"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk" data-tk="'+e(tk)+'"'+(lg?' style="font-size:15px"':'')+'>'+e(tk)+'</a></span>';}
 function pct(v){var s=String(v||''),n=parseFloat(s.replace('%',''));if(isNaN(n))return'<span class="dim">—</span>';if(Math.abs(n)<0.5&&s.indexOf('%')<0)n*=100;var c=n>0.01?'g':n<-0.01?'r':'dim';return'<span class="'+c+'">'+(n>0?'+':'')+n.toFixed(2)+'%</span>'}
 function pc(v){var n=parseFloat(String(v).replace(/[$,+]/g,''));return n>0?'g':n<0?'r':'dim'}
 function sd(s){return String(s||'').replace(/^\$/,'')}
@@ -1004,7 +1006,7 @@ function rInPlay(d){
   for(var i=0;i<Math.min(items.length,15);i++){
     var it=items[i],sym=it.symbol||'',qc=qCls[it.quality||'']||'q-watch';
     h+='<div class="inplay-card">';
-    h+='<a href="https://www.tradingview.com/chart/?symbol='+encodeURIComponent(sym)+'" target="tv" class="bold white mono" style="font-size:14px;min-width:52px">'+e(sym)+'</a>';
+    h+='<a href="https://www.tradingview.com/chart/?symbol='+encodeURIComponent(sym)+'" onclick="return openTV(this.href)" class="bold white mono" style="font-size:14px;min-width:52px">'+e(sym)+'</a>';
     h+='<span class="dim mono" style="font-size:12px">'+e(String(it.last||''))+'</span>';
     var np=parseFloat(it.netPct)||0;
     h+='<span class="mono" style="font-size:12px;'+(np>=0?'color:#3fb950':'color:#f85149')+'">'+(np>=0?'+':'')+e(it.netPct||'0')+'%</span>';
@@ -1579,7 +1581,7 @@ function areteCard(p){
   if(p.stop)details.push('SL: <span class="mono r">'+e(p.stop)+'</span>');
   if(details.length)h+='<div style="font-size:11px;margin-top:3px;color:#8b949e">'+details.join(' · ')+'</div>';
   // Row 3: thesis
-  if(p.thesis){h+='<div style="font-size:11px;margin-top:3px;color:#c9d1d9">💡 '+e(p.thesis).replace(/\*{0,2}\$([A-Z]{1,5})\*{0,2}/g,function(m,tk2){var sl=_icSlugs[tk2],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk2),tu='https://www.tradingview.com/chart/?symbol='+tk2;return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="tv" title="TV"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk">'+tk2+'</a></span>';})+'</div>';}
+  if(p.thesis){h+='<div style="font-size:11px;margin-top:3px;color:#c9d1d9">💡 '+e(p.thesis).replace(/\*{0,2}\$([A-Z]{1,5})\*{0,2}/g,function(m,tk2){var sl=_icSlugs[tk2],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk2),tu='https://www.tradingview.com/chart/?symbol='+tk2;return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" onclick="return openTV(this.href)" title="TV"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk">'+tk2+'</a></span>';})+'</div>';}
   if(p.note)h+='<div class="dim" style="font-size:11px;margin-top:2px;font-style:italic">'+e(p.note)+'</div>';
   // Row 4: options data
   var oH='';
@@ -2314,7 +2316,7 @@ function parseN(t){var s={},l=t.split('\n'),k='',b=[];for(var i=0;i<l.length;i++
 function gN(sec,keys){for(var i=0;i<keys.length;i++){var v=sec[keys[i]];if(v)return v;}
   // Fuzzy match: check if any sec key CONTAINS any of our search keys
   var sk=Object.keys(sec);for(var i=0;i<keys.length;i++){for(var j=0;j<sk.length;j++){if(sk[j].indexOf(keys[i])>=0||keys[i].indexOf(sk[j])>=0){if(sec[sk[j]])return sec[sk[j]];}}}return'';}
-function fmt(t){if(!t)return'';var h=e(t);h=h.replace(/\*{0,2}\$([A-Z]{1,5})\*{0,2}/g,function(m,tk){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+tk;return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="tv" title="TV"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk">'+tk+'</a></span>';});h=h.replace(/\*\*(.+?)\*\*/g,'<span class="white bold">$1</span>');h=h.replace(/\n/g,'<br>');return h;}
+function fmt(t){if(!t)return'';var h=e(t);h=h.replace(/\*{0,2}\$([A-Z]{1,5})\*{0,2}/g,function(m,tk){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+tk;return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" onclick="return openTV(this.href)" title="TV"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk">'+tk+'</a></span>';});h=h.replace(/\*\*(.+?)\*\*/g,'<span class="white bold">$1</span>');h=h.replace(/\n/g,'<br>');return h;}
 
 // ── v90.3: Off-hours polling gate ──
 // AZ = UTC-7 (no DST). Market-relevant: ~6:15am-4:15pm AZ weekdays.
