@@ -171,7 +171,7 @@ function sparkSvg(tk,w,h){
 var _to={};
 var _tkNews={};
 var _lastD={};
-function tkLink(tk,lg){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="_blank" title="TradingView"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk" data-tk="'+e(tk)+'"'+(lg?' style="font-size:15px"':'')+'>'+e(tk)+'</a></span>';}
+function tkLink(tk,lg){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" target="tv" title="TradingView"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk" data-tk="'+e(tk)+'"'+(lg?' style="font-size:15px"':'')+'>'+e(tk)+'</a></span>';}
 function pct(v){var s=String(v||''),n=parseFloat(s.replace('%',''));if(isNaN(n))return'<span class="dim">—</span>';if(Math.abs(n)<0.5&&s.indexOf('%')<0)n*=100;var c=n>0.01?'g':n<-0.01?'r':'dim';return'<span class="'+c+'">'+(n>0?'+':'')+n.toFixed(2)+'%</span>'}
 function pc(v){var n=parseFloat(String(v).replace(/[$,+]/g,''));return n>0?'g':n<0?'r':'dim'}
 function sd(s){return String(s||'').replace(/^\$/,'')}
@@ -1210,27 +1210,29 @@ function rEarnings(d){
   for(var di=0;di<dayOrder.length;di++){
     var dk=dayOrder[di];
     var dayKey=dk.replace(/[^a-zA-Z]/g,'');
-    // Auto-collapse: past days collapsed, today+ open (unless user overrode)
+    // Auto-collapse: past days collapsed by default, today+ open
     var isPast=!pastToday&&dk!==todayName&&dayOrder.indexOf(todayName)>di;
     var dayCol=isPast;
     try{var sv=localStorage.getItem('earn_day_'+dayKey);if(sv!==null)dayCol=sv==='1';}catch(e){}
     if(dk===todayName)pastToday=true;
     var items=dayMap[dk];
+    var isDayToday=dk===todayName;
     h+='<div style="margin-bottom:2px">';
-    h+='<div style="background:#161b22;padding:5px 8px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;border-radius:4px" onclick="toggleEarnDay(\''+dayKey+'\')">';
-    h+='<span id="earnDayArrow_'+dayKey+'" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(dayCol?'-90':'0')+'deg);font-size:10px;color:#7d8590">▼</span>';
-    h+='<span style="color:#7d8590;font-size:11px;font-weight:700;letter-spacing:1px">'+e(dk).toUpperCase()+'</span>';
+    h+='<div style="background:'+(isDayToday?'#0d1a2e':'#161b22')+';padding:5px 8px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;border-radius:4px'+(isDayToday?';border-left:2px solid #58a6ff':'')+'" onclick="toggleEarnDay(\''+dayKey+'\')">';
+    h+='<span id="earnDayArrow_'+dayKey+'" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(dayCol?'-90':'0')+'deg);font-size:10px;color:#7d8590">\u25BC</span>';
+    h+='<span style="color:'+(isDayToday?'#58a6ff':'#7d8590')+';font-size:11px;font-weight:700;letter-spacing:1px">'+e(dk).toUpperCase()+(isDayToday?' \u2190 TODAY':'')+'</span>';
     h+='<span class="dim" style="font-size:10px">('+items.length+')</span>';
+    if(isPast)h+='<span class="dim" style="font-size:9px;margin-left:auto">\u2714 done</span>';
     h+='</div>';
     h+='<div id="earnDay_'+dayKey+'" style="'+(dayCol?'display:none':'')+'">';
-    h+='<div class="info-box" style="padding:0;margin:0"><table><tr><th>Ticker</th><th>Time</th><th>Est</th><th>Actual</th></tr>';
+    h+='<div class="info-box" style="padding:0;margin:0"><table><tr><th>Ticker</th><th>Time</th><th>Est</th><th>Actual</th><th style="font-size:9px">Info</th></tr>';
     for(var i=0;i<items.length;i++){
       var er=items[i],sym=er.symbol||'',tier=er.tier||'';
       var rowStyle=tier==='mine'?'background:#0d2010':tier==='watchlist'?'background:#0d1a2a':'';
       var symCol=tier==='mine'?'#3fb950':tier==='watchlist'?'#58a6ff':'#c9d1d9';
       h+='<tr style="'+rowStyle+'">';
-      h+='<td style="font-weight:700;color:'+symCol+'">'+tkLink(sym)+(tier==='mine'?' <span style="font-size:9px;color:#3fb950">★</span>':'')+'</td>';
-      h+='<td class="dim" style="font-size:11px;white-space:nowrap">'+e(er.time||'—')+'</td>';
+      h+='<td style="font-weight:700;color:'+symCol+'">'+tkLink(sym)+(tier==='mine'?' <span style="font-size:9px;color:#3fb950">\u2605</span>':'')+'</td>';
+      h+='<td class="dim" style="font-size:11px;white-space:nowrap">'+e(er.time||'\u2014')+'</td>';
       h+='<td class="dim" style="font-size:11px">'+e(er.note||'')+'</td>';
       var actStr='';
       if(er.epsActual!=null){
@@ -1238,10 +1240,15 @@ function rEarnings(d){
         var miss=er.note&&er.epsActual<parseFloat(String(er.note).replace(/.*Est: \$/,'').replace(/ .*/,''));
         var ac=beat?'#3fb950':miss?'#f85149':'#c9d1d9';
         actStr='<span style="color:'+ac+';font-weight:700">$'+er.epsActual+'</span>';
-        if(beat)actStr+=' <span style="font-size:9px;color:#3fb950">✓ Beat</span>';
-        if(miss)actStr+=' <span style="font-size:9px;color:#f85149">✗ Miss</span>';
+        if(beat)actStr+=' <span style="font-size:9px;color:#3fb950">\u2713 Beat</span>';
+        if(miss)actStr+=' <span style="font-size:9px;color:#f85149">\u2717 Miss</span>';
       }
       h+='<td style="font-size:11px">'+actStr+'</td>';
+      // External links + focus pin
+      h+='<td style="font-size:10px;white-space:nowrap">';
+      h+='<a href="https://finviz.com/quote.ashx?t='+encodeURIComponent(sym)+'&p=d" target="_blank" title="Finviz" style="color:#7d8590;margin-right:4px">\uD83D\uDD17</a>';
+      h+='<span style="cursor:pointer;color:'+(typeof _focusedTickers!=='undefined'&&_focusedTickers.has(sym)?'#58a6ff':'#30363d')+'" onclick="event.stopPropagation();toggleFocusTicker(\''+sym+'\');if(_lastD)R(_lastD);" title="Focus">\uD83D\uDCCC</span>';
+      h+='</td>';
       h+='</tr>';
     }
     h+='</table></div></div></div>';
@@ -1603,6 +1610,12 @@ function rAreteBook(d){
   var groups={};var order=['Swing','DTC','Option','Long'];
   for(var i=0;i<all.length;i++){var t=all[i].tag||'Other';if(!groups[t])groups[t]=[];groups[t].push(all[i]);}
   for(var g=0;g<order.length;g++){var k=order[g];if(!groups[k])continue;
+    // Sort group tickers by selected mode
+    var gTks=groups[k].map(function(x){return x.ticker||x.sym||'';});
+    var gConf={};for(var gi=0;gi<groups[k].length;gi++){var gt=groups[k][gi].ticker||groups[k][gi].sym||'';gConf[gt]={conf:parseFloat((_tq[gt]||{}).conf||0)};}
+    var sortedGTks=sortTickers(gTks,gConf,'arete_'+k);
+    var gSorted=[];for(var si2=0;si2<sortedGTks.length;si2++){for(var gi2=0;gi2<groups[k].length;gi2++){if((groups[k][gi2].ticker||groups[k][gi2].sym)===sortedGTks[si2]){gSorted.push(groups[k][gi2]);break;}}}
+    if(gSorted.length)groups[k]=gSorted;
     var colKey='arete_col_'+k;var isCol=true;try{var _sv=localStorage.getItem(colKey);if(_sv!==null)isCol=_sv==='1';}catch(e){}
     h+='<h3 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\''+k+'\')">';
     h+='<span id="areteArrow_'+k+'" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> ';
