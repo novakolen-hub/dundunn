@@ -1005,7 +1005,7 @@ function rInPlay(d){
   for(var i=0;i<Math.min(items.length,15);i++){
     var it=items[i],sym=it.symbol||'',qc=qCls[it.quality||'']||'q-watch';
     h+='<div class="inplay-card">';
-    h+='<a href="https://www.tradingview.com/chart/?symbol='+encodeURIComponent(sym)+'" target="tv" class="bold white mono" style="font-size:14px;min-width:52px">'+e(sym)+'</a>';
+    h+=tkLink(sym);
     h+='<span class="dim mono" style="font-size:12px">'+e(String(it.last||''))+'</span>';
     var np=parseFloat(it.netPct)||0;
     h+='<span class="mono" style="font-size:12px;'+(np>=0?'color:#3fb950':'color:#f85149')+'">'+(np>=0?'+':'')+e(it.netPct||'0')+'%</span>';
