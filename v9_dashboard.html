@@ -1151,32 +1151,71 @@ function rEcon(d){
   if(!eco.length){$('sEcon').innerHTML='';return;}
   var isCol=true;try{var _v=localStorage.getItem('sec_col_econ');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'econ\')"><span id="secArrow_econ" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Economic Calendar <span class="dim" style="font-size:12px;font-weight:400">('+eco.length+')</span></h2>';
-  h+='<div id="secBody_econ" style="'+(isCol?'display:none':'')+'"><div class="info-box" style="padding:0">';
+  h+='<div id="secBody_econ" style="'+(isCol?'display:none':'')+'">';
   var impactColor={High:'#f85149',Medium:'#e3b341',Low:'#7d8590'};
   var impactDot={High:'🔴',Medium:'🟡',Low:'⚪'};
+  // Group events by day (using separator titles as day names)
+  var dayGroups=[],curDay=null;
   for(var i=0;i<eco.length;i++){
     var ev=eco[i];
     if(ev.isSep){
-      h+='<div style="padding:4px 10px;font-size:10px;font-weight:700;color:#7d8590;background:#0d1117;letter-spacing:1px">'+e(ev.title)+'</div>';
-      continue;
+      curDay={title:ev.title,events:[]};
+      dayGroups.push(curDay);
+    } else if(curDay){
+      curDay.events.push(ev);
+    } else {
+      // Events before any separator
+      if(!dayGroups.length){curDay={title:'Today',events:[]};dayGroups.push(curDay);}
+      curDay.events.push(ev);
     }
-    var ic=impactColor[ev.impact]||'#7d8590';
-    var id=impactDot[ev.impact]||'';
-    h+='<div style="padding:7px 10px;border-bottom:1px solid #161b22;display:flex;gap:8px;align-items:flex-start">';
-    // Impact bar
-    h+='<div style="width:3px;min-height:32px;background:'+ic+';border-radius:2px;flex-shrink:0;margin-top:2px"></div>';
-    h+='<div style="flex:1;min-width:0">';
-    h+='<div style="font-size:12px;font-weight:700;color:#e6edf3">'+e(ev.title)+'</div>';
-    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:3px;font-size:11px;color:#7d8590">';
-    if(ev.time) h+='<span>🕐 '+e(ev.time)+'</span>';
-    if(ev.impact) h+='<span style="color:'+ic+';font-weight:700">'+id+' '+e(ev.impact)+'</span>';
-    if(ev.previous) h+='<span>Prev: <span class="white">'+e(ev.previous)+'</span></span>';
-    if(ev.forecast) h+='<span>Fcst: <span class="white">'+e(ev.forecast)+'</span></span>';
-    if(ev.actual) h+='<span>Act: <span style="color:#3fb950;font-weight:700">'+e(ev.actual)+'</span></span>';
-    if(ev.tickers) h+='<span class="b">→ '+e(ev.tickers)+'</span>';
+  }
+  // Determine today for auto-collapse
+  var todayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var azNow=new Date(new Date().getTime()+(new Date().getTimezoneOffset()*60000)-(7*3600000));
+  var todayName=todayNames[azNow.getDay()];
+  for(var di=0;di<dayGroups.length;di++){
+    var dg=dayGroups[di],dayKey='econ_'+dg.title.replace(/[^a-zA-Z]/g,'');
+    var titleUp=dg.title.toUpperCase();
+    var isToday=titleUp.indexOf(todayName.toUpperCase())>=0;
+    var isPast=false;
+    // Check if day title contains a past weekday
+    for(var pd=0;pd<todayNames.length;pd++){
+      if(titleUp.indexOf(todayNames[pd].toUpperCase())>=0){
+        var dayDiff=(azNow.getDay()-pd+7)%7;
+        if(dayDiff>0&&dayDiff<5)isPast=true;
+        break;
+      }
+    }
+    var dayCol=isPast;
+    try{var sv=localStorage.getItem(dayKey);if(sv!==null)dayCol=sv==='1';}catch(e){}
+    h+='<div style="margin-bottom:2px">';
+    h+='<div style="background:'+(isToday?'#0d1a2e':'#161b22')+';padding:5px 8px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;border-radius:4px'+(isToday?';border-left:2px solid #58a6ff':'')+'" onclick="toggleEconDay(\''+dayKey+'\')">';
+    h+='<span id="econDayArrow_'+dayKey+'" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(dayCol?'-90':'0')+'deg);font-size:10px;color:#7d8590">▼</span>';
+    h+='<span style="color:'+(isToday?'#58a6ff':'#7d8590')+';font-size:11px;font-weight:700;letter-spacing:1px">'+e(dg.title).toUpperCase()+(isToday?' ← TODAY':'')+'</span>';
+    h+='<span class="dim" style="font-size:10px">('+dg.events.length+')</span>';
+    if(isPast)h+='<span class="dim" style="font-size:9px;margin-left:auto">✔ done</span>';
+    h+='</div>';
+    h+='<div id="econDay_'+dayKey+'" style="'+(dayCol?'display:none':'')+'"><div class="info-box" style="padding:0;margin:0">';
+    for(var ei=0;ei<dg.events.length;ei++){
+      var ev=dg.events[ei];
+      var ic=impactColor[ev.impact]||'#7d8590';
+      var id=impactDot[ev.impact]||'';
+      h+='<div style="padding:7px 10px;border-bottom:1px solid #161b22;display:flex;gap:8px;align-items:flex-start">';
+      h+='<div style="width:3px;min-height:32px;background:'+ic+';border-radius:2px;flex-shrink:0;margin-top:2px"></div>';
+      h+='<div style="flex:1;min-width:0">';
+      h+='<div style="font-size:12px;font-weight:700;color:#e6edf3">'+e(ev.title)+'</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:3px;font-size:11px;color:#7d8590">';
+      if(ev.time) h+='<span>🕐 '+e(ev.time)+'</span>';
+      if(ev.impact) h+='<span style="color:'+ic+';font-weight:700">'+id+' '+e(ev.impact)+'</span>';
+      if(ev.previous) h+='<span>Prev: <span class="white">'+e(ev.previous)+'</span></span>';
+      if(ev.forecast) h+='<span>Fcst: <span class="white">'+e(ev.forecast)+'</span></span>';
+      if(ev.actual) h+='<span>Act: <span style="color:#3fb950;font-weight:700">'+e(ev.actual)+'</span></span>';
+      if(ev.tickers) h+='<span class="b">→ '+e(ev.tickers)+'</span>';
+      h+='</div></div></div>';
+    }
     h+='</div></div></div>';
   }
-  h+='</div></div>';
+  h+='</div>';
   $('sEcon').innerHTML=h;
 }
 function toggleEarnDay(dayKey){
@@ -1186,6 +1225,14 @@ function toggleEarnDay(dayKey){
   b.style.display=vis?'none':'';
   if(a)a.style.transform=vis?'rotate(-90deg)':'rotate(0deg)';
   try{localStorage.setItem('earn_day_'+dayKey,vis?'1':'0');}catch(e){}
+}
+function toggleEconDay(dayKey){
+  var b=$('econDay_'+dayKey),a=$('econDayArrow_'+dayKey);
+  if(!b)return;
+  var vis=b.style.display!=='none';
+  b.style.display=vis?'none':'';
+  if(a)a.style.transform=vis?'rotate(-90deg)':'rotate(0deg)';
+  try{localStorage.setItem(dayKey,vis?'1':'0');}catch(e){}
 }
 function rEarnings(d){
   var earn=d.earnings||[];
