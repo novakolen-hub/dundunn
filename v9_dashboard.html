@@ -2623,6 +2623,11 @@ function renderPTModal(d){
   h+='<div class="pt-sizing" id="ptSizing"><div class="pt-sz-row"><span class="lbl">Enter stop + target to calculate sizing</span></div></div>';
   h+='</div>';
 
+  // ── Section 5: Playbook Card ──
+  h+='<div class="pt-section" id="ptPlaybook">';
+  h+=buildPlaybookHTML(detectedKey||'Momentum');
+  h+='</div>';
+
   $('ptBody').innerHTML=h;
 }
 
@@ -2718,6 +2723,8 @@ function buildScorecardHTML(d,setupKey,side){
   var passCol=gC>=6?'#00c853':passN>=6?'#ffc107':'#ef5350';
   h+='<div class="pt-pass-bar"><div class="pt-pass-fill" style="width:'+((gC+yC)/total*100).toFixed(0)+'%;background:'+passCol+'"></div></div>';
   h+='<div style="text-align:center;font-family:\'JetBrains Mono\',monospace;font-size:12px;color:'+passCol+'">'+gC+' GREEN · '+yC+' YELLOW · '+rC+' RED — '+(passN>=6?'PASS':'FAIL')+' ('+passN+'/'+total+')</div>';
+  // Guidance engine
+  h+=buildGuidanceHTML(checks,setupKey,(_ptData&&_ptData.gpSizingAdj)||'');
   return h;
 }
 
@@ -2728,7 +2735,253 @@ function ptUpdateSC(){
   var side=$('ptSide').value;
   var sec=$('ptSCSection');
   if(sec)sec.innerHTML=buildScorecardHTML(_ptData,setup,side);
+  // Update playbook card
+  var pb=$('ptPlaybook');if(pb)pb.innerHTML=buildPlaybookHTML(setup);
   ptCalcSize(); // re-calc sizing too
+}
+
+// ── SCORECARD GUIDANCE ENGINE ──
+// Reads the check results and generates contextual advice
+function buildGuidanceHTML(checks,setupKey,sizingAdj){
+  var reds=[],yellows=[];
+  for(var i=0;i<checks.length;i++){
+    if(checks[i].val==='RED')reds.push(checks[i]);
+    else if(checks[i].val==='YELLOW')yellows.push(checks[i]);
+  }
+  var passN=checks.length-reds.length;
+  var h='<div style="margin-top:10px;padding:10px 12px;border-radius:6px;font-size:12px;line-height:1.6;';
+  if(reds.length>=3)h+='background:#1a0d0d;border:1px solid #da3633;color:#f0a0a0">';
+  else if(reds.length>=1||yellows.length>=2)h+='background:#1a1500;border:1px solid #9e6a03;color:#e3c87d">';
+  else h+='background:#0d1a0d;border:1px solid #238636;color:#7ee787">';
+
+  // Generate advice based on what failed
+  if(reds.length>=3){
+    h+='<b style="color:#ef5350">⛔ DO NOT TRADE.</b> '+reds.length+' checks failed. The setup conditions are not met. ';
+    h+='Wait for conditions to improve or find a different setup.';
+  } else if(reds.length===0&&yellows.length===0){
+    h+='<b style="color:#00c853">✅ Full green light.</b> All checks pass. Execute with confidence at full size for this gameplan.';
+  } else {
+    // Contextual advice per failed/warned check
+    var advice=[];
+    for(var r=0;r<reds.length;r++){
+      var n=reds[r].name;
+      if(n.indexOf('RVOL')>=0)advice.push('RVOL below threshold — institutional participation is light. Wait for volume to confirm or take half-size.');
+      else if(n.indexOf('VWAP')>=0)advice.push('Wrong side of VWAP — the directional bias isn\'t confirmed. Wait for VWAP reclaim or flip to a short setup.');
+      else if(n.indexOf('Confluence')>=0)advice.push('Low confluence — not enough signals stacking. This is a C-grade setup at best. Reduce size to 50% or pass.');
+      else if(n.indexOf('GP')>=0)advice.push('Setup not valid for current gameplan. The system says bench — respect it or find RS Override criteria.');
+      else if(n.indexOf('Sector')>=0)advice.push('Too much sector exposure. Adding here concentrates risk. Consider a different sector or reduce existing positions first.');
+      else if(n.indexOf('RSI')>=0)advice.push('RSI at extreme — momentum is overextended. High risk of mean reversion against your entry.');
+      else if(n.indexOf('Session')>=0)advice.push('Not the ideal session for this setup type. Proceed with tighter stops.');
+      else if(n.indexOf('VIX')>=0)advice.push('Elevated VIX — wider expected moves. Use wider stops and reduce size by 25%.');
+    }
+    for(var y=0;y<yellows.length;y++){
+      var yn=yellows[y].name;
+      if(yn.indexOf('RVOL')>=0)advice.push('RVOL borderline — close to threshold but not there yet. Wait 15 min for volume to build or take starter size only.');
+      else if(yn.indexOf('VWAP')>=0)advice.push('Near VWAP — not clearly above/below. Wait for a decisive move or use a tighter stop.');
+      else if(yn.indexOf('GP')>=0)advice.push('Caution combo — setup allowed but sub-mode is weakening. Use reduced size per the sizing badge.');
+      else if(yn.indexOf('Confluence')>=0)advice.push('Confluence in the Playbook tier — tradeable but needs checklist confirmation.');
+      else if(yn.indexOf('VIX')>=0)advice.push('VIX elevated — factor in wider expected move for stop placement.');
+      else if(yn.indexOf('Sector')>=0)advice.push('One position already open in this sector — acceptable but watch total exposure.');
+    }
+    if(reds.length>=2){
+      h+='<b style="color:#ef5350">⚠️ Weak setup — consider passing.</b> ';
+    } else if(reds.length===1&&yellows.length>=2){
+      h+='<b style="color:#ffc107">⚠️ Proceed with caution — reduced conviction.</b> ';
+    } else if(reds.length===1){
+      h+='<b style="color:#ffc107">△ One issue to address:</b> ';
+    } else {
+      h+='<b style="color:#e3b341">✓ Pass with notes:</b> ';
+    }
+    h+=advice.join(' ');
+    // Sizing implication
+    if(reds.length>=2)h+='<div style="margin-top:4px"><b>Sizing:</b> Pass this trade or wait for improvement.</div>';
+    else if(reds.length===1)h+='<div style="margin-top:4px"><b>Sizing:</b> Half of normal base, Tier 1 only. Add only if the RED check flips.</div>';
+    else if(yellows.length>=2)h+='<div style="margin-top:4px"><b>Sizing:</b> 75% of normal base. Be ready to exit faster.</div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+// ── SMB PLAYBOOK CARDS ──
+var _PLAYBOOK={
+'BigDog':{
+  name:'Big Dog Consolidation Trade',
+  source:'7 transcripts · SMB Setup 1',
+  what:'Stock up 3%+ with catalyst, compresses in a wedge for 45min+ above VWAP. RVOL ≥3. When the wedge breaks with volume, ride the next leg.',
+  entry:'Tier 1: Buy into the wedge (accumulate). Tier 2: Add on breakout of wedge resistance. Tier 3: Momentum add on first pullback after breakout. All buying must be above VWAP.',
+  exit:'Sell into the spike when move gets steep for that stock\'s price. If stock reaches 2x ATR from the consolidation, start scaling. Take 1/3 at 1R, 1/3 at 2R, trail last third.',
+  stops:'Stop below the bottom of the consolidation wedge. Typically 0.15-0.20x ATR below entry. The wedge low IS your risk level.',
+  mistakes:'Don\'t confuse a pullback trade with a Big Dog. The consolidation must be 45+ minutes. Don\'t chase if the breakout already moved 1x ATR. Don\'t hold if VWAP breaks.',
+  key:'The consolidation IS the setup. The longer the wedge, the more energy stored. Bella: "The best Big Dog trades are so obvious you feel stupid afterward."'
+},
+'BigDogBounce':{
+  name:'Big Dog Bounce (Below VWAP Variant)',
+  source:'Derived from Big Dog + VWAP principles',
+  what:'Stock gapped down or selling hard, finds support, consolidates BELOW VWAP. Building a base for a bounce back toward VWAP. Structure trade, not momentum.',
+  entry:'Tier 1: Buy at support with a stop below the low. Tier 2: Add on higher low confirmation. Tier 3: Add on VWAP reclaim. MAX Tier 3 — this is C-Recovery eligible, reduced size.',
+  exit:'Target is VWAP reclaim. Take 50% at VWAP, trail rest above. If it fails to reclaim VWAP after 2 attempts, exit entire position.',
+  stops:'Below the consolidation low or the session low, whichever is tighter. 0.15x ATR max.',
+  mistakes:'Don\'t treat this as a momentum trade. It\'s a patience/structure trade. Don\'t size like a Big Dog — this is reduced size ($3-5K on C-Recovery).',
+  key:'This is the trade that C-Recovery unlocks. You\'re buying structure at support, not chasing momentum. The VWAP reclaim is your payoff.'
+},
+'OpeningDrive':{
+  name:'Opening Drive First Move Trade',
+  source:'7 transcripts · SMB Setup 4',
+  what:'The first directional move right on the open. Stock 3%+ with catalyst. Watch the Level 2 battle. Follow the winner. Entire trade lasts 1-5 minutes.',
+  entry:'Pattern A (Battle): Watch bid/offer fight at a key price. When one side wins, follow immediately with a buy/sell stop. Pattern B (Level): Pre-market S/R level holds on open, trade against it.',
+  exit:'Sell into the spike. When the move gets steep (vertically), start selling. 40c on an $8 stock. 60c on a $29 stock. Use ATR as guide — 2x ATR from key level = exhaustion.',
+  stops:'3-5 cents from the battle resolution level. This is a scalp — tiny risk, huge R:R (10:1+). Must be staged with conditional orders BEFORE the battle resolves.',
+  mistakes:'Not having a buy/sell stop ready. Holding too long — this is a 2-minute trade. Paying too much for entries (40c away on a 35c ATR stock).',
+  key:'Bella: "Kind of a stupid trade" but traders make $100-200K/year just from this. Book $500-1,500 and move to your playbook. This FINANCES your day.'
+},
+'GapGo':{
+  name:'Gap & Go / Gap & Fail Trade',
+  source:'SMB Setup 3 · Variable table',
+  what:'Stock gaps 3%+ on earnings/news. If it holds the gap and builds, go with it (Gap & Go). If it fills the gap, short the failure (Gap & Fail). Multi-day hold potential.',
+  entry:'Gap & Go: Buy first consolidation above gap level, stop below gap low. Gap & Fail: Short on gap fill below pre-market support. Use 2-day VWAP for swing stops.',
+  exit:'Gap & Go: Trail with higher lows, sell into 2x ATR extension. Gap & Fail: Cover at prior day close or key support. Take momentum lots off at 1R.',
+  stops:'Below gap low for longs, above gap high for shorts. Size based on gap distance — larger gaps need proportionally smaller positions.',
+  mistakes:'Chasing a gap that\'s already moved 1 ATR from open. Fighting a gap fill instead of flipping bias. Not recognizing a Gap & Fail early.',
+  key:'The 2-day VWAP is the key level for overnight holds. If stock is above 2-day VWAP on close, swing candidate. Below = take profits.'
+},
+'OR-Break':{
+  name:'Opening Range Breakout',
+  source:'Derived from Opening Drive + VWAP Setup 9',
+  what:'Stock breaks above the first 15-minute range (Opening Range high) with volume confirmation. Continuation trade above VWAP.',
+  entry:'Buy on break above OR high with RVOL ≥1.5. Stop below OR midpoint or VWAP. Add on first pullback that holds above OR high (level flip from resistance to support).',
+  exit:'First target: 1x OR range measured from breakout. Second target: 2x OR range. Trail using the broken OR high as support.',
+  stops:'Below VWAP or below OR midpoint — whichever is tighter. If OR high becomes resistance again (failed breakout), exit immediately.',
+  mistakes:'Buying the breakout without volume confirmation (RVOL). Not waiting for OR to actually form (first 15 min). Holding through a re-entry back below OR high.',
+  key:'The OR breakout works because trapped shorts from the range must cover. The level flip (old resistance = new support) is your confirmation to add size.'
+},
+'DailyBreakout':{
+  name:'Daily Chart Breakout Trade',
+  source:'SMB Setup 2 · Variable table',
+  what:'Stock breaks out of a daily/weekly consolidation pattern at 52-week highs. RVOL ≥3 required. Multi-day hold. This is the big swing trade.',
+  entry:'Buy on breakout day with volume confirmation. Add on first pullback to breakout level (level flip). Use daily close above breakout as confirmation for overnight hold.',
+  exit:'Trail with the 8 EMA on the daily chart. Take 1/3 at 1R, 1/3 at the measured move target, trail last third. Exit if daily close below breakout level.',
+  stops:'Below the breakout level or below the consolidation high, 0.15-0.20x daily ATR. This is a wider stop = smaller share count.',
+  mistakes:'Buying breakouts without RVOL ≥3 — low volume breakouts fail. Not having the patience to hold overnight. Chasing after a 1 ATR move already happened.',
+  key:'RVOL ≥3 is non-negotiable for daily breakouts. SMB variable table explicitly requires it. The volume IS the institution confirming the breakout.'
+},
+'Failed-BD':{
+  name:'Failed Breakdown Trade',
+  source:'Derived from Return Pullback (Setup 8) + VWAP principles',
+  what:'Price dips below a key level (OR low, support), traps shorts, then reclaims above. The trapped shorts\' forced covering becomes your fuel. Above VWAP = buy signal.',
+  entry:'Wait for the breakdown to FAIL — price must reclaim above the level. Buy on the reclaim with stop below the false breakdown low. Add on higher low above the level.',
+  exit:'Target the other side of the range — if it failed at OR low, target OR high. Take 50% there, trail rest. Minimum 3:1 R:R or pass.',
+  stops:'Below the false breakdown low. This is the "where I\'m wrong" level — if the breakdown resumes, the thesis is dead.',
+  mistakes:'Buying DURING the breakdown hoping for a reversal. Not waiting for the actual reclaim above the level. Not checking that price is back above VWAP.',
+  key:'The real edge is WHO IS TRAPPED. Breakout/breakdown traders who are provably wrong create forced order flow. This is more powerful than any indicator.'
+},
+'VWAP-Hold':{
+  name:'VWAP Hold / Pullback to VWAP',
+  source:'5 transcripts · SMB Setup 9',
+  what:'Stock establishes directional move, pulls back to VWAP. First pullback to VWAP = highest probability continuation entry. Second pullback acceptable. Third = setup degrades.',
+  entry:'Nibble small as price approaches VWAP. When you see the turn (volume increasing on bounce, offers lifting differently), add real size. Use higher lows as trailing stops.',
+  exit:'Target: next resistance level or 1x ATR from VWAP. Take momentum lots off at first resistance, hold core with VWAP as trailing stop.',
+  stops:'Below VWAP by 0.15x ATR. If stock decisively breaks below VWAP and holds for 15-20 min, the trade is done.',
+  mistakes:'Buying the THIRD pullback to VWAP — stock has expended too much energy. Check the hourly: if already moved 1 full ATR, the pullback may be the end, not continuation.',
+  key:'Shark: "Do not short above VWAP and do not buy below VWAP." This single rule eliminates a huge percentage of losing trades. VWAP is the daily demarcation line.'
+},
+'Pullback-EMA':{
+  name:'Pullback to EMA (Trend Continuation)',
+  source:'Derived from VWAP Setup 9 + SecondDay principles',
+  what:'Stock in an uptrend (EMA9 > EMA20) pulls back to the EMA zone. RSI cooling from overbought into the 35-55 zone = energy reloading for next leg.',
+  entry:'Buy as price touches EMA20 with EMA9 still above it (bullish stack intact). Stop below EMA20. Add when RSI starts turning up from the 35-45 zone.',
+  exit:'Target: prior high or 1x ATR from EMA. Take 50% at prior high, trail rest using EMA9 as guide. Exit if EMA9 crosses below EMA20 (stack broken).',
+  stops:'Below EMA20 by 0.10-0.15x ATR. The EMA stack must remain bullish — if it flips, the trend has changed.',
+  mistakes:'Buying the pullback when EMAs are flat or crossing (no trend). Not waiting for RSI to actually cool — buying a pullback that hasn\'t finished pulling back.',
+  key:'The EMA stack tells you the trend. The RSI tells you the energy level. Buy when the trend is intact but energy has reloaded. That\'s the sweet spot.'
+},
+'Momentum':{
+  name:'Momentum Trade',
+  source:'Derived from BigDog + Opening Drive principles',
+  what:'Stock above VWAP, above EMA stack, RSI 55-75, RVOL ≥1.5, outperforming SPY. Pure trend-following: the trend is your friend until it bends.',
+  entry:'Buy on strength. Add on higher lows. Don\'t wait for pullbacks — momentum trades reward aggression. Tier in quickly once the direction is confirmed.',
+  exit:'Sell into acceleration (parabolic move). Use ATR as guide: 2-3x ATR from entry = start scaling. Trail with EMA9 on the 5-min chart.',
+  stops:'Below EMA9 on the 5-min chart, or below the most recent higher low. This should be tight — momentum trades work immediately or they don\'t work.',
+  mistakes:'Holding through a VWAP break expecting it to come back. Not selling into the spike. Turning a momentum scalp into a swing hold without a reason.',
+  key:'Momentum setups need A or B breadth because they need institutional follow-through. On GP-C or weak sub-modes, momentum dries up.'
+},
+'SecondDay':{
+  name:'Second Day Play',
+  source:'6 transcripts · SMB Setup 7',
+  what:'After a big Day 1 catalyst move (earnings, news), Day 2 tests the levels established on Day 1. Institutions complete positions over 2-3 days — ride the follow-through.',
+  entry:'Pre-market: identify S1/S2/R1/R2 from Day 1 action. Buy at S1 (support) for longs, short at R1 (resistance) for shorts. Tier 1: at level (25-50%). Tier 2: on breakout confirmation (50-75%). Momentum lots for scalp profit.',
+  exit:'Longs: sell into R2. When R1 becomes support (level flip), reload. Shorts: cover into S2. Take momentum lots off at 1 full ATR from HOD.',
+  stops:'0.15-0.20x ATR beyond entry level. A+ trades risk 30% of intraday stop. B trades 15-20%. C trades 5-10%.',
+  mistakes:'Not having pre-market levels written down before the open. Missing the setup because you were watching something else (automate the screen). Exiting entirely on Day 1 when Day 2 could continue.',
+  key:'Institutions that enter/exit positions do so over 2-3 DAYS. The Day 1 levels tell you where they\'re operating. Day 2 they come back to the same levels.'
+},
+'ReturnPullback':{
+  name:'Return / Pullback Trade',
+  source:'4 transcripts · SMB Setup 8',
+  what:'Price attempts to break out of a value zone and fails. Trapped traders must exit, creating predictable flow. Enter on the pullback to the zone edge for a move back through.',
+  entry:'Wait for: (1) breakout attempt, (2) failure confirmation (price returns inside zone), (3) pullback to zone edge, (4) momentum turning point (micro trend line break, order flow shift). Enter at the turning point.',
+  exit:'Target: opposite edge of the value zone. For pure scalps, exit completely at the target. For swing/context trades, let it run beyond using higher timeframe targets.',
+  stops:'Beyond the failed breakout level. If another breakout succeeds, thesis is dead. Minimum 3:1 R:R to the other side of the zone.',
+  mistakes:'Entering before the failure is confirmed (buying into a breakout). Not measuring R:R before entry — if you can\'t fit 3:1, pass. Trying to be smarter than your process at the target.',
+  key:'The edge comes from WHO IS TRAPPED and WHERE they must exit. This is more structural than any indicator. Examine all trades through this lens.'
+},
+'MarketPlay':{
+  name:'Market Play Trade',
+  source:'6 transcripts · SMB Setup 5',
+  what:'When VIX >15 (especially >20), trade the market itself — SPY, QQQ, IWM, VXX, UVXY. Look for trend days where trapped institutions create sustained directional moves.',
+  entry:'Spread risk: Tier 1 buy SPY+QQQ+IWM, short VXX+UVXY at key technical level. Tier 2: add on pullback into VWAP (declining volume, tick turning neutral). Tier 3: add when SPY makes new high above resistance.',
+  exit:'Core + Trading Shares model: 50% holds with stop at "where I\'m wrong" level. 50% trades the ebb and flow — buy dips, sell rips. Trend day: hold into close.',
+  stops:'Below VWAP for longs after 10am. The trend day rule: if you can\'t retrace to overnight low/high by 10:30-10:45, odds are it\'s a trend day — don\'t fight it.',
+  mistakes:'Fighting the trend after 10am. Shorting above a rising VWAP. Not having a one-button basket ready for instant execution. Spreading too thin across too many products.',
+  key:'The real edge: macro hedge funds MUST cover when trapped. Their forced buying/selling creates your trend. Identify who is trapped, not where the chart says support is.'
+},
+'Scalping':{
+  name:'Scalping & Price Spike Trade',
+  source:'3 transcripts · SMB Setup 6',
+  what:'Quick, small, high-probability trades while watching a stock. First Move Scalp: follow the direction of the opening battle. Level Scalp: fade resistance/support. Price Spike: 1-1.5x ATR in 1-2 bars.',
+  entry:'First Move: follow the winner of the first bid/offer battle. Level: short at resistance when offers thicken, cover at support. Spike: if justified (real news), ride it. If unjustified, fade back to mean.',
+  exit:'Sell into the spike or cover into the flush. Done in seconds to a minute. For price spikes: scale out in thirds — 1/3 at HOD, 1/3 at next ATR level, 1/3 trails.',
+  stops:'2-5 cents from your entry level. Scalps have tiny risk and tiny reward — the edge is frequency and win rate, not size.',
+  mistakes:'Dismissing scalping as "not worth it." Not having price spike filters/alerts built. Shorting growth stocks at the top on Day 1 of an 800% move. Not tracking results.',
+  key:'Scalping fills dead time profitably, finances bigger trades (+$1K cushion = more aggressive on conviction), and helps you FEEL the trade. 80-90% of your playbook is bigger trades, but the inability to scalp is a weakness.'
+},
+'RS-Override':{
+  name:'Relative Strength Override',
+  source:'V9 System Rule',
+  what:'When a stock shows exceptional relative strength vs SPY despite weak breadth (GP-C or worse), it may be experiencing institutional accumulation independent of the market. Override the bench call.',
+  entry:'Must meet ALL 6 RS Override criteria: (1) RS > +2% vs SPY, (2) Above VWAP, (3) Above EMA9 > EMA20, (4) RVOL ≥2, (5) Sector showing relative strength, (6) Catalyst or institutional activity visible. Enter as any valid setup type.',
+  exit:'Normal exit rules for the selected setup type apply. Tighter stops than normal — you\'re trading against market conditions.',
+  stops:'Tighter than normal — 0.10x ATR max. You\'re fighting the tape with a stock-specific thesis, so you need to be right quickly.',
+  mistakes:'Calling RS Override without meeting ALL 6 criteria. Using it as an excuse to trade on C-Flat days. Not reducing size — even overrides use the current GP sizing.',
+  key:'RS Override is the escape valve, not a daily tool. If you\'re using it more than once a week, you\'re probably rationalizing trades the system says to skip.'
+},
+'Rotation-ETF':{
+  name:'Rotation / Sector ETF Trade',
+  source:'V9 System Rule',
+  what:'When sector rotation is visible (money flowing out of one sector into another while SPY is flat), trade the sector ETFs directly. Works on any GP where the rotation is clear.',
+  entry:'Identify the rotation via sector heatmap (XLF, XLK, XLE, etc.). Buy the sector gaining relative strength, or short the sector losing it. Use VWAP and RS as filters.',
+  exit:'Exit when the rotation signal fades — the winning sector stops outperforming, or breadth shifts to affect all sectors equally.',
+  stops:'Below sector ETF VWAP for longs. These are typically intraday trades with moderate sizing.',
+  mistakes:'Confusing sector rotation with a broad market move. Trading too many sectors at once. Not checking if the rotation is sustainable (news-driven vs flow-driven).',
+  key:'Steenbarger: "If it\'s not a trend day, it\'s a sector day." When SPY is rangy, look for sector reallocation — the money has to go somewhere.'
+}
+};
+
+function buildPlaybookHTML(setupKey){
+  var pb=_PLAYBOOK[setupKey];
+  if(!pb)return '<div style="margin-top:10px;padding:8px 12px;background:#161b22;border:1px solid #21262d;border-radius:6px;font-size:11px;color:#6e7590">No playbook card available for this setup.</div>';
+  var h='<div style="margin-top:10px">';
+  h+='<div style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#161b22;border:1px solid #21262d;border-radius:6px" onclick="var b=this.nextElementSibling;b.style.display=b.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.pb-arr\').textContent=b.style.display===\'none\'?\'▶\':\'▼\'">';
+  h+='<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:#58a6ff">📖 '+e(pb.name)+' <span class="dim" style="font-size:9px">'+e(pb.source)+'</span></span>';
+  h+='<span class="pb-arr" style="color:#6e7590;font-size:10px">▶</span></div>';
+  h+='<div style="display:none;background:#0d1117;border:1px solid #21262d;border-top:0;border-radius:0 0 6px 6px;padding:12px;font-size:12px;line-height:1.65;color:#c8cdd8">';
+  h+='<p style="margin:0 0 8px"><b style="color:#e6edf3">What it is:</b> '+e(pb.what)+'</p>';
+  h+='<p style="margin:0 0 8px"><b style="color:#00c853">Entry:</b> '+e(pb.entry)+'</p>';
+  h+='<p style="margin:0 0 8px"><b style="color:#ffc107">Exit:</b> '+e(pb.exit)+'</p>';
+  h+='<p style="margin:0 0 8px"><b style="color:#ef5350">Stops:</b> '+e(pb.stops)+'</p>';
+  h+='<p style="margin:0 0 8px"><b style="color:#ab47bc">Common mistakes:</b> '+e(pb.mistakes)+'</p>';
+  h+='<p style="margin:0"><b style="color:#26c6da">Key insight:</b> '+e(pb.key)+'</p>';
+  h+='</div></div>';
+  return h;
 }
 
 // Calculate position size from entry/stop/target
