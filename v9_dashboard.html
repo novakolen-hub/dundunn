@@ -321,10 +321,17 @@ function quickGrade(ticker,setupKey,subModeLabel,gpLetter,side){
   var rsi=parseFloat(q.rsi)||50;
   if(side==='LONG'){if(rsi>=35&&rsi<=70)g++;else if(rsi>=25&&rsi<=80)y++;else{r++;notes.push('RSI');}}
   else{if(rsi>=30&&rsi<=65)g++;else if(rsi>=20&&rsi<=75)y++;else{r++;notes.push('RSI');}}
-  // 8. Sector (benefit of doubt)
-  g++;
+  // 8. Sector (check if we have open positions in same sector from _lastD)
+  var sector=_SEC[ticker]||'';
+  if(sector&&_lastD&&_lastD.positions){
+    var secCount=0;for(var sc=0;sc<_lastD.positions.length;sc++){var pt=_lastD.positions[sc].ticker||'';if(_SEC[pt]===sector)secCount++;}
+    if(secCount===0)g++;else if(secCount===1){y++;notes.push('1 in '+sector);}else{r++;notes.push(secCount+' in '+sector);}
+  } else {g++;}
   var grade;
-  if(g>=7)grade='A';else if(g+y>=7&&g>=5)grade='B';else if(g+y>=6)grade='C';else grade='F';
+  if(g>=7&&r===0)grade='A';
+  else if(g>=6&&r<=1)grade='B';
+  else if(r<=2&&g+y>=6)grade='C';
+  else grade='F';
   return{grade:grade,greens:g,yellows:y,reds:r,notes:notes,total:g+y+r};
 }
 function gradeHtml(gr){
@@ -2863,58 +2870,52 @@ function buildGuidanceHTML(checks,setupKey,sizingAdj){
     if(checks[i].val==='RED')reds.push(checks[i]);
     else if(checks[i].val==='YELLOW')yellows.push(checks[i]);
   }
-  var passN=checks.length-reds.length;
   var h='<div style="margin-top:10px;padding:10px 12px;border-radius:6px;font-size:12px;line-height:1.6;';
   if(reds.length>=3)h+='background:#1a0d0d;border:1px solid #da3633;color:#f0a0a0">';
+  else if(reds.length>=2)h+='background:#1a0d00;border:1px solid #da3633;color:#f0a0a0">';
   else if(reds.length>=1||yellows.length>=2)h+='background:#1a1500;border:1px solid #9e6a03;color:#e3c87d">';
   else h+='background:#0d1a0d;border:1px solid #238636;color:#7ee787">';
 
-  // Generate advice based on what failed
   if(reds.length>=3){
-    h+='<b style="color:#ef5350">⛔ DO NOT TRADE.</b> '+reds.length+' checks failed. The setup conditions are not met. ';
-    h+='Wait for conditions to improve or find a different setup.';
+    h+='<b style="color:#ef5350">⛔ DO NOT TRADE.</b> '+reds.length+' checks failed. Wait for conditions to improve.';
   } else if(reds.length===0&&yellows.length===0){
-    h+='<b style="color:#00c853">✅ Full green light.</b> All checks pass. Execute with confidence at full size for this gameplan.';
+    h+='<b style="color:#00c853">✅ Full green light.</b> Execute with confidence at full size.';
+  } else if(reds.length===0&&yellows.length<=1){
+    h+='<b style="color:#00c853">✓ Strong setup.</b> ';
+    if(yellows.length===1)h+=_shortAdvice(yellows[0]);
+    h+='<div style="margin-top:3px"><b>Sizing:</b> Full base.</div>';
   } else {
-    // Contextual advice per failed/warned check
-    var advice=[];
-    for(var r=0;r<reds.length;r++){
-      var n=reds[r].name;
-      if(n.indexOf('RVOL')>=0)advice.push('RVOL below threshold — institutional participation is light. Wait for volume to confirm or take half-size.');
-      else if(n.indexOf('VWAP')>=0)advice.push('Wrong side of VWAP — the directional bias isn\'t confirmed. Wait for VWAP reclaim or flip to a short setup.');
-      else if(n.indexOf('Confluence')>=0)advice.push('Low confluence — not enough signals stacking. This is a C-grade setup at best. Reduce size to 50% or pass.');
-      else if(n.indexOf('GP')>=0)advice.push('Setup not valid for current gameplan. The system says bench — respect it or find RS Override criteria.');
-      else if(n.indexOf('Sector')>=0)advice.push('Too much sector exposure. Adding here concentrates risk. Consider a different sector or reduce existing positions first.');
-      else if(n.indexOf('RSI')>=0)advice.push('RSI at extreme — momentum is overextended. High risk of mean reversion against your entry.');
-      else if(n.indexOf('Session')>=0)advice.push('Not the ideal session for this setup type. Proceed with tighter stops.');
-      else if(n.indexOf('VIX')>=0)advice.push('Elevated VIX — wider expected moves. Use wider stops and reduce size by 25%.');
-    }
-    for(var y=0;y<yellows.length;y++){
-      var yn=yellows[y].name;
-      if(yn.indexOf('RVOL')>=0)advice.push('RVOL borderline — close to threshold but not there yet. Wait 15 min for volume to build or take starter size only.');
-      else if(yn.indexOf('VWAP')>=0)advice.push('Near VWAP — not clearly above/below. Wait for a decisive move or use a tighter stop.');
-      else if(yn.indexOf('GP')>=0)advice.push('Caution combo — setup allowed but sub-mode is weakening. Use reduced size per the sizing badge.');
-      else if(yn.indexOf('Confluence')>=0)advice.push('Confluence in the Playbook tier — tradeable but needs checklist confirmation.');
-      else if(yn.indexOf('VIX')>=0)advice.push('VIX elevated — factor in wider expected move for stop placement.');
-      else if(yn.indexOf('Sector')>=0)advice.push('One position already open in this sector — acceptable but watch total exposure.');
-    }
+    // Build concise issue list — max 2 most important
+    var issues=[];
+    for(var ri=0;ri<Math.min(reds.length,2);ri++)issues.push(_shortAdvice(reds[ri]));
+    if(issues.length<2)for(var yi=0;yi<Math.min(yellows.length,2-issues.length);yi++)issues.push(_shortAdvice(yellows[yi]));
+
     if(reds.length>=2){
-      h+='<b style="color:#ef5350">⚠️ Weak setup — consider passing.</b> ';
-    } else if(reds.length===1&&yellows.length>=2){
-      h+='<b style="color:#ffc107">⚠️ Proceed with caution — reduced conviction.</b> ';
+      h+='<b style="color:#ef5350">⚠️ Weak — consider passing.</b> ';
     } else if(reds.length===1){
-      h+='<b style="color:#ffc107">△ One issue to address:</b> ';
+      h+='<b style="color:#ffc107">△ Reduced conviction.</b> ';
     } else {
-      h+='<b style="color:#e3b341">✓ Pass with notes:</b> ';
+      h+='<b style="color:#e3b341">✓ Pass with notes.</b> ';
     }
-    h+=advice.join(' ');
-    // Sizing implication
-    if(reds.length>=2)h+='<div style="margin-top:4px"><b>Sizing:</b> Pass this trade or wait for improvement.</div>';
-    else if(reds.length===1)h+='<div style="margin-top:4px"><b>Sizing:</b> Half of normal base, Tier 1 only. Add only if the RED check flips.</div>';
-    else if(yellows.length>=2)h+='<div style="margin-top:4px"><b>Sizing:</b> 75% of normal base. Be ready to exit faster.</div>';
+    h+=issues.join(' ');
+    // Sizing directive
+    if(reds.length>=2)h+='<div style="margin-top:3px"><b>Sizing:</b> Pass or wait for improvement.</div>';
+    else if(reds.length===1)h+='<div style="margin-top:3px"><b>Sizing:</b> Half base, Tier 1 only. Add only if the RED flips.</div>';
+    else h+='<div style="margin-top:3px"><b>Sizing:</b> 75% base. Tighter stops.</div>';
   }
-  h+='</div>';
-  return h;
+  h+='</div>';return h;
+}
+function _shortAdvice(chk){
+  var n=chk.name||'';
+  if(n.indexOf('RVOL')>=0)return chk.val==='RED'?'RVOL too low — no institutional volume.':'RVOL borderline — wait for volume or starter size.';
+  if(n.indexOf('VWAP')>=0)return chk.val==='RED'?'Wrong side of VWAP — wait for reclaim.':'Near VWAP — wait for decisive move.';
+  if(n.indexOf('Confluence')>=0)return chk.val==='RED'?'Low confluence — not enough signals stacking.':'Confluence in Playbook tier — needs checklist.';
+  if(n.indexOf('GP')>=0)return chk.val==='RED'?'Setup blocked for current GP.':'GP caution — reduced size per sub-mode.';
+  if(n.indexOf('Sector')>=0)return chk.val==='RED'?'Too much sector exposure — adding concentrates risk.':'One open in sector — watch total exposure.';
+  if(n.indexOf('RSI')>=0)return 'RSI at extreme — overextended for entry.';
+  if(n.indexOf('VIX')>=0)return chk.val==='RED'?'High VIX — reduce size 25%, wider stops.':'VIX elevated — wider expected moves.';
+  if(n.indexOf('Session')>=0)return 'Not ideal session for this setup.';
+  return '';
 }
 
 // ── SMB PLAYBOOK CARDS ──
