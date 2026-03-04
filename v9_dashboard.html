@@ -233,22 +233,22 @@ var _d,_n=0,_e=0;
 // Used for: active setups bar, setup labels on cards, GP filtering
 // ══════════════════════════════════════════════════════════════
 var C_REGISTRY={
-  'VWAP-Hold':      {label:'VWAP Hold',             validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure'},
-  'OR-Break':       {label:'OR Break',               validGP:['A','B'],                       minRVOL:1.5, nature:'breakout'},
-  'Pullback-EMA':   {label:'Pullback EMA',           validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure'},
-  'Momentum':       {label:'Momentum',               validGP:['A','B'],                       minRVOL:2,   nature:'momentum'},
-  'Failed-BD':      {label:'Failed BD',              validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure'},
-  'RS-Override':    {label:'RS Override',             validGP:['A','B','C-Recovery','C','D'],  minRVOL:2,   nature:'any'},
-  'Rotation-ETF':   {label:'Rotation ETF',           validGP:['A','B','C-Recovery','D'],      minRVOL:0,   nature:'any'},
-  'BigDog':         {label:'Big Dog',                validGP:['A','B'],                       minRVOL:3,   nature:'momentum'},
-  'BigDogBounce':   {label:'BigDog Bounce',          validGP:['A','B','C-Recovery'],          minRVOL:2,   nature:'structure'},
-  'GapGo':          {label:'Gap & Go',               validGP:['A','B'],                       minRVOL:2,   nature:'momentum'},
-  'DailyBreakout':  {label:'Daily Breakout',         validGP:['A','B'],                       minRVOL:3,   nature:'breakout'},
-  'OpeningDrive':   {label:'Opening Drive',          validGP:['A','B'],                       minRVOL:1.5, nature:'momentum'},
-  'MarketPlay':     {label:'Market Play',            validGP:['A','B','C-Recovery','D'],      minRVOL:1.5, nature:'any'},
-  'SecondDay':      {label:'Second Day',             validGP:['A','B'],                       minRVOL:1.5, nature:'momentum'},
-  'ReturnPullback': {label:'Return Pullback',        validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure'},
-  'Scalping':       {label:'Scalping',               validGP:['A','B','D'],                   minRVOL:1,   nature:'any'}
+  'VWAP-Hold':      {label:'VWAP Hold',             validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure', stopATR:0.15, rr:3, scale:'Nibble→add on turn→trail'},
+  'OR-Break':       {label:'OR Break',               validGP:['A','B'],                       minRVOL:1.5, nature:'breakout',  stopATR:0.20, rr:3, scale:'50% at 1R, trail rest above OR'},
+  'Pullback-EMA':   {label:'Pullback EMA',           validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure', stopATR:0.15, rr:3, scale:'50% at prior high, trail w/ EMA9'},
+  'Momentum':       {label:'Momentum',               validGP:['A','B'],                       minRVOL:2,   nature:'momentum',  stopATR:0.15, rr:3, scale:'Add on higher lows, sell into spike'},
+  'Failed-BD':      {label:'Failed BD',              validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure', stopATR:0.15, rr:3, scale:'50% at opposite edge, trail rest'},
+  'RS-Override':    {label:'RS Override',             validGP:['A','B','C-Recovery','C','D'],  minRVOL:2,   nature:'any',       stopATR:0.10, rr:3, scale:'Tight stops, 33% at 1R/2R/trail'},
+  'Rotation-ETF':   {label:'Rotation ETF',           validGP:['A','B','C-Recovery','D'],      minRVOL:0,   nature:'any',       stopATR:0.20, rr:2, scale:'50% at 1R, trail rest'},
+  'BigDog':         {label:'Big Dog',                validGP:['A','B'],                       minRVOL:3,   nature:'momentum',  stopATR:0.20, rr:5, scale:'33% at 1R, 33% at 2R, trail'},
+  'BigDogBounce':   {label:'BigDog Bounce',          validGP:['A','B','C-Recovery'],          minRVOL:2,   nature:'structure', stopATR:0.15, rr:3, scale:'50% at VWAP, trail above'},
+  'GapGo':          {label:'Gap & Go',               validGP:['A','B'],                       minRVOL:2,   nature:'momentum',  stopATR:0.20, rr:5, scale:'33% at 1R, hold runner for multi-day'},
+  'DailyBreakout':  {label:'Daily Breakout',         validGP:['A','B'],                       minRVOL:3,   nature:'breakout',  stopATR:0.20, rr:3, scale:'33% at 1R, 33% at measured move, trail'},
+  'OpeningDrive':   {label:'Opening Drive',          validGP:['A','B'],                       minRVOL:1.5, nature:'momentum',  stopATR:0.05, rr:10,scale:'Sell into spike, done in 2 min'},
+  'MarketPlay':     {label:'Market Play',            validGP:['A','B','C-Recovery','D'],      minRVOL:1.5, nature:'any',       stopATR:0.20, rr:3, scale:'50% core holds, 50% trades ebb/flow'},
+  'SecondDay':      {label:'Second Day',             validGP:['A','B'],                       minRVOL:1.5, nature:'momentum',  stopATR:0.15, rr:3, scale:'25-50% at level, rest on breakout'},
+  'ReturnPullback': {label:'Return Pullback',        validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure', stopATR:0.15, rr:3, scale:'100% at opposite zone edge'},
+  'Scalping':       {label:'Scalping',               validGP:['A','B','D'],                   minRVOL:1,   nature:'any',       stopATR:0.05, rr:2, scale:'Full size in, full size out — seconds'}
 };
 
 // Caution combos: sub-mode + setup = allowed but YELLOW
@@ -2790,15 +2790,56 @@ function renderPTModal(d){
   h+=buildScorecardHTML(d,detectedKey||'Momentum','LONG');
   h+='</div>';
 
-  // ── Section 4: Entry / Stop / Target ──
+  // ── Section 4: Trade Plan (auto-filled) ──
   h+='<div class="pt-section">';
   h+='<div class="pt-label">Trade Plan</div>';
+
+  // Calculate suggested levels
+  var setupReg=C_REGISTRY[detectedKey||'Momentum']||{};
+  var atr=d.atr||1;
+  var entry=d.last;
+  var stopDist=atr*(setupReg.stopATR||0.15);
+  var sugStop=Math.round((entry-stopDist)*100)/100;
+  var sugTarget=Math.round((entry+stopDist*(setupReg.rr||3))*100)/100;
+
+  // Smart stop: use nearest structure level if available
+  var smartStop=sugStop;
+  var stopNote='ATR-based ('+((setupReg.stopATR||0.15)*100).toFixed(0)+'% ATR)';
+  // Check VWAP as stop reference
+  if(d.vwap>0&&d.vwap<entry&&d.vwap>sugStop){
+    smartStop=Math.round((d.vwap-0.05)*100)/100;
+    stopNote='Below VWAP ($'+d.vwap.toFixed(2)+')';
+  }
+  // Check OR low
+  if(d.orLo>0&&d.orLo<entry&&d.orLo>sugStop&&(detectedKey==='Failed-BD'||detectedKey==='OR-Break')){
+    smartStop=Math.round((d.orLo-0.05)*100)/100;
+    stopNote='Below OR Low ($'+d.orLo.toFixed(2)+')';
+  }
+  // Check EMA20 for pullback
+  if(d.ema20>0&&d.ema20<entry&&d.ema20>sugStop&&detectedKey==='Pullback-EMA'){
+    smartStop=Math.round((d.ema20-atr*0.10)*100)/100;
+    stopNote='Below EMA20 ($'+d.ema20.toFixed(2)+')';
+  }
+
+  var risk=Math.abs(entry-smartStop);
+  var sugTarget2=Math.round((entry+risk*(setupReg.rr||3))*100)/100;
+
+  // Suggested shares from sizing
+  var sizing=d.gpSizing||{baseLo:8000,baseHi:12000};
+  var midBase=(sizing.baseLo+sizing.baseHi)/2;
+  var sugShares=Math.floor(midBase/entry);
+  var dollarRisk=sugShares*risk;
+
   h+='<div class="pt-input-row">';
-  h+='<input class="pt-input" id="ptEntry" type="number" step="0.01" placeholder="Entry" value="'+d.last.toFixed(2)+'" onchange="ptCalcSize()">';
-  h+='<input class="pt-input" id="ptStop" type="number" step="0.01" placeholder="Stop" onchange="ptCalcSize()">';
-  h+='<input class="pt-input" id="ptTarget" type="number" step="0.01" placeholder="Target" onchange="ptCalcSize()">';
+  h+='<div style="flex:1"><div style="font-size:9px;color:#6e7590;margin-bottom:2px">ENTRY</div><input class="pt-input" id="ptEntry" type="number" step="0.01" value="'+entry.toFixed(2)+'" onchange="ptCalcSize()"></div>';
+  h+='<div style="flex:1"><div style="font-size:9px;color:#6e7590;margin-bottom:2px">STOP <span class="dim">('+e(stopNote)+')</span></div><input class="pt-input" id="ptStop" type="number" step="0.01" value="'+smartStop.toFixed(2)+'" onchange="ptCalcSize()" style="border-color:#da3633"></div>';
+  h+='<div style="flex:1"><div style="font-size:9px;color:#6e7590;margin-bottom:2px">TARGET <span class="dim">('+setupReg.rr+':1)</span></div><input class="pt-input" id="ptTarget" type="number" step="0.01" value="'+sugTarget2.toFixed(2)+'" onchange="ptCalcSize()" style="border-color:#238636"></div>';
   h+='</div>';
-  h+='<div class="pt-sizing" id="ptSizing"><div class="pt-sz-row"><span class="lbl">Enter stop + target to calculate sizing</span></div></div>';
+
+  // Auto-show sizing immediately
+  h+='<div class="pt-sizing" id="ptSizing">';
+  h+=_buildSizingHTML(entry,smartStop,sugTarget2,setupReg,sizing,d.gpSizingAdj||'');
+  h+='</div>';
   h+='</div>';
 
   // ── Section 5: Playbook Card ──
@@ -2913,9 +2954,23 @@ function ptUpdateSC(){
   var side=$('ptSide').value;
   var sec=$('ptSCSection');
   if(sec)sec.innerHTML=buildScorecardHTML(_ptData,setup,side);
-  // Update playbook card
   var pb=$('ptPlaybook');if(pb)pb.innerHTML=buildPlaybookHTML(setup);
-  ptCalcSize(); // re-calc sizing too
+  // Recalculate suggested stop/target for new setup type
+  var reg=C_REGISTRY[setup]||{};
+  var d=_ptData;
+  var atr=d.atr||1;
+  var entry=parseFloat($('ptEntry').value)||d.last;
+  var stopDist=atr*(reg.stopATR||0.15);
+  var newStop=Math.round((entry-stopDist)*100)/100;
+  // Smart stop logic
+  if(d.vwap>0&&d.vwap<entry&&d.vwap>newStop){newStop=Math.round((d.vwap-0.05)*100)/100;}
+  if(d.orLo>0&&d.orLo<entry&&d.orLo>newStop&&(setup==='Failed-BD'||setup==='OR-Break')){newStop=Math.round((d.orLo-0.05)*100)/100;}
+  if(d.ema20>0&&d.ema20<entry&&d.ema20>newStop&&setup==='Pullback-EMA'){newStop=Math.round((d.ema20-atr*0.10)*100)/100;}
+  var risk=Math.abs(entry-newStop);
+  var newTarget=Math.round((entry+risk*(reg.rr||3))*100)/100;
+  $('ptStop').value=newStop.toFixed(2);
+  $('ptTarget').value=newTarget.toFixed(2);
+  ptCalcSize();
 }
 
 // ── SCORECARD GUIDANCE ENGINE ──
@@ -3156,41 +3211,43 @@ function buildPlaybookHTML(setupKey){
   return h;
 }
 
-// Calculate position size from entry/stop/target
+// Shared sizing calculation renderer
+function _buildSizingHTML(entry,stop,target,reg,sizing,sizingAdj){
+  if(!entry||!stop)return '<div class="pt-sz-row"><span class="lbl">Enter stop to calculate sizing</span></div>';
+  var risk=Math.abs(entry-stop);
+  if(risk<=0)return '<div class="pt-sz-row"><span class="lbl">Stop must differ from entry</span></div>';
+
+  var midBase=(sizing.baseLo+sizing.baseHi)/2;
+  var shares=Math.floor(midBase/entry);
+  var dollarRisk=shares*risk;
+  var rr=target>0?((Math.abs(target-entry))/risk):0;
+  var rrCls=rr>=3?'g':rr>=2?'y':'r';
+  var r1=(entry+risk).toFixed(2),r2=(entry+risk*2).toFixed(2),r3=(entry+risk*3).toFixed(2);
+
+  var h='';
+  h+='<div class="pt-sz-row"><span class="lbl">Shares</span><span class="val">'+shares+' sh · $'+(shares*entry).toFixed(0)+'</span></div>';
+  h+='<div class="pt-sz-row"><span class="lbl">$ Risk</span><span class="val r">−$'+dollarRisk.toFixed(0)+' ('+risk.toFixed(2)+'/sh)</span></div>';
+  if(target>0){
+    h+='<div class="pt-sz-row"><span class="lbl">R:R</span><span class="val '+rrCls+'">'+rr.toFixed(1)+':1</span></div>';
+    var profit=shares*Math.abs(target-entry);
+    h+='<div class="pt-sz-row"><span class="lbl">Target P&L</span><span class="val g">+$'+profit.toFixed(0)+' at $'+target.toFixed(2)+'</span></div>';
+  }
+  h+='<div class="pt-sz-row"><span class="lbl">R-Levels</span><span class="val dim" style="font-size:10px">1R $'+r1+' · 2R $'+r2+' · 3R $'+r3+'</span></div>';
+  h+='<div style="margin-top:6px;font-size:10px;color:#6e7590">Base: $'+sizing.baseLo+'–$'+sizing.baseHi+' ('+e(sizingAdj)+') · '+e(reg.scale||'')+'</div>';
+  return h;
+}
+
+// Calculate position size from entry/stop/target (on manual edit)
 function ptCalcSize(){
   if(!_ptData)return;
   var entry=parseFloat($('ptEntry').value)||0;
   var stop=parseFloat($('ptStop').value)||0;
   var target=parseFloat($('ptTarget').value)||0;
   var el=$('ptSizing');
-  if(!entry||!stop){el.innerHTML='<div class="pt-sz-row"><span class="lbl">Enter stop + target to calculate sizing</span></div>';return;}
-
-  var risk=Math.abs(entry-stop);
-  if(risk<=0){el.innerHTML='<div class="pt-sz-row"><span class="lbl">Stop must differ from entry</span></div>';return;}
-
-  // Use effective sizing from sub-mode
-  var sizing=_ptData.gpSizing||{baseLo:8000,baseHi:12000};
-  var midBase=(sizing.baseLo+sizing.baseHi)/2;
-  var shares=Math.floor(midBase/entry);
-  var dollarRisk=shares*risk;
-  var rr=target>0?((target-entry)/risk).toFixed(1):'—';
-  var r1=(entry+risk).toFixed(2), r2=(entry+risk*2).toFixed(2), r3=(entry+risk*3).toFixed(2);
-
   var setup=$('ptSetup').value;
   var reg=C_REGISTRY[setup]||{};
-  var scalePlan=reg.scalePlan||'33% at 1R, 33% at 2R, trail';
-
-  var h='';
-  h+='<div class="pt-sz-row"><span class="lbl">Position</span><span class="val">'+shares+' sh · $'+(shares*entry).toFixed(0)+'</span></div>';
-  h+='<div class="pt-sz-row"><span class="lbl">$ Risk</span><span class="val r">$'+dollarRisk.toFixed(0)+' ('+risk.toFixed(2)+'/sh)</span></div>';
-  h+='<div class="pt-sz-row"><span class="lbl">R:R</span><span class="val '+(parseFloat(rr)>=2?'g':parseFloat(rr)>=1?'y':'r')+'">'+rr+':1</span></div>';
-  h+='<div class="pt-sz-row"><span class="lbl">R-Levels</span><span class="val dim">1R $'+r1+' · 2R $'+r2+' · 3R $'+r3+'</span></div>';
-  if(target>0){
-    var profit=shares*Math.abs(target-entry);
-    h+='<div class="pt-sz-row"><span class="lbl">Target P&L</span><span class="val g">+$'+profit.toFixed(0)+' at $'+target.toFixed(2)+'</span></div>';
-  }
-  h+='<div style="margin-top:6px;font-size:10px;color:#6e7590">Base: $'+sizing.baseLo+'-$'+sizing.baseHi+' ('+e(_ptData.gpSizingAdj||'')+') · Scale: '+e(scalePlan)+'</div>';
-  el.innerHTML=h;
+  var sizing=_ptData.gpSizing||{baseLo:8000,baseHi:12000};
+  el.innerHTML=_buildSizingHTML(entry,stop,target,reg,sizing,_ptData.gpSizingAdj||'');
 }
 
 function rFoot(d){
