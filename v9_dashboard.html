@@ -2437,6 +2437,8 @@ function rFocused(d){
     h+='<span>'+tkLink(tk,1)+' '+src.join(' ');
     if(cm.conf){var ccc=cm.conf>=28?'g':cm.conf>=24?'y':'dim';h+=' <span class="mono '+ccc+'" style="font-size:11px" title="Confluence">⚡'+cm.conf.toFixed(0)+'</span>';}
     if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
+    // Setup type label (clickable → opens pre-trade modal)
+    if(q.setup||cm.setup){var _smlF=(d.gpSubMode&&d.gpSubMode.subMode)?d.gpSubMode.subMode:'';h+=setupTagHtml(q.setup||cm.setup,_smlF,d.gpLetter||'C',tk);}
     h+='</span>';
     h+='<span class="mono" style="font-size:13px">';
     if(q.last)h+=e(q.last)+' ';
