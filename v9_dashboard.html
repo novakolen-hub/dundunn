@@ -2666,13 +2666,50 @@ function rHidden(d){
 // PRE-TRADE SCORECARD MODAL (Component D — Phase 3)
 // ══════════════════════════════════════════════════════════════
 var _ptData=null; // cached pretrade response
+var _ptCandidateList=[]; // ordered list of candidate tickers for nav
+var _ptCurrentIdx=-1; // current index in candidate list
 
 function openPT(symbol){
   if(!symbol)return;
+  // Build candidate list if not already set, or find position in existing list
+  if(!_ptCandidateList.length)_buildCandidateList();
+  _ptCurrentIdx=-1;
+  for(var i=0;i<_ptCandidateList.length;i++){if(_ptCandidateList[i]===symbol){_ptCurrentIdx=i;break;}}
+  _loadPTModal(symbol);
+}
+
+function _buildCandidateList(){
+  var sm=_lastD?_lastD.gpSubMode:null;var gp=(_lastD&&_lastD.gpLetter)||'C';
+  var subModeLabel=(sm&&sm.subMode)?sm.subMode:'';
+  var tqKeys=Object.keys(_tq||{});var cands=[];
+  for(var i=0;i<tqKeys.length;i++){
+    var tk=tqKeys[i],q=_tq[tk];
+    if(!q||!q.setup||!q.last||tk.charAt(0)==='$')continue;
+    var key=_matchSetupKey(q.setup);if(!key)continue;
+    var chk=_cSGP(key,subModeLabel,gp);if(!chk.ok)continue;
+    var gr=quickGrade(tk,key,subModeLabel,gp,'LONG');
+    if(!gr||gr.grade==='F')continue;
+    cands.push({ticker:tk,grade:gr.grade,conf:parseFloat(q.conf)||0});
+  }
+  var go={A:0,B:1,C:2};
+  cands.sort(function(a,b){var gd=(go[a.grade]||3)-(go[b.grade]||3);return gd!==0?gd:b.conf-a.conf;});
+  _ptCandidateList=cands.map(function(c){return c.ticker;});
+}
+
+function ptNav(dir){
+  if(!_ptCandidateList.length)return;
+  var newIdx=_ptCurrentIdx+dir;
+  if(newIdx<0)newIdx=_ptCandidateList.length-1;
+  if(newIdx>=_ptCandidateList.length)newIdx=0;
+  _ptCurrentIdx=newIdx;
+  _loadPTModal(_ptCandidateList[newIdx]);
+}
+
+function _loadPTModal(symbol){
   var ov=$('ptOverlay');ov.classList.add('open');
-  $('ptTitle').textContent='Pre-Trade: '+symbol;
-  $('ptBody').innerHTML='<div class="pt-loading">Loading '+e(symbol)+' data...</div>';
-  // Fetch pre-trade data
+  var countTxt=_ptCandidateList.length>0?' <span class="dim" style="font-size:11px">'+(_ptCurrentIdx+1)+'/'+_ptCandidateList.length+'</span>':'';
+  $('ptTitle').innerHTML='<span style="cursor:pointer;padding:4px 8px;border-radius:4px;margin-right:6px" onclick="ptNav(-1)" title="Previous">◀</span>'+e(symbol)+countTxt+'<span style="cursor:pointer;padding:4px 8px;border-radius:4px;margin-left:6px" onclick="ptNav(1)" title="Next">▶</span>';
+  $('ptBody').innerHTML='<div class="pt-loading">Loading '+e(symbol)+'...</div>';
   fetch(EP+'?mode=pretrade&symbol='+encodeURIComponent(symbol)+'&t='+Date.now())
     .then(function(r){return r.json()})
     .then(function(d){
@@ -2684,6 +2721,14 @@ function openPT(symbol){
 }
 
 function closePT(){$('ptOverlay').classList.remove('open');_ptData=null;}
+
+// Keyboard nav: ← → arrows when modal is open, Escape to close
+document.addEventListener('keydown',function(ev){
+  if(!$('ptOverlay').classList.contains('open'))return;
+  if(ev.key==='ArrowLeft'){ev.preventDefault();ptNav(-1);}
+  else if(ev.key==='ArrowRight'){ev.preventDefault();ptNav(1);}
+  else if(ev.key==='Escape')closePT();
+});
 
 function renderPTModal(d){
   var h='';
