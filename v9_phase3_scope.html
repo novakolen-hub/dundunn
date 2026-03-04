@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V9 Dashboard Phase 3 — Build Scope</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0f14;--s:#13161e;--s2:#191d28;--s3:#1e2230;
+  --b:#262b3a;--bh:#323850;
+  --t:#c8cdd8;--td:#6e7590;--tw:#e8ecf4;
+  --a:#00c853;--b2:#42a5f5;--c:#ff9800;--d:#ef5350;--y:#ffc107;--cy:#26c6da;--pu:#ab47bc;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t);font-family:'Source Serif 4',Georgia,serif;font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.page{max-width:900px;margin:0 auto;padding:28px 20px 80px}
+h1{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--tw);letter-spacing:-0.5px}
+h1 span{color:var(--cy)}
+.meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td);margin-top:4px;letter-spacing:0.3px;text-transform:uppercase}
+h2{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:var(--cy);margin:36px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--b)}
+h2 .n{display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;background:var(--s2);border-radius:5px;font-size:11px;color:var(--td);margin-right:8px;vertical-align:middle}
+h3{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--tw);margin:18px 0 6px}
+p{margin:6px 0}
+.card{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:14px 16px;margin:10px 0}
+.card-cy{border-left:3px solid var(--cy)}
+.card-y{border-left:3px solid var(--y)}
+.card-g{border-left:3px solid var(--a)}
+.card-r{border-left:3px solid var(--d)}
+.card b{color:var(--tw)}
+code{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--s2);color:var(--cy);padding:1px 5px;border-radius:3px}
+pre{background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:12px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.5;color:#b0b8cc;margin:8px 0 12px}
+.tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:3px;vertical-align:middle;letter-spacing:0.3px;margin-left:4px}
+.t-p1{background:#238636;color:#fff} .t-p2{background:#1f6feb;color:#fff} .t-p3{background:var(--pu);color:#fff}
+.t-new{background:var(--a);color:#000} .t-mod{background:var(--y);color:#000} .t-wire{background:var(--cy);color:#000}
+.effort{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--td);margin-top:4px}
+.dep{font-size:12px;color:var(--td);font-style:italic;margin-top:4px}
+.tbl-wrap{overflow-x:auto;margin:12px 0;border-radius:8px;border:1px solid var(--b)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{background:var(--s2);color:var(--cy);font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px;padding:8px;text-align:left;border-bottom:2px solid var(--bh)}
+td{padding:7px 8px;border-bottom:1px solid var(--b);vertical-align:top}
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:10px 0;font-family:'JetBrains Mono',monospace;font-size:11px}
+.fs{background:var(--s2);border:1px solid var(--b);border-radius:5px;padding:5px 10px;color:var(--tw)}
+.fa{color:var(--td);font-size:14px}
+@media(max-width:600px){.page{padding:16px 12px 60px}h1{font-size:18px}h2{font-size:13px}}
+.fade{opacity:0;transform:translateY(6px);animation:fu .4s ease forwards}
+@keyframes fu{to{opacity:1;transform:translateY(0)}}
+.fade:nth-child(2){animation-delay:.04s}.fade:nth-child(3){animation-delay:.08s}.fade:nth-child(4){animation-delay:.12s}.fade:nth-child(5){animation-delay:.16s}.fade:nth-child(6){animation-delay:.2s}.fade:nth-child(7){animation-delay:.24s}.fade:nth-child(8){animation-delay:.28s}.fade:nth-child(9){animation-delay:.32s}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="fade">
+<h1>Dashboard Phase 3 <span>— Build Scope</span></h1>
+<div class="meta">v11.16 Target · 5 Components · Backend: v90.9 ready · March 2026</div>
+</div>
+
+<!-- ════════ WHAT EXISTS ════════ -->
+<section class="fade">
+<h2><span class="n">00</span> What Already Works</h2>
+<div class="card card-g">
+<b>GP Banner (v11.15):</b> Already shows sub-mode label, trajectory arrow, sizing advisory text, and GP timeline bar. The <code>gpSubMode</code> object is read from the poll response and rendered. This is the one piece that's live.
+</div>
+<div class="card card-g">
+<b>Book section (v11.15):</b> Shows live positions from TradeStation with P&L, position heat strip, bias signals, Arete cross-reference, key levels, sparklines, and sort pills. PIN-locked. This doesn't use TM data yet — it reads from the scanner's <code>positions</code> array.
+</div>
+<div class="card card-g">
+<b>Ticker cards (v11.15):</b> Rich cards with flags, levels, VWAP distance, EMA, OR, sparklines, confluence scores, persistent notes, dual-links. No setup type labels.
+</div>
+</section>
+
+<!-- ════════ COMPONENT MAP ════════ -->
+<section class="fade">
+<h2><span class="n">01</span> The 5 Components</h2>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>#</th><th>Component</th><th>What it does</th><th>Backend source</th><th>Priority</th></tr></thead>
+<tbody>
+<tr><td>A</td><td><b>GP Sizing Badge</b></td><td>Shows dollar range badge next to sub-mode label on GP banner</td><td><code>SUBMODE_SIZING</code> via poll</td><td><span class="tag t-p1">P1</span></td></tr>
+<tr><td>B</td><td><b>Active Setups Bar</b></td><td>Filtered setup strip below GP banner — what's tradeable right now</td><td><code>getActiveSetups()</code></td><td><span class="tag t-p1">P1</span></td></tr>
+<tr><td>C</td><td><b>Setup Labels on Cards</b></td><td>Badge on each ticker card showing matched setup type + caution flag</td><td><code>_matchSetupType()</code> via enriched quotes</td><td><span class="tag t-p1">P1</span></td></tr>
+<tr><td>D</td><td><b>Pre-Trade Scorecard Modal</b></td><td>Click-to-evaluate: 8-check scorecard, sizing calc, trade plan form</td><td><code>getPreTradeData()</code> + <code>evaluateScorecard()</code></td><td><span class="tag t-p2">P2</span></td></tr>
+<tr><td>E</td><td><b>TM Book Integration</b></td><td>Open trades from Trades tab with live P&L, daily limit bar, sync status</td><td><code>syncTrades()</code> + <code>getDailyLimitStatus()</code></td><td><span class="tag t-p3">P3</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card card-cy">
+<b>Build order rationale:</b> A+B+C are pure display — they read data the backend already computes and show it. No new API calls needed, just include more fields in the existing poll response. D requires a new fetch call (<code>getPreTradeData</code>) triggered by user action (click). E requires wiring the Trades tab data into the poll, replacing the current TradeStation-direct position feed.
+</div>
+</section>
+
+<!-- ════════ COMPONENT A ════════ -->
+<section class="fade">
+<h2><span class="n">A</span> GP Sizing Badge <span class="tag t-p1">P1</span> <span class="tag t-mod">MOD</span></h2>
+
+<h3>Current state</h3>
+<p>The GP banner shows text like "◉ C-Recovery: Tier 1-2 max ($3-6K), select setups only" — but this is hardcoded text, not reading from <code>SUBMODE_SIZING</code>. It also says $3-6K when the actual value is now $3-5K.</p>
+
+<h3>Change</h3>
+<p>Add a colored sizing badge inline with the sub-mode tag. Read <code>sizingAdj</code> from the poll data, map to badge styling and dollar text. Replace the hardcoded advisory lines with dynamic text from the sizing map.</p>
+
+<pre>
+// Badge rendering in rGP():
+var sizeBadges = {
+  full:     { bg:'rgba(0,200,83,0.12)', col:'#00c853', txt:'$15-20K' },
+  standard: { bg:'rgba(66,165,245,0.12)', col:'#42a5f5', txt:'$8-12K' },
+  reduce:   { bg:'rgba(255,193,7,0.12)', col:'#ffc107', txt:'$6-9K' },
+  small:    { bg:'rgba(255,152,0,0.12)', col:'#ff9800', txt:'$3-5K' },
+  bench:    { bg:'rgba(239,83,80,0.12)', col:'#ef5350', txt:'BENCH' },
+  inverse:  { bg:'rgba(171,71,188,0.12)', col:'#ab47bc', txt:'$8-12K INV' }
+};
+// → renders as pill badge: [small $3-5K] next to [C-Recovery ▲]
+</pre>
+
+<div class="effort">~15 lines changed in rGP(). No new API calls.</div>
+</section>
+
+<!-- ════════ COMPONENT B ════════ -->
+<section class="fade">
+<h2><span class="n">B</span> Active Setups Bar <span class="tag t-p1">P1</span> <span class="tag t-new">NEW</span></h2>
+
+<h3>What it is</h3>
+<p>A horizontal strip below the GP banner that answers: "What can I trade right now?" Shows filtered setup types valid for the current sub-mode, with count of matching tickers.</p>
+
+<h3>Visual</h3>
+<pre>
+┌──────────────────────────────────────────────────────────────┐
+│  ACTIVE SETUPS · C-Recovery                                  │
+│  ┌─────────────┐ ┌──────────────┐ ┌────────────┐            │
+│  │ VWAP-Hold 4 │ │ Pullback-EMA │ │ Failed-BD  │  + 2 more  │
+│  │ ✓ structure │ │ ✓ structure  │ │ ✓ struct.  │            │
+│  └─────────────┘ └──────────────┘ └────────────┘            │
+│  Blocked: Momentum · BigDog · GapGo · OpeningDrive · ...     │
+└──────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>Data source</h3>
+<p>The backend <code>getActiveSetups()</code> returns this data, but calling it on every poll is expensive. Instead: include the <code>validGP</code> arrays in the poll response (via <code>setupTypes</code> in <code>getPreTradeData()</code>) and filter client-side. The dashboard already knows the current sub-mode from the poll. Client-side filtering = zero extra API cost.</p>
+
+<div class="flow">
+  <div class="fs">Poll response</div><div class="fa">→</div>
+  <div class="fs">gpSubMode.subMode</div><div class="fa">→</div>
+  <div class="fs">filter SETUP_REGISTRY client-side</div><div class="fa">→</div>
+  <div class="fs">render bar</div>
+</div>
+
+<h3>Implementation</h3>
+<p>Ship a static copy of <code>SETUP_REGISTRY</code> (just <code>validGP</code>, <code>minRVOL</code>, <code>nature</code>, <code>label</code>) to the dashboard as a JS constant. Run the same <code>_checkSetupGP</code> matching logic client-side. Green badge = allowed, yellow = caution, grayed = blocked. Clicking an allowed setup scrolls to the section containing matching tickers.</p>
+
+<div class="effort">~60 lines new. JS constant + rActiveSetups() function + new div. No API calls.</div>
+</section>
+
+<!-- ════════ COMPONENT C ════════ -->
+<section class="fade">
+<h2><span class="n">C</span> Setup Labels on Ticker Cards <span class="tag t-p1">P1</span> <span class="tag t-mod">MOD</span></h2>
+
+<h3>What it is</h3>
+<p>Each ticker card in the In Play, Watching, Focused sections gets a small badge showing the matched setup type when one is detected. Caution (△) setups show a yellow warning. Blocked setups show a dimmed label with strikethrough.</p>
+
+<h3>Data source</h3>
+<p>The scanner already writes the <code>setup</code> field to each ticker's quote data (visible in <code>_tq[ticker].setup</code>). The <code>_matchSetupType()</code> logic runs server-side. The dashboard needs to:</p>
+<ol style="margin-left:20px;margin-top:4px;font-size:13px">
+  <li>Read <code>setup</code> from the quote data (already available)</li>
+  <li>Cross-reference against the client-side <code>SETUP_REGISTRY</code> copy</li>
+  <li>Check current sub-mode to determine if it's allowed/caution/blocked</li>
+  <li>Render the badge on the card</li>
+</ol>
+
+<h3>Badge examples</h3>
+<pre>
+GP-A, ticker shows VWAP-Hold:
+  [VWAP-Hold ✓] — green badge, structure icon
+
+GP-B-Weakening, ticker shows OR-Break:
+  [OR-Break △] — yellow badge, caution tooltip
+
+GP-C-Recovery, ticker shows Momentum:
+  [Momentum ✗] — dimmed/struck, not valid for C-Recovery
+
+GP-C-Flat, ticker shows ReturnPullback:
+  [ReturnPullback ✗] — dimmed, bench mode blocks everything
+</pre>
+
+<div class="effort">~30 lines changed in card rendering functions. No API calls.</div>
+</section>
+
+<!-- ════════ COMPONENT D ════════ -->
+<section class="fade">
+<h2><span class="n">D</span> Pre-Trade Scorecard Modal <span class="tag t-p2">P2</span> <span class="tag t-new">NEW</span></h2>
+
+<h3>What it is</h3>
+<p>When you click a ticker's setup badge (or a dedicated "Evaluate" button), a modal overlay opens showing the full pre-trade analysis: 8-check scorecard with traffic lights, position sizing calculation, and a trade plan form that logs to the Trades tab.</p>
+
+<h3>Flow</h3>
+<div class="flow">
+  <div class="fs">Click ticker</div><div class="fa">→</div>
+  <div class="fs">fetch getPreTradeData(ticker)</div><div class="fa">→</div>
+  <div class="fs">render scorecard</div><div class="fa">→</div>
+  <div class="fs">user fills entry/stop/target</div><div class="fa">→</div>
+  <div class="fs">computePositionSize()</div><div class="fa">→</div>
+  <div class="fs">logPlannedTrade()</div>
+</div>
+
+<h3>Modal sections</h3>
+
+<div class="card card-cy">
+<b>Section 1 — Ticker Context (auto-filled):</b> Last price, VWAP distance, RVOL, key levels, confluence score, sector, beta, IVR. All from <code>getPreTradeData()</code> return.
+</div>
+
+<div class="card card-cy">
+<b>Section 2 — Scorecard (8 checks):</b> Traffic light grid. Each check shows GREEN/YELLOW/RED with the reason string. Pass count (e.g. "6/8 GREEN") determines overall signal. This calls <code>evaluateScorecard()</code> server-side with the selected setup type and side.
+</div>
+
+<div class="card card-cy">
+<b>Section 3 — Setup Selection:</b> Dropdown of setup types. Pre-selected based on the card's matched setup. Changing the dropdown re-runs the scorecard live (Check 1 changes based on setup type vs sub-mode). Shows <code>validGP</code> status, <code>minRVOL</code> check, session check.
+</div>
+
+<div class="card card-cy">
+<b>Section 4 — Size Calculator:</b> User inputs entry price, stop price, target price. Auto-calculates: position size (shares + dollars), dollar risk, R-multiples (1R/2R/3R), risk as % of account, scale plan from registry. All from <code>computePositionSize()</code>. Sub-mode sizing is automatic — C-Recovery shows $3-5K base, not A-level.
+</div>
+
+<div class="card card-cy">
+<b>Section 5 — Log Trade:</b> Button that calls <code>logPlannedTrade()</code> to write the plan to the Trades tab with a context snapshot. This is the bridge between "I'm evaluating" and "I'm executing."
+</div>
+
+<h3>API calls required</h3>
+<p>Two new fetch calls triggered by user interaction (not polling):</p>
+<pre>
+1. GET ?mode=pretrade&ticker=NVDA
+   → calls getPreTradeData('NVDA')
+   → returns: price, levels, context, sizing, setupTypes, sub-mode
+
+2. POST ?mode=scorecard
+   Body: { ticker, setupType, side, entry, stop, target }
+   → calls evaluateScorecard() + computePositionSize()
+   → returns: checks[], sizing{}, planned trade ID
+</pre>
+
+<div class="card card-y">
+<b>Backend gap:</b> The scanner's <code>doGet()</code> currently handles <code>mode=dashboard</code> and <code>mode=pretrade</code> and <code>mode=scorecard</code>. Need to verify that <code>mode=pretrade</code> and <code>mode=scorecard</code> are wired in v90.9's <code>doGet()</code>. If not, add two route handlers (~20 lines each).
+</div>
+
+<div class="effort">~200 lines new. Modal HTML/CSS + 2 fetch calls + form logic. Biggest component.</div>
+</section>
+
+<!-- ════════ COMPONENT E ════════ -->
+<section class="fade">
+<h2><span class="n">E</span> TM Book Integration <span class="tag t-p3">P3</span> <span class="tag t-wire">WIRE</span></h2>
+
+<h3>What it is</h3>
+<p>Replace the current Book section's TradeStation-direct position data with Trade Management module data. The TM Trades tab has richer data: entry context, planned vs actual, scorecard at entry, P&L attribution, and daily limit tracking.</p>
+
+<h3>What changes</h3>
+
+<div class="card card-cy">
+<b>Position cards:</b> Add fields from TM: setup type used, scorecard pass count at entry, planned entry vs actual, scale plan status (Tier 1 of 3, etc.), context snapshot link.
+</div>
+
+<div class="card card-cy">
+<b>Daily limit bar:</b> New horizontal bar at top of Book showing: daily P&L vs daily stop limit, trade count vs max trades, exposure vs max exposure. Data from <code>getDailyLimitStatus()</code>. Color-coded: green (under 50%), yellow (50-80%), red (>80%).
+</div>
+
+<div class="card card-cy">
+<b>Sync status indicator:</b> Small badge showing last <code>syncTrades()</code> timestamp and whether there are unmatched executions. Warns if sync is stale (>5 min).
+</div>
+
+<h3>Data source</h3>
+<p>Include TM data in the dashboard poll response. Add to <code>getTimerState()</code> or create a lightweight <code>getTMSummary()</code> that returns: open trades array (from Trades tab), daily limit status, last sync time, unmatched execution count.</p>
+
+<div class="card card-y">
+<b>Quota consideration:</b> Reading from the Trades tab on every 60-second poll adds ~2-3 Sheets reads per cycle. At 420 cycles/day (7 hours), that's ~1,260 extra reads. Well within the 20K daily limit, but should be gated to market hours only.
+</div>
+
+<div class="effort">~120 lines changed in rBook() + new daily limit bar + backend summary endpoint.</div>
+</section>
+
+<!-- ════════ BUILD ORDER ════════ -->
+<section class="fade">
+<h2><span class="n">02</span> Build Order</h2>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>Step</th><th>Component</th><th>What ships</th><th>Lines</th><th>Depends on</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><b>A — GP Sizing Badge</b></td><td>Dollar badge on GP banner, fix $3-6K → $3-5K</td><td>~15</td><td>Nothing (poll data exists)</td></tr>
+<tr><td>2</td><td><b>Registry constant</b></td><td>Client-side <code>SETUP_REGISTRY</code> + <code>_checkSetupGP()</code></td><td>~50</td><td>Nothing (static data)</td></tr>
+<tr><td>3</td><td><b>B — Active Setups Bar</b></td><td>Setup strip below GP banner</td><td>~60</td><td>Step 2 (registry)</td></tr>
+<tr><td>4</td><td><b>C — Setup Labels on Cards</b></td><td>Badges on ticker cards</td><td>~30</td><td>Step 2 (registry)</td></tr>
+<tr><td>5</td><td><b>Scanner: poll response</b></td><td>Add <code>setupTypes</code> + enriched sub-mode to poll</td><td>~15</td><td>v90.9 deployed to GAS</td></tr>
+<tr><td>6</td><td><b>D — Pre-Trade Modal</b></td><td>Full scorecard + sizing + trade plan form</td><td>~200</td><td>Steps 2,5 + doGet routes</td></tr>
+<tr><td>7</td><td><b>E — TM Book</b></td><td>TM data in Book, daily limit bar, sync status</td><td>~120</td><td>Step 6 + TM running live</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card card-g">
+<b>Steps 1-4 can ship together</b> as a single dashboard push (v11.16.0). Pure client-side, no backend changes needed. The sub-mode data and setup fields are already in the poll response. This gets you the sizing badge, the active setups bar, and setup labels on cards — immediate visual benefit at zero API cost.
+</div>
+
+<div class="card card-y">
+<b>Step 5 is a minor scanner edit</b> to include the full <code>setupTypes</code> array in the poll response (currently only in <code>getPreTradeData()</code>). ~15 lines in <code>getTimerState()</code>.
+</div>
+
+<div class="card card-cy">
+<b>Step 6 (Pre-Trade Modal) is the centerpiece</b> but requires the doGet routes to be verified/added. This is the component that turns the dashboard from "informational" to "actionable" — you evaluate, score, size, and plan the trade without leaving the page.
+</div>
+</section>
+
+<!-- ════════ WHAT SHIPS FIRST ════════ -->
+<section class="fade">
+<h2><span class="n">03</span> First Shipment: v11.16.0</h2>
+
+<p>Steps 1-4 bundled. One dashboard push. Here's what you see at the desk on the next trading day:</p>
+
+<div class="card card-g">
+<b>GP Banner:</b> "C-Recovery ▲" now has a <span style="background:rgba(255,152,0,0.15);color:#ff9800;padding:2px 8px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600">small $3-5K</span> badge right next to it. No ambiguity about position size ceiling.
+</div>
+
+<div class="card card-g">
+<b>Active Setups Bar:</b> Below the GP banner: "ACTIVE: VWAP-Hold · Pullback-EMA · Failed-BD · BigDogBounce · ReturnPullback · MarketPlay · Rotation-ETF" with green badges. Below that: "BLOCKED: Momentum · BigDog · GapGo · OpeningDrive · DailyBreakout · SecondDay" dimmed out. Instant clarity on what's in play.
+</div>
+
+<div class="card card-g">
+<b>Ticker Cards:</b> Every card with a detected setup shows a badge like <span style="background:rgba(0,200,83,0.12);color:#00c853;padding:2px 8px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600">VWAP-Hold ✓</span> or <span style="background:rgba(255,193,7,0.12);color:#ffc107;padding:2px 8px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600">OR-Break △</span>. The visual filter your brain needs.
+</div>
+</section>
+
+<div style="margin-top:48px;padding-top:16px;border-top:1px solid var(--b);text-align:center">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--td)">
+    V9 Trading System · Dashboard Phase 3 Build Scope · March 4, 2026
+  </div>
+</div>
+
+</div>
+</body>
+</html>
