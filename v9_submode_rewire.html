@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V9 Sub-Mode Rewire — v90.9 Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14; --surface: #13161e; --surface2: #191d28; --surface3: #1e2230;
+  --border: #262b3a; --border-hi: #323850;
+  --text: #c8cdd8; --text-dim: #6e7590; --text-bright: #e8ecf4;
+  --gp-a: #00c853; --gp-b: #42a5f5; --gp-c: #ff9800; --gp-d: #ef5350;
+  --yellow: #ffc107; --cyan: #26c6da; --purple: #ab47bc;
+  --accent: #26c6da;
+  --green-bg: rgba(0,200,83,0.08); --blue-bg: rgba(66,165,245,0.08);
+  --orange-bg: rgba(255,152,0,0.08); --red-bg: rgba(239,83,80,0.08);
+  --yellow-bg: rgba(255,193,7,0.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 14.5px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+
+/* ── Header ── */
+.header { border-bottom: 2px solid var(--border); padding-bottom: 16px; margin-bottom: 32px; }
+.header h1 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 24px; font-weight: 700; color: var(--text-bright);
+  letter-spacing: -0.5px;
+}
+.header h1 span { color: var(--accent); }
+.header .meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--text-dim); margin-top: 6px;
+  letter-spacing: 0.3px; text-transform: uppercase;
+}
+
+/* ── Section headers ── */
+h2 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px; font-weight: 600; color: var(--accent);
+  margin: 40px 0 14px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.2px;
+}
+h2 .num {
+  display: inline-block; width: 28px; height: 28px; line-height: 28px;
+  text-align: center; background: var(--surface2); border-radius: 6px;
+  font-size: 12px; color: var(--text-dim); margin-right: 8px;
+  vertical-align: middle;
+}
+h3 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 600; color: var(--text-bright);
+  margin: 20px 0 8px;
+}
+p { margin: 8px 0; }
+
+/* ── Tables ── */
+.tbl-wrap { overflow-x: auto; margin: 12px 0 16px; border-radius: 8px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+thead th {
+  background: var(--surface2); color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 10px 8px; text-align: left;
+  border-bottom: 2px solid var(--border-hi);
+  position: sticky; top: 0; z-index: 2;
+}
+td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:hover td { background: rgba(38,198,218,0.03); }
+tbody tr:last-child td { border-bottom: none; }
+td.setup-name { font-weight: 600; color: var(--text-bright); white-space: nowrap; }
+.c-green { color: var(--gp-a); font-weight: 700; }
+.c-yellow { color: var(--yellow); font-weight: 600; }
+.c-red { color: var(--gp-d); opacity: 0.45; }
+.c-recovery { color: var(--yellow); font-weight: 700; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.2px;
+}
+.b-full     { background: var(--green-bg); color: var(--gp-a); border: 1px solid rgba(0,200,83,0.2); }
+.b-standard { background: var(--blue-bg); color: var(--gp-b); border: 1px solid rgba(66,165,245,0.2); }
+.b-reduce   { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(255,193,7,0.2); }
+.b-small    { background: var(--orange-bg); color: var(--gp-c); border: 1px solid rgba(255,152,0,0.25); }
+.b-bench    { background: var(--red-bg); color: var(--gp-d); border: 1px solid rgba(239,83,80,0.2); }
+.b-inverse  { background: rgba(171,71,188,0.08); color: var(--purple); border: 1px solid rgba(171,71,188,0.2); }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 18px; margin: 12px 0;
+}
+.card-accent { border-left: 3px solid var(--accent); }
+.card-warn   { border-left: 3px solid var(--yellow); }
+.card-green  { border-left: 3px solid var(--gp-a); }
+.card b { color: var(--text-bright); }
+
+/* ── Code blocks ── */
+code {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  background: var(--surface2); color: var(--accent); padding: 1px 6px; border-radius: 3px;
+}
+pre {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 16px; overflow-x: auto; margin: 10px 0 14px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+  line-height: 1.55; color: #b0b8cc;
+}
+pre b { color: var(--accent); font-weight: 600; }
+pre .cm { color: var(--text-dim); font-style: italic; }
+
+/* ── Sub-mode grid ── */
+.sm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 12px 0; }
+.sm-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; font-size: 12.5px;
+}
+.sm-card .label {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+  margin-bottom: 4px;
+}
+.sm-card .desc { color: var(--text-dim); font-size: 11.5px; line-height: 1.5; }
+
+/* ── Flow diagram ── */
+.flow {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.flow-step {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 12px; color: var(--text-bright);
+}
+.flow-arrow { color: var(--text-dim); font-size: 16px; }
+
+/* ── Tag ── */
+.tag {
+  display: inline-block; font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 3px;
+  vertical-align: middle; letter-spacing: 0.3px; margin-left: 6px;
+}
+.tag-new { background: var(--gp-a); color: #000; }
+.tag-fix { background: var(--yellow); color: #000; }
+.tag-break { background: var(--gp-d); color: #fff; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .page { padding: 16px 12px 60px; }
+  .header h1 { font-size: 18px; }
+  h2 { font-size: 13px; }
+  table { font-size: 11px; }
+  .sm-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Fade-in animation ── */
+.fade-in { opacity: 0; transform: translateY(8px); animation: fadeUp 0.5s ease forwards; }
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+.fade-in:nth-child(2) { animation-delay: 0.05s; }
+.fade-in:nth-child(3) { animation-delay: 0.1s; }
+.fade-in:nth-child(4) { animation-delay: 0.15s; }
+.fade-in:nth-child(5) { animation-delay: 0.2s; }
+.fade-in:nth-child(6) { animation-delay: 0.25s; }
+.fade-in:nth-child(7) { animation-delay: 0.3s; }
+.fade-in:nth-child(8) { animation-delay: 0.35s; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ════════════════ HEADER ════════════════ -->
+<div class="header fade-in">
+  <h1>V9 Sub-Mode <span>↔</span> Trade Management Rewire</h1>
+  <div class="meta">Scanner v90.9 &nbsp;·&nbsp; 16 GP Sub-Modes &nbsp;·&nbsp; 16 Setup Types &nbsp;·&nbsp; 5 Edits &nbsp;·&nbsp; March 2026</div>
+</div>
+
+<!-- ════════════════ OVERVIEW ════════════════ -->
+<section class="fade-in">
+<h2><span class="num">01</span> What Changed</h2>
+<p>The sub-mode engine (<code>classifyTrajectory</code> + <code>getGPSubMode</code>) was built in v90.5 but never wired into the Trade Management module. v90.9 connects them with 5 targeted edits — no rewrite, just plumbing.</p>
+
+<div class="flow">
+  <div class="flow-step">Breadth History</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">classifyTrajectory()</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">getGPSubMode()</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--accent)">_checkSetupGP() <span class="tag tag-new">NEW</span></div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="border-color:var(--accent)">Sizing / Scorecard / Active Setups</div>
+</div>
+
+<div class="card card-accent">
+  <b>Core principle:</b> The breadth score determines your gameplan letter (A/B/C/D). The trajectory determines your sub-mode within that letter. The sub-mode determines which setups are valid and what size you trade. Structure/patience setups unlock on C-Recovery. Momentum setups stay locked.
+</div>
+</section>
+
+<!-- ════════════════ 16 SUB-MODES ════════════════ -->
+<section class="fade-in">
+<h2><span class="num">02</span> The 16 Sub-Modes</h2>
+
+<div class="sm-grid">
+  <div class="sm-card" style="border-left:3px solid var(--gp-a)">
+    <div class="label" style="color:var(--gp-a)">A-Surge</div>
+    <div class="desc">Improving · Screaming. All setups, lean in.</div>
+    <div style="margin-top:4px"><span class="badge b-full">full $15-20K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-a)">
+    <div class="label" style="color:var(--gp-a)">A-Steady</div>
+    <div class="desc">Stable · Strong and holding.</div>
+    <div style="margin-top:4px"><span class="badge b-full">full $15-20K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-a)">
+    <div class="label" style="color:var(--yellow)">A-Cooling</div>
+    <div class="desc">Fading · Losing steam. Tighten stops, no new max-size.</div>
+    <div style="margin-top:4px"><span class="badge b-reduce">reduce $6-9K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-a)">
+    <div class="label" style="color:var(--yellow)">A-Choppy</div>
+    <div class="desc">Choppy · Strong but erratic. Standard size, watch closely.</div>
+    <div style="margin-top:4px"><span class="badge b-reduce">reduce $6-9K</span></div>
+  </div>
+
+  <div class="sm-card" style="border-left:3px solid var(--gp-b)">
+    <div class="label" style="color:var(--gp-b)">B-Building</div>
+    <div class="desc">Improving · Approaching A. Start positioning.</div>
+    <div style="margin-top:4px"><span class="badge b-standard">standard $8-12K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-b)">
+    <div class="label" style="color:var(--gp-b)">B-Steady</div>
+    <div class="desc">Stable · Solid. High confluence setups.</div>
+    <div style="margin-top:4px"><span class="badge b-standard">standard $8-12K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-b)">
+    <div class="label" style="color:var(--yellow)">B-Weakening</div>
+    <div class="desc">Fading · Heading toward C. Reduce new entries.</div>
+    <div style="margin-top:4px"><span class="badge b-reduce">reduce $6-9K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-b)">
+    <div class="label" style="color:var(--yellow)">B-Choppy</div>
+    <div class="desc">Choppy · Positive but noisy. Be selective.</div>
+    <div style="margin-top:4px"><span class="badge b-reduce">reduce $6-9K</span></div>
+  </div>
+
+  <div class="sm-card" style="border-left:3px solid var(--gp-c)">
+    <div class="label" style="color:var(--yellow)">C-Recovery</div>
+    <div class="desc">Improving · Getting better. Tier 1-2 only, structure setups.</div>
+    <div style="margin-top:4px"><span class="badge b-small">small $3-5K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-c)">
+    <div class="label" style="color:var(--gp-d)">C-Flat</div>
+    <div class="desc">Stable · Going nowhere. Very selective or bench.</div>
+    <div style="margin-top:4px"><span class="badge b-bench">bench $0</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-c)">
+    <div class="label" style="color:var(--gp-d)">C-Deteriorating</div>
+    <div class="desc">Fading · Heading toward D. Shorts only or sit out.</div>
+    <div style="margin-top:4px"><span class="badge b-bench">bench $0</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-c)">
+    <div class="label" style="color:var(--gp-d)">C-Choppy</div>
+    <div class="desc">Choppy · Directionless noise. Bench.</div>
+    <div style="margin-top:4px"><span class="badge b-bench">bench $0</span></div>
+  </div>
+
+  <div class="sm-card" style="border-left:3px solid var(--gp-d)">
+    <div class="label" style="color:var(--yellow)">D-Bottoming</div>
+    <div class="desc">Improving · Worst may be over. Reduce inverse size.</div>
+    <div style="margin-top:4px"><span class="badge b-reduce">reduce $6-9K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-d)">
+    <div class="label" style="color:var(--gp-d)">D-Persistent</div>
+    <div class="desc">Stable · Staying ugly. Inverse ETFs or sit out.</div>
+    <div style="margin-top:4px"><span class="badge b-inverse">inverse $8-12K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-d)">
+    <div class="label" style="color:var(--gp-d)">D-Capitulation</div>
+    <div class="desc">Fading · Getting worse. Max inverse or full sit-out.</div>
+    <div style="margin-top:4px"><span class="badge b-inverse">inverse $8-12K</span></div>
+  </div>
+  <div class="sm-card" style="border-left:3px solid var(--gp-d)">
+    <div class="label" style="color:var(--yellow)">D-Choppy</div>
+    <div class="desc">Choppy · Ugly and erratic. Reduced inverse or sit out.</div>
+    <div style="margin-top:4px"><span class="badge b-reduce">reduce $6-9K</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ════════════════ SETUP × GP MATRIX ════════════════ -->
+<section class="fade-in">
+<h2><span class="num">03</span> Setup × Gameplan Matrix</h2>
+<p>Each setup specifies which GP states it's valid in via <code>validGP</code>. Sub-mode labels (like <code>C-Recovery</code>) unlock specific sub-modes without opening the full GP letter.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr>
+  <th>Setup</th>
+  <th style="color:var(--gp-a)">A</th>
+  <th style="color:var(--yellow)">A-Cool</th>
+  <th style="color:var(--gp-b)">B</th>
+  <th style="color:var(--yellow)">B-Weak</th>
+  <th style="color:var(--gp-c)">C-Rec</th>
+  <th style="color:var(--gp-d)">C-Flat</th>
+  <th style="color:var(--gp-d)">D</th>
+  <th>RVOL</th>
+  <th>Nature</th>
+</tr>
+</thead>
+<tbody>
+<tr><td class="setup-name">VWAP-Hold</td>             <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-recovery">✓</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥1</td><td>Structure</td></tr>
+<tr><td class="setup-name">OR-Break</td>               <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-yellow">△</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥1.5</td><td>Breakout</td></tr>
+<tr><td class="setup-name">Pullback-EMA</td>           <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-recovery">✓</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥1</td><td>Structure</td></tr>
+<tr><td class="setup-name">Momentum</td>               <td class="c-green">✓</td><td class="c-yellow">△</td><td class="c-green">✓</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥2</td><td>Momentum</td></tr>
+<tr><td class="setup-name">Failed-BD</td>              <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-recovery">✓</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥1</td><td>Structure</td></tr>
+<tr><td class="setup-name">RS-Override</td>            <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-red">✗</td><td>≥2</td><td>Override</td></tr>
+<tr><td class="setup-name">Rotation-ETF</td>           <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-recovery">✓</td><td class="c-red">✗</td><td class="c-green">✓</td><td>—</td><td>Any</td></tr>
+<tr><td class="setup-name">BigDog</td>                 <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-yellow">△</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥3</td><td>Momentum</td></tr>
+<tr><td class="setup-name">BigDogBounce <span class="tag tag-new">NEW</span></td> <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-recovery">✓</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥2</td><td>Structure</td></tr>
+<tr><td class="setup-name">GapGo</td>                  <td class="c-green">✓</td><td class="c-yellow">△</td><td class="c-green">✓</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥2</td><td>Momentum</td></tr>
+<tr><td class="setup-name">DailyBreakout</td>          <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-yellow">△</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥1.5</td><td>Breakout</td></tr>
+<tr><td class="setup-name">OpeningDrive</td>           <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥1.5</td><td>Momentum</td></tr>
+<tr><td class="setup-name">MarketPlay</td>             <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-recovery">✓</td><td class="c-red">✗</td><td class="c-green">✓</td><td>—</td><td>Any</td></tr>
+<tr><td class="setup-name">SecondDay</td>              <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-yellow">△</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥2</td><td>Momentum</td></tr>
+<tr><td class="setup-name">ReturnPullback</td>         <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-recovery">✓</td><td class="c-red">✗</td><td class="c-red">✗</td><td>≥1</td><td>Structure</td></tr>
+<tr><td class="setup-name">Scalping</td>               <td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-green">✓</td><td class="c-red">✗</td><td class="c-red">✗</td><td class="c-green">✓</td><td>≥1</td><td>Any</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card card-accent">
+<b>Legend:</b> <span class="c-green">✓</span> Full green light &nbsp;·&nbsp; <span class="c-recovery">✓</span> C-Recovery only (reduced $3-5K) &nbsp;·&nbsp; <span class="c-yellow">△</span> Caution — allowed but scorecard warns (YELLOW) &nbsp;·&nbsp; <span class="c-red">✗</span> Blocked
+</div>
+</section>
+
+<!-- ════════════════ SIZING MAP ════════════════ -->
+<section class="fade-in">
+<h2><span class="num">04</span> Sub-Mode Sizing Map</h2>
+<p><code>SUBMODE_SIZING</code> maps the <code>sizingAdj</code> field from <code>getGPSubMode()</code> to actual dollar ranges. Replaces the flat <code>GP_SIZING</code> lookup.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>sizingAdj</th><th>Base Lo</th><th>Base Hi</th><th>Risk Lo</th><th>Risk Hi</th><th>Applied To</th></tr></thead>
+<tbody>
+<tr><td><span class="badge b-full">full</span></td><td>$15,000</td><td>$20,000</td><td>$150</td><td>$200</td><td>A-Surge, A-Steady</td></tr>
+<tr><td><span class="badge b-standard">standard</span></td><td>$8,000</td><td>$12,000</td><td>$100</td><td>$150</td><td>B-Building, B-Steady, D-Persistent</td></tr>
+<tr><td><span class="badge b-reduce">reduce</span></td><td>$6,000</td><td>$9,000</td><td>$75</td><td>$120</td><td>A-Cooling, A-Choppy, B-Weakening, B-Choppy, D-Bottoming, D-Choppy</td></tr>
+<tr><td><span class="badge b-small">small</span></td><td>$3,000</td><td>$5,000</td><td>$40</td><td>$70</td><td>C-Recovery</td></tr>
+<tr><td><span class="badge b-bench">bench</span></td><td>$0</td><td>$0</td><td>$0</td><td>$0</td><td>C-Flat, C-Choppy, C-Deteriorating</td></tr>
+<tr><td><span class="badge b-inverse">inverse</span></td><td>$8,000</td><td>$12,000</td><td>$100</td><td>$150</td><td>D-Persistent, D-Capitulation</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- ════════════════ C-RECOVERY RULES ════════════════ -->
+<section class="fade-in">
+<h2><span class="num">05</span> C-Recovery — The Key Unlock</h2>
+
+<div class="card card-warn">
+<b>Problem solved:</b> GP-C previously meant "sit out, period." But many C days have improving breadth with real setups available. March 2, 2026: GP-C all day, gap down grinding up, VWAP reclaim and Return Pullback setups present — system said bench.
+</div>
+
+<div class="card card-green">
+<b>C-Recovery activates when:</b> Breadth score is between -3 and +3 (GP-C range) AND trajectory is <code>Improving</code> — meaning the last 6 readings show a positive delta ≥ 2.0 or average change ≥ 0.4 per reading.
+</div>
+
+<h3>What's allowed on C-Recovery</h3>
+<p>Structure/patience setups that don't need institutional follow-through: VWAP-Hold, Pullback-EMA, Failed-BD, BigDogBounce, ReturnPullback, MarketPlay, Rotation-ETF, RS-Override.</p>
+
+<h3>What's still blocked on C-Recovery</h3>
+<p>Momentum setups that need breadth confirmation for follow-through: Momentum, BigDog (full), GapGo, OpeningDrive, DailyBreakout, SecondDay, Scalping.</p>
+
+<h3>Sizing constraint</h3>
+<p>$3-5K base (midpoint $4K). After IVR and beta adjustments, max realistic position is ~$4,500. This enforces Tier 1-3 max automatically — you can't accidentally size up to A-level on a C day.</p>
+</section>
+
+<!-- ════════════════ SCORECARD IMPACT ════════════════ -->
+<section class="fade-in">
+<h2><span class="num">06</span> Scorecard Check 1 — Sub-Mode Aware</h2>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>Scenario</th><th>Old Result</th><th>New Result</th></tr></thead>
+<tbody>
+<tr><td>GP-A + any long setup</td><td style="color:var(--gp-a)">GREEN</td><td style="color:var(--gp-a)">GREEN (no change)</td></tr>
+<tr><td>A-Cooling + Momentum</td><td style="color:var(--gp-a)">GREEN</td><td style="color:var(--yellow)">YELLOW — "breadth fading, higher risk"</td></tr>
+<tr><td>GP-B + any long setup</td><td style="color:var(--gp-a)">GREEN</td><td style="color:var(--gp-a)">GREEN (no change)</td></tr>
+<tr><td>B-Weakening + OR-Break</td><td style="color:var(--gp-a)">GREEN</td><td style="color:var(--yellow)">YELLOW — "breadth weakening"</td></tr>
+<tr><td>C-Recovery + VWAP-Hold</td><td style="color:var(--gp-d)">RED</td><td style="color:var(--yellow)">YELLOW — "reduced size, structure setups" <span class="tag tag-new">NEW</span></td></tr>
+<tr><td>C-Recovery + Momentum</td><td style="color:var(--gp-d)">RED</td><td style="color:var(--gp-d)">RED — "C-Recovery doesn't support momentum"</td></tr>
+<tr><td>C-Flat + any long</td><td style="color:var(--gp-d)">RED</td><td style="color:var(--gp-d)">RED (no change)</td></tr>
+<tr><td>GP-C + RS-Override</td><td style="color:var(--yellow)">YELLOW</td><td style="color:var(--yellow)">YELLOW (no change, RS-Override valid everywhere)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>YELLOW counts toward the 6/8 pass threshold but the trader sees the warning. This is the "allowed but be careful" signal.</p>
+</section>
+
+<!-- ════════════════ THE 5 EDITS ════════════════ -->
+<section class="fade-in">
+<h2><span class="num">07</span> The 5 Code Edits (v90.8 → v90.9)</h2>
+
+<h3>Edit 1 — SETUP_REGISTRY <span class="tag tag-fix">EXPANDED</span></h3>
+<p>Added <code>validGP</code>, <code>minRVOL</code>, <code>nature</code> to all 15 entries. Split BigDog into BigDog + BigDogBounce (16 total). The <code>validGP</code> array is the authoritative source for which setups work in which conditions.</p>
+
+<h3>Edit 2 — SUBMODE_SIZING + computePositionSize() <span class="tag tag-break">BREAKING</span></h3>
+<p>Added <code>SUBMODE_SIZING</code> constant, three helpers (<code>_getCurrentSubMode</code>, <code>_checkSetupGP</code>, <code>_getEffectiveSizing</code>), and rewired <code>computePositionSize()</code>. The old hard <code>if (gp === 'C') return blocked</code> is gone — replaced by <code>sizingAdj === 'bench'</code> check which respects C-Recovery.</p>
+
+<h3>Edit 3 — evaluateScorecard() Check 1 <span class="tag tag-fix">REWIRED</span></h3>
+<p>Check 1 now reads <code>GP_SUB_MODE</code> from ScriptProperties and calls <code>_checkSetupGP()</code>. C-Recovery + structure setup → YELLOW. Caution combos (A-Cooling + Momentum, etc.) → YELLOW.</p>
+
+<h3>Edit 4 — getActiveSetups() <span class="tag tag-fix">REWIRED</span></h3>
+<p>Reads sub-mode, filters via <code>validGP</code> array instead of hardcoded GP letter checks. C-Recovery tickers surface with <code>gpAllowed: true</code> + <code>reducedSize: true</code> flag. Output now includes <code>caution</code>, <code>nature</code>, <code>minRVOL</code>, <code>subMode</code>.</p>
+
+<h3>Edit 5 — getPreTradeData() <span class="tag tag-new">ENHANCED</span></h3>
+<p>Return object now includes <code>gpSubMode</code>, <code>gpSizingAdj</code>, <code>gpSubModeDesc</code>, effective sizing (sub-mode-aware), and full <code>validGP</code>/<code>minRVOL</code>/<code>nature</code> in <code>setupTypes</code> array. Dashboard Phase 3 has everything it needs.</p>
+</section>
+
+<!-- ════════════════ MATCHING LOGIC ════════════════ -->
+<section class="fade-in">
+<h2><span class="num">08</span> How validGP Matching Works</h2>
+
+<pre>
+<span class="cm">// _checkSetupGP(setupType, subModeLabel, gpLetter)</span>
+<span class="cm">// 1. If sub-mode label (e.g. 'C-Recovery') is in validGP → allowed</span>
+<span class="cm">// 2. Else if base letter (e.g. 'A') is in validGP → allowed</span>
+<span class="cm">//    (but check for caution combos like A-Cooling + Momentum)</span>
+<span class="cm">// 3. Else → blocked</span>
+
+<b>validGP: ['A', 'B', 'C-Recovery']</b>
+
+A-Surge    → 'A' matches   → <b style="color:var(--gp-a)">allowed</b>
+A-Cooling  → 'A' matches   → <b style="color:var(--gp-a)">allowed</b> (may be caution)
+B-Steady   → 'B' matches   → <b style="color:var(--gp-a)">allowed</b>
+C-Recovery → exact match    → <b style="color:var(--yellow)">allowed (reduced $3-5K)</b>
+C-Flat     → 'C' not in GP  → <b style="color:var(--gp-d)">blocked</b>
+D-Persistent → 'D' not in GP → <b style="color:var(--gp-d)">blocked</b>
+</pre>
+</section>
+
+<!-- ════════════════ DEPENDENCIES ════════════════ -->
+<section class="fade-in">
+<h2><span class="num">09</span> Dependencies &amp; Notes</h2>
+
+<div class="card card-accent">
+<b>Requires:</b> Breadth history must be populating in <code>BREADTH_GP_HISTORY</code> ScriptProperty (done by <code>updateMarketTab()</code> since v90.5). <code>classifyTrajectory()</code> needs ≥3 readings to classify — first ~15 minutes of the day will default to "Stable" until enough data accumulates.
+</div>
+
+<div class="card card-accent">
+<b>Dashboard Phase 3:</b> <code>getPreTradeData()</code> now returns all sub-mode data. When the pre-trade form modal gets built, it can display the sub-mode label, sizing adjustment badge, and the full scorecard with sub-mode-aware Check 1.
+</div>
+
+<div class="card card-accent">
+<b>SMB Playbook cards (pending):</b> The <code>validGP</code> assignments in this spec are based on Big Dog transcript 1 + the SMB Integration Session notes. As remaining transcripts are processed and playbook cards are built, individual setup <code>validGP</code> arrays may be refined — especially for setups where we only have partial course data (GapGo, OpeningDrive, SecondDay, DailyBreakout).
+</div>
+</section>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<div style="margin-top:48px; padding-top:16px; border-top:1px solid var(--border); text-align:center;">
+  <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim);">
+    V9 Trading System · Scanner v90.9 · Sub-Mode Rewire Reference
+    <br>Last updated: March 4, 2026
+  </div>
+</div>
+
+</div>
+</body>
+</html>
