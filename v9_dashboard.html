@@ -86,6 +86,30 @@
   .news-item a{color:#e6edf3;font-size:13px;line-height:1.5}.news-item a:hover{color:#58a6ff}
   .news-meta{font-size:11px;color:#7d8590;margin-top:3px}.news-src{color:#58a6ff}.news-time{margin-left:6px}.news-item.stale{opacity:0.35}.news-item.read a{color:#3d444d}.news-item.read{opacity:0.45}
   #backToTop{position:fixed;bottom:20px;right:20px;z-index:999;width:40px;height:40px;border-radius:50%;background:#161b22;border:1px solid #30363d;color:#58a6ff;font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);transition:opacity 0.2s}#backToTop:hover{background:#1c2333;border-color:#58a6ff}
+  /* ── Sizing badge (GP banner) ── */
+  .size-badge{display:inline-block;padding:2px 9px;border-radius:11px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.2px;vertical-align:middle;margin-left:6px}
+  .sb-full{background:rgba(0,200,83,0.12);color:#00c853;border:1px solid rgba(0,200,83,0.2)}
+  .sb-standard{background:rgba(66,165,245,0.12);color:#42a5f5;border:1px solid rgba(66,165,245,0.2)}
+  .sb-reduce{background:rgba(255,193,7,0.12);color:#ffc107;border:1px solid rgba(255,193,7,0.2)}
+  .sb-caution{background:rgba(255,193,7,0.12);color:#ffc107;border:1px solid rgba(255,193,7,0.2)}
+  .sb-small{background:rgba(255,152,0,0.12);color:#ff9800;border:1px solid rgba(255,152,0,0.25)}
+  .sb-bench{background:rgba(239,83,80,0.12);color:#ef5350;border:1px solid rgba(239,83,80,0.2)}
+  .sb-inverse{background:rgba(171,71,188,0.12);color:#ab47bc;border:1px solid rgba(171,71,188,0.2)}
+  /* ── Active setups bar ── */
+  .as-bar{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:10px 14px;margin:6px 0 2px}
+  .as-bar .as-hdr{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6e7590;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px}
+  .as-pills{display:flex;flex-wrap:wrap;gap:5px}
+  .as-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;cursor:default;transition:opacity 0.15s}
+  .as-pill.as-ok{background:rgba(0,200,83,0.1);color:#00c853;border:1px solid rgba(0,200,83,0.2)}
+  .as-pill.as-warn{background:rgba(255,193,7,0.1);color:#ffc107;border:1px solid rgba(255,193,7,0.2)}
+  .as-pill.as-off{background:#0d1117;color:#3d4455;border:1px solid #1c2030;text-decoration:line-through;opacity:0.5}
+  .as-pill .as-ct{background:rgba(255,255,255,0.08);border-radius:8px;padding:0 5px;font-size:9px;margin-left:2px}
+  .as-blocked{font-size:11px;color:#3d4455;margin-top:5px;font-style:italic}
+  /* ── Setup label on ticker cards ── */
+  .setup-tag{display:inline-block;padding:1px 7px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.15px;vertical-align:middle;margin-left:4px}
+  .st-ok{background:rgba(0,200,83,0.1);color:#00c853;border:1px solid rgba(0,200,83,0.18)}
+  .st-warn{background:rgba(255,193,7,0.1);color:#ffc107;border:1px solid rgba(255,193,7,0.18)}
+  .st-off{background:#0d1117;color:#3d4455;border:1px solid #1c2030;text-decoration:line-through;opacity:0.45}
   .ratio-row{padding:6px 0;border-bottom:1px solid #161b22}
   @media(max-width:480px){body{padding:8px;font-size:13px}.heatmap{grid-template-columns:repeat(3,1fr)}table{font-size:12px}.inst-grid{grid-template-columns:1fr !important}}
   .inst-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px}
@@ -113,6 +137,7 @@
 <p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
 <div id="sGP"></div>
+<div id="sActiveSetups"></div>
 <div id="sHidden" style="display:none"></div>
 <div id="sBrief"></div>
 <div id="sStory"></div>
@@ -138,6 +163,150 @@
 <script>
 var EP='https://script.google.com/macros/s/AKfycbyA45O4vPIEOTdOW601PmdkdnOpTDSzu44qaSPq-PDBhElHlzThmyqdvD8MO7IZqmLq/exec';
 var _d,_n=0,_e=0;
+
+// ══════════════════════════════════════════════════════════════
+// CLIENT-SIDE SETUP REGISTRY (mirrors v90.9 SETUP_REGISTRY)
+// Used for: active setups bar, setup labels on cards, GP filtering
+// ══════════════════════════════════════════════════════════════
+var C_REGISTRY={
+  'VWAP-Hold':      {label:'VWAP Hold',             validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure'},
+  'OR-Break':       {label:'OR Break',               validGP:['A','B'],                       minRVOL:1.5, nature:'breakout'},
+  'Pullback-EMA':   {label:'Pullback EMA',           validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure'},
+  'Momentum':       {label:'Momentum',               validGP:['A','B'],                       minRVOL:2,   nature:'momentum'},
+  'Failed-BD':      {label:'Failed BD',              validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure'},
+  'RS-Override':    {label:'RS Override',             validGP:['A','B','C-Recovery','C','D'],  minRVOL:2,   nature:'any'},
+  'Rotation-ETF':   {label:'Rotation ETF',           validGP:['A','B','C-Recovery','D'],      minRVOL:0,   nature:'any'},
+  'BigDog':         {label:'Big Dog',                validGP:['A','B'],                       minRVOL:3,   nature:'momentum'},
+  'BigDogBounce':   {label:'BigDog Bounce',          validGP:['A','B','C-Recovery'],          minRVOL:2,   nature:'structure'},
+  'GapGo':          {label:'Gap & Go',               validGP:['A','B'],                       minRVOL:2,   nature:'momentum'},
+  'DailyBreakout':  {label:'Daily Breakout',         validGP:['A','B'],                       minRVOL:3,   nature:'breakout'},
+  'OpeningDrive':   {label:'Opening Drive',          validGP:['A','B'],                       minRVOL:1.5, nature:'momentum'},
+  'MarketPlay':     {label:'Market Play',            validGP:['A','B','C-Recovery','D'],      minRVOL:1.5, nature:'any'},
+  'SecondDay':      {label:'Second Day',             validGP:['A','B'],                       minRVOL:1.5, nature:'momentum'},
+  'ReturnPullback': {label:'Return Pullback',        validGP:['A','B','C-Recovery'],          minRVOL:1,   nature:'structure'},
+  'Scalping':       {label:'Scalping',               validGP:['A','B','D'],                   minRVOL:1,   nature:'any'}
+};
+
+// Caution combos: sub-mode + setup = allowed but YELLOW
+var _CAUTION_MAP={
+  'A-Cooling':['Momentum','GapGo'],
+  'A-Choppy':['Momentum','GapGo','BigDog'],
+  'B-Weakening':['OR-Break','DailyBreakout','BigDog','SecondDay','OpeningDrive'],
+  'B-Choppy':['OR-Break','DailyBreakout','BigDog']
+};
+
+// Check if setup is allowed for current sub-mode
+// Returns {ok:bool, caution:bool, reason:string}
+function _cSGP(setupKey,subModeLabel,gpLetter){
+  var r=C_REGISTRY[setupKey];
+  if(!r||!r.validGP)return{ok:true,caution:false,reason:''};
+  var vg=r.validGP;
+  // Exact sub-mode match
+  if(vg.indexOf(subModeLabel)>=0)return{ok:true,caution:false,reason:subModeLabel+' supports '+r.label};
+  // Base letter match
+  if(vg.indexOf(gpLetter)>=0){
+    var cl=_CAUTION_MAP[subModeLabel]||[];
+    if(cl.indexOf(setupKey)>=0)return{ok:true,caution:true,reason:subModeLabel+': '+r.label+' higher risk'};
+    return{ok:true,caution:false,reason:'GP-'+gpLetter+' supports '+r.label};
+  }
+  return{ok:false,caution:false,reason:subModeLabel+': '+r.label+' blocked'};
+}
+
+// Sizing badge data
+var _SIZE_BADGES={
+  full:     {cls:'sb-full',    txt:'$15-20K'},
+  standard: {cls:'sb-standard',txt:'$8-12K'},
+  reduce:   {cls:'sb-reduce',  txt:'$6-9K'},
+  caution:  {cls:'sb-caution', txt:'$6-9K'},
+  small:    {cls:'sb-small',   txt:'$3-5K'},
+  bench:    {cls:'sb-bench',   txt:'BENCH'},
+  inverse:  {cls:'sb-inverse', txt:'$8-12K INV'}
+};
+
+// Build setup tag HTML for a ticker card
+function setupTagHtml(setupRaw,subModeLabel,gpLetter){
+  if(!setupRaw)return '';
+  // Try to match setup key from raw scanner output
+  var key=_matchSetupKey(setupRaw);
+  if(!key||!C_REGISTRY[key])return '';
+  var r=C_REGISTRY[key],chk=_cSGP(key,subModeLabel,gpLetter);
+  var cls=chk.ok?(chk.caution?'st-warn':'st-ok'):'st-off';
+  var icon=chk.ok?(chk.caution?'△':'✓'):'✗';
+  var tip=chk.reason||'';
+  return ' <span class="setup-tag '+cls+'" title="'+e(tip)+'">'+e(r.label)+' '+icon+'</span>';
+}
+
+// Match scanner setup string to registry key
+function _matchSetupKey(s){
+  if(!s)return null;
+  s=s.toUpperCase();
+  if(s.indexOf('VWAP')>=0)return 'VWAP-Hold';
+  if(s.indexOf('OR-BREAK')>=0||s.indexOf('OR BREAK')>=0||s.indexOf('OPENING RANGE')>=0)return 'OR-Break';
+  if(s.indexOf('PULLBACK')>=0&&s.indexOf('RETURN')<0)return 'Pullback-EMA';
+  if(s.indexOf('RETURN')>=0||s.indexOf('RETPULL')>=0)return 'ReturnPullback';
+  if(s.indexOf('MOMENTUM')>=0||s.indexOf('SPIKE')>=0)return 'Momentum';
+  if(s.indexOf('FAILED')>=0||s.indexOf('FAIL-BD')>=0)return 'Failed-BD';
+  if(s.indexOf('RS OVERRIDE')>=0||s.indexOf('RS-OVER')>=0)return 'RS-Override';
+  if(s.indexOf('ROTATION')>=0||s.indexOf('SECTOR')>=0)return 'Rotation-ETF';
+  if(s.indexOf('BOUNCE')>=0||s.indexOf('REVERSAL')>=0)return 'BigDogBounce';
+  if(s.indexOf('BIG DOG')>=0||s.indexOf('BIGDOG')>=0||s.indexOf('CONSOL')>=0)return 'BigDog';
+  if(s.indexOf('GAP')>=0)return 'GapGo';
+  if(s.indexOf('DAILY')>=0||s.indexOf('BREAKOUT')>=0)return 'DailyBreakout';
+  if(s.indexOf('OPEN')>=0&&s.indexOf('DRIVE')>=0)return 'OpeningDrive';
+  if(s.indexOf('MARKET')>=0)return 'MarketPlay';
+  if(s.indexOf('SECOND')>=0||s.indexOf('2ND')>=0)return 'SecondDay';
+  if(s.indexOf('SCALP')>=0)return 'Scalping';
+  return null;
+}
+
+// ═══ Render Active Setups Bar ═══
+function rActiveSetups(d){
+  var el=$('sActiveSetups');if(!el)return;
+  var sm=d.gpSubMode,gp=d.gpLetter||'C';
+  var subModeLabel=(sm&&sm.subMode)?sm.subMode:'';
+  var sizAdj=(sm&&sm.sizingAdj)?sm.sizingAdj:'';
+  if(!subModeLabel){el.innerHTML='';return;}
+
+  var allowed=[],caution=[],blocked=[];
+  var keys=Object.keys(C_REGISTRY);
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i],chk=_cSGP(k,subModeLabel,gp);
+    if(chk.ok&&!chk.caution)allowed.push({key:k,r:C_REGISTRY[k]});
+    else if(chk.ok&&chk.caution)caution.push({key:k,r:C_REGISTRY[k]});
+    else blocked.push({key:k,r:C_REGISTRY[k]});
+  }
+
+  // Count matching tickers per setup from quotes
+  var setupCounts={};
+  var tqKeys=Object.keys(_tq||{});
+  for(var j=0;j<tqKeys.length;j++){
+    var tq=_tq[tqKeys[j]];
+    if(tq&&tq.setup){
+      var mk=_matchSetupKey(tq.setup);
+      if(mk){setupCounts[mk]=(setupCounts[mk]||0)+1;}
+    }
+  }
+
+  var h='<div class="as-bar"><div class="as-hdr">Active Setups · '+e(subModeLabel)+'</div><div class="as-pills">';
+  for(var a=0;a<allowed.length;a++){
+    var ct=setupCounts[allowed[a].key]||0;
+    h+='<span class="as-pill as-ok" title="'+e(allowed[a].r.nature)+' · RVOL≥'+allowed[a].r.minRVOL+'">'+e(allowed[a].r.label);
+    if(ct>0)h+=' <span class="as-ct">'+ct+'</span>';
+    h+='</span>';
+  }
+  for(var c=0;c<caution.length;c++){
+    var ct2=setupCounts[caution[c].key]||0;
+    h+='<span class="as-pill as-warn" title="Caution: '+e(caution[c].r.label)+' higher risk in '+e(subModeLabel)+'">'+e(caution[c].r.label);
+    if(ct2>0)h+=' <span class="as-ct">'+ct2+'</span>';
+    h+=' △</span>';
+  }
+  h+='</div>';
+  if(blocked.length){
+    h+='<div class="as-blocked">Blocked: '+blocked.map(function(b){return b.r.label}).join(' · ')+'</div>';
+  }
+  h+='</div>';
+  el.innerHTML=h;
+}
 
 var SN={SOXX:'Semis',SMH:'Semis',XLK:'Tech',XLY:'Cons Disc',XLF:'Financials',XLI:'Industrials',XLC:'Comm Svcs',IWM:'Small Cap',XLU:'Utilities',XLP:'Staples',XLV:'Healthcare',XLE:'Energy',XLB:'Materials'};
 var _SEC={NVDA:'Semis',AMD:'Semis',AVGO:'Semis',TSM:'Semis',MU:'Semis',MRVL:'Semis',INTC:'Semis',QCOM:'Semis',ARM:'Semis',KLAC:'Semis',LRCX:'Semis',AMAT:'Semis',ASML:'Semis',ADI:'Semis',SMCI:'Semis',SMTC:'Semis',ONTO:'Semis',ACLS:'Semis',MSFT:'Software',ORCL:'Software',CRM:'Software',NOW:'Software',ADBE:'Software',PLTR:'Software',SNOW:'Software',DDOG:'Software',MDB:'Software',NET:'Software',PANW:'Software',CRWD:'Software',ZS:'Software',FTNT:'Software',AAPL:'Mega Tech',GOOGL:'Mega Tech',GOOG:'Mega Tech',AMZN:'Mega Tech',META:'Mega Tech',NFLX:'Mega Tech',TSLA:'Mega Tech',CRDO:'Networking',ALAB:'Networking',CSCO:'Networking',JNPR:'Networking',CIEN:'Networking',ANET:'Networking',GLW:'Networking',COHR:'Networking',LITE:'Networking',RMBS:'Networking',EQIX:'Data Centers',SKYT:'Data Centers',IREN:'Data Centers',NBIS:'Data Centers',APLD:'Data Centers',JPM:'Financials',GS:'Financials',MS:'Financials',BAC:'Financials',V:'Financials',MA:'Financials',BLK:'Financials',COIN:'Crypto',MSTR:'Crypto',HOOD:'Crypto',IONQ:'Quantum',QBTS:'Quantum',RGTI:'Quantum',RKLB:'Space',OKLO:'Space',LMT:'Defense',RTX:'Defense',NOC:'Defense',XOM:'Energy',CVX:'Energy',SLB:'Energy',OXY:'Energy',LLY:'Pharma',UNH:'Healthcare',JNJ:'Healthcare',PFE:'Pharma',ABBV:'Pharma',BA:'Aero',CAT:'Industrial',DE:'Industrial',WMT:'Retail',COST:'Retail',HD:'Retail',LOW:'Retail',TGT:'Retail',UBER:'Transport',ABNB:'Travel',SQ:'Fintech',SHOP:'E-Commerce',DIS:'Media',BABA:'China',JD:'China',PDD:'China',BIDU:'China',RIVN:'EV',SPOT:'Media'};
@@ -275,7 +444,7 @@ function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.t
   var _ae=document.activeElement;
   var _noteId=_ae&&_ae.id&&_ae.id.startsWith('note_')?_ae.id:null;
   var _noteCur=_noteId?_ae.selectionStart:0;
-  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBrief(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInPlay(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
+  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rActiveSetups(d);rBrief(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInPlay(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
   // Restore textarea focus
   if(_noteId){var _el=document.getElementById(_noteId);if(_el){_el.focus();_el.selectionStart=_el.selectionEnd=_noteCur;}}
 }
@@ -449,12 +618,17 @@ function rGP(d){
     h+='<div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">';
     h+='<span class="tag-sub '+trajCls+'">'+e(sm.subMode)+'</span>';
     h+='<span class="traj-arrow '+trajAC+'">'+trajArr+'</span>';
+    // Sizing badge from SUBMODE_SIZING
+    var sbInfo=_SIZE_BADGES[sm.sizingAdj];
+    if(sbInfo)h+='<span class="size-badge '+sbInfo.cls+'">'+sbInfo.txt+'</span>';
     if(sm.desc)h+='<span class="dim" style="font-size:12px">'+e(sm.desc)+'</span>';
     h+='</div>';
+    // Dynamic advisory from sizingAdj (replaces hardcoded lines)
     if(sm.sizingAdj==='reduce')h+='<p class="y" style="font-size:11px;margin-top:4px">⚠ Momentum fading — reduce new entries, tighten stops</p>';
-    else if(sm.sizingAdj==='small')h+='<p style="color:#FF9800;font-size:11px;margin-top:4px">◉ C-Recovery: Tier 1-2 max ($3-6K), select setups only</p>';
-    else if(sm.sizingAdj==='bench')h+='<p class="dim" style="font-size:11px;margin-top:4px">◻ Bench or very selective — no momentum for setups</p>';
+    else if(sm.sizingAdj==='small')h+='<p style="color:#FF9800;font-size:11px;margin-top:4px">◉ C-Recovery: Tier 1-3 max ($3-5K), structure setups only</p>';
+    else if(sm.sizingAdj==='bench')h+='<p class="dim" style="font-size:11px;margin-top:4px">◻ Bench — no setups available. RS Override or SIM only.</p>';
     else if(sm.sizingAdj==='caution')h+='<p class="y" style="font-size:11px;margin-top:4px">⚡ Choppy conditions — standard size but watch closely</p>';
+    else if(sm.sizingAdj==='inverse')h+='<p style="color:#ab47bc;font-size:11px;margin-top:4px">◆ Inverse ETF mode — SOXS/TECS/SQQQ or Defiance singles</p>';
   }
   // SPY/QQQ/VIX line
   var bn=gS(d,'BENCHMARKS'),spy=fS(bn,'SPY'),qqq=fS(bn,'QQQ'),bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd2,'$VIX');
@@ -1010,7 +1184,11 @@ function rInPlay(d){
     var np=parseFloat(it.netPct)||0;
     h+='<span class="mono" style="font-size:12px;'+(np>=0?'color:#3fb950':'color:#f85149')+'">'+(np>=0?'+':'')+e(it.netPct||'0')+'%</span>';
     h+='<span class="mono '+qc+'" style="font-size:10px;font-weight:700">'+e(it.quality||'')+'·'+e(String(it.confluence||''))+'</span>';
-    if(it.setup)h+='<span class="tag" style="background:#0d1a2e;color:#58a6ff;border:1px solid #1f6feb;font-size:9px">'+e(it.setup)+'</span>';
+    if(it.setup){
+      var _sml=(d.gpSubMode&&d.gpSubMode.subMode)?d.gpSubMode.subMode:'';
+      var _gpl=d.gpLetter||'C';
+      h+=setupTagHtml(it.setup,_sml,_gpl);
+    }
     var reasons=it.reasons||[];
     for(var r=0;r<reasons.length;r++){
       var rText=reasons[r],rc='reason-rvol';
@@ -1401,6 +1579,8 @@ function posCard(p,alert,areteInfo){
   h+=' <span class="mono dim" style="font-size:11px">$'+e(p.last)+'</span> <span style="font-size:10px">'+pct(p.dayPLPct)+'</span>'+sparkSvg(tk);
   if(p.accountType)h+=' <span class="tag tag-acct">'+e(p.accountType)+'</span>';
   if(p.tag)h+=' <span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e">'+e(p.tag)+'</span>';
+  // Setup type label on position cards
+  if(q.setup){var _smlB=(_lastD&&_lastD.gpSubMode&&_lastD.gpSubMode.subMode)?_lastD.gpSubMode.subMode:'';h+=setupTagHtml(q.setup,_smlB,(_lastD&&_lastD.gpLetter)||'C');}
   // RS inline
   if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
   h+='</span><span class="'+pc(p.totalPL)+' bold mono" style="font-size:14px">'+e(p.totalPL)+'</span></div>';
@@ -1568,6 +1748,8 @@ function areteCard(p){
   if(p.flag)h+=' <span class="g bold" style="font-size:10px">'+e(p.flag)+'</span>';
   // RS if available
   if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
+  // Setup type label
+  if(q.setup){var _smlA=(_lastD&&_lastD.gpSubMode&&_lastD.gpSubMode.subMode)?_lastD.gpSubMode.subMode:'';h+=setupTagHtml(q.setup,_smlA,(_lastD&&_lastD.gpLetter)||'C');}
   h+='</span>';
   h+='<span class="mono" style="font-size:12px">';
   if(q.last)h+=e(q.last)+' ';
@@ -1826,6 +2008,8 @@ function rWatching(d){
     h+='<span>'+tkLink(tk,1);
     if(cm.conf){var ccc=cm.conf>=28?'g':cm.conf>=24?'y':'dim';h+=' <span class="mono '+ccc+'" style="font-size:11px" title="Confluence">⚡'+cm.conf.toFixed(0)+'</span>';}
     if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
+    // Setup type label
+    if(cm.setup||q.setup){var _sml2=(d.gpSubMode&&d.gpSubMode.subMode)?d.gpSubMode.subMode:'';h+=setupTagHtml(cm.setup||q.setup,_sml2,d.gpLetter||'C');}
     h+='</span>';
     h+='<span class="mono" style="font-size:12px">';
     if(q.last)h+=e(q.last)+' ';
@@ -2307,7 +2491,7 @@ function rFoot(d){
     if(um.length){var dh='<h3 style="color:#7d8590">Unmatched Opus Sections</h3>';for(var i=0;i<um.length;i++)dh+='<div class="info-box" style="border-color:#30363d"><p class="dim" style="font-size:11px">'+e(um[i])+'</p><p style="font-size:12px">'+fmt(sec[um[i]])+'</p></div>';$('sCoach').innerHTML+= dh;}}
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
   var fSm=(d.gpSubMode&&d.gpSubMode.subMode)?' · '+e(d.gpSubMode.subMode):'';
-  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.15 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+fSm+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.16 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+fSm+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
 }
 
 // ═══ UTILS ═══
