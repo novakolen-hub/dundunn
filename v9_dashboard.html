@@ -144,6 +144,22 @@
   .pt-btn:hover{background:#2ea043}
   .pt-btn:disabled{background:#21262d;color:#484f58;cursor:not-allowed}
   .pt-loading{text-align:center;padding:40px;color:#6e7590;font-size:13px}
+  /* ── Trade Grade on cards ── */
+  .tg{display:inline-flex;align-items:center;justify-content:center;width:22px;height:18px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;margin-left:4px;vertical-align:middle}
+  .tg-a{background:rgba(0,200,83,0.15);color:#00c853;border:1px solid rgba(0,200,83,0.25)}
+  .tg-b{background:rgba(66,165,245,0.12);color:#42a5f5;border:1px solid rgba(66,165,245,0.2)}
+  .tg-c{background:rgba(255,152,0,0.12);color:#ff9800;border:1px solid rgba(255,152,0,0.2)}
+  .tg-f{background:rgba(239,83,80,0.12);color:#ef5350;border:1px solid rgba(239,83,80,0.2)}
+  /* ── Trade Candidates section ── */
+  .tc-section{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:10px 14px;margin:6px 0 4px}
+  .tc-hdr{font-family:'JetBrains Mono',monospace;font-size:11px;color:#e3b341;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px}
+  .tc-card{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#161b22;border:1px solid #21262d;border-radius:6px;margin-bottom:4px;cursor:pointer;transition:border-color .15s}
+  .tc-card:hover{border-color:#58a6ff}
+  .tc-tk{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#e6edf3;min-width:55px}
+  .tc-setup{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px}
+  .tc-meta{font-size:11px;color:#8b949e;flex:1}
+  .tc-grade{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700}
+  .tc-empty{font-size:12px;color:#3d4455;font-style:italic;padding:4px 0}
   .ratio-row{padding:6px 0;border-bottom:1px solid #161b22}
   @media(max-width:480px){body{padding:8px;font-size:13px}.heatmap{grid-template-columns:repeat(3,1fr)}table{font-size:12px}.inst-grid{grid-template-columns:1fr !important}}
   .inst-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px}
@@ -172,6 +188,7 @@
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
 <div id="sGP"></div>
 <div id="sActiveSetups"></div>
+<div id="sTradeCandidates"></div>
 <div id="sHidden" style="display:none"></div>
 <div id="sBrief"></div>
 <div id="sStory"></div>
@@ -271,6 +288,52 @@ var _SIZE_BADGES={
 };
 
 // Build setup tag HTML for a ticker card (clickable → opens pre-trade modal)
+// ═══ QUICK GRADE — lightweight client-side scorecard from _tq data ═══
+function quickGrade(ticker,setupKey,subModeLabel,gpLetter,side){
+  var q=_tq[ticker]||{};
+  if(!q.last||!setupKey)return null;
+  var reg=C_REGISTRY[setupKey];if(!reg)return null;
+  side=side||'LONG';
+  var g=0,y=0,r=0,notes=[];
+  // 1. GP × Setup
+  var c1=_cSGP(setupKey,subModeLabel,gpLetter);
+  if(side==='LONG'){
+    if(c1.ok&&!c1.caution)g++;else if(c1.ok&&c1.caution){y++;notes.push('GP caution');}else{r++;notes.push('GP blocked');}
+  } else { if(gpLetter==='D')g++;else if(gpLetter==='C')y++;else{r++;notes.push('wrong GP for short');} }
+  // 2. RVOL
+  var rv=parseFloat(q.rvol)||0;var rvReq=reg.minRVOL||1;
+  if(rv>=rvReq)g++;else if(rv>=rvReq*0.7){y++;notes.push('RVOL low');}else{r++;notes.push('RVOL');}
+  // 3. VWAP
+  var last=parseFloat(q.last)||0;var vwap=parseFloat(q.vwap)||0;
+  var vd=vwap>0?((last-vwap)/vwap*100):0;
+  if(side==='LONG'){if(vd>0)g++;else if(vd>-0.3)y++;else{r++;notes.push('<VWAP');}}
+  else{if(vd<0)g++;else if(vd<0.3)y++;else{r++;notes.push('>VWAP');}}
+  // 4. Confluence
+  var cf=parseFloat(q.conf)||0;
+  if(cf>=24)g++;else if(cf>=20){y++;notes.push('conf '+cf);}else{r++;notes.push('conf '+cf);}
+  // 5. Session (assume valid during market hours)
+  g++;
+  // 6. VIX
+  var vix=(_lastD&&_lastD.vix)?parseFloat(_lastD.vix):0;
+  if(!vix){var vixQ=_tq['$VIX.X']||_tq['$VIX']||{};vix=parseFloat(vixQ&&vixQ.last)||15;}
+  if(vix<18)g++;else if(vix<25){y++;notes.push('VIX '+vix.toFixed(0));}else{r++;notes.push('VIX high');}
+  // 7. RSI
+  var rsi=parseFloat(q.rsi)||50;
+  if(side==='LONG'){if(rsi>=35&&rsi<=70)g++;else if(rsi>=25&&rsi<=80)y++;else{r++;notes.push('RSI');}}
+  else{if(rsi>=30&&rsi<=65)g++;else if(rsi>=20&&rsi<=75)y++;else{r++;notes.push('RSI');}}
+  // 8. Sector (benefit of doubt)
+  g++;
+  var grade;
+  if(g>=7)grade='A';else if(g+y>=7&&g>=5)grade='B';else if(g+y>=6)grade='C';else grade='F';
+  return{grade:grade,greens:g,yellows:y,reds:r,notes:notes,total:g+y+r};
+}
+function gradeHtml(gr){
+  if(!gr)return '';
+  var cls=gr.grade==='A'?'tg-a':gr.grade==='B'?'tg-b':gr.grade==='C'?'tg-c':'tg-f';
+  var tip=gr.greens+'G/'+gr.yellows+'Y/'+gr.reds+'R'+(gr.notes.length?' — '+gr.notes.join(', '):'');
+  return '<span class="tg '+cls+'" title="'+e(tip)+'">'+gr.grade+'</span>';
+}
+
 function setupTagHtml(setupRaw,subModeLabel,gpLetter,ticker){
   if(!setupRaw)return '';
   var key=_matchSetupKey(setupRaw);
@@ -280,7 +343,59 @@ function setupTagHtml(setupRaw,subModeLabel,gpLetter,ticker){
   var icon=chk.ok?(chk.caution?'△':'✓'):'✗';
   var tip=chk.reason||'';
   var onclick=ticker?' onclick="event.stopPropagation();openPT(\''+ticker+'\')" style="cursor:pointer"':'';
-  return ' <span class="setup-tag '+cls+'" title="'+e(tip)+'"'+onclick+'>'+e(r.label)+' '+icon+'</span>';
+  var h=' <span class="setup-tag '+cls+'" title="'+e(tip)+'"'+onclick+'>'+e(r.label)+' '+icon+'</span>';
+  if(ticker&&chk.ok){var gr=quickGrade(ticker,key,subModeLabel,gpLetter,'LONG');if(gr)h+=gradeHtml(gr);}
+  return h;
+}
+
+// ═══ TRADE CANDIDATES — surfaces best opportunities at the top ═══
+function rTradeCandidates(d){
+  var el=$('sTradeCandidates');if(!el)return;
+  var sm=d.gpSubMode,gp=d.gpLetter||'C';
+  var subModeLabel=(sm&&sm.subMode)?sm.subMode:'';
+  var tqKeys=Object.keys(_tq||{});
+  var candidates=[];
+  for(var i=0;i<tqKeys.length;i++){
+    var tk=tqKeys[i],q=_tq[tk];
+    if(!q||!q.setup||!q.last)continue;
+    if(tk.charAt(0)==='$'||tk.charAt(0)==='/')continue;
+    var key=_matchSetupKey(q.setup);if(!key)continue;
+    var chk=_cSGP(key,subModeLabel,gp);if(!chk.ok)continue;
+    var gr=quickGrade(tk,key,subModeLabel,gp,'LONG');
+    if(!gr||gr.grade==='F')continue;
+    candidates.push({ticker:tk,key:key,grade:gr,q:q,caution:chk.caution});
+  }
+  var gradeOrder={A:0,B:1,C:2,F:3};
+  candidates.sort(function(a,b){
+    var gd=(gradeOrder[a.grade.grade]||3)-(gradeOrder[b.grade.grade]||3);
+    if(gd!==0)return gd;
+    return(parseFloat(b.q.conf)||0)-(parseFloat(a.q.conf)||0);
+  });
+  candidates=candidates.slice(0,8);
+  if(!candidates.length){el.innerHTML='';return;}
+  var h='<div class="tc-section"><div class="tc-hdr">🎯 Trade Candidates · '+e(subModeLabel||'GP-'+gp)+'</div>';
+  for(var c=0;c<candidates.length;c++){
+    var cd=candidates[c],q=cd.q;
+    var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
+    var chgCls=chgN>0?'g':chgN<0?'r':'dim';
+    var rv=parseFloat(q.rvol)||0;var rvc=rv>=2?'g':rv>=1.5?'y':'dim';
+    var cf=parseFloat(q.conf)||0;var cfc=cf>=28?'g':cf>=24?'y':'dim';
+    var setupCls=cd.caution?'st-warn':'st-ok';
+    var gradeCol=cd.grade.grade==='A'?'#00c853':cd.grade.grade==='B'?'#42a5f5':'#ff9800';
+    h+='<div class="tc-card" onclick="openPT(\''+cd.ticker+'\')">';
+    h+='<span class="tc-tk">'+e(cd.ticker)+'</span>';
+    h+='<span class="tc-setup '+setupCls+'">'+e(C_REGISTRY[cd.key].label)+'</span>';
+    h+='<span class="tc-meta">';
+    h+='<span class="'+chgCls+'">'+e(q.chg||'')+'</span>';
+    h+=' <span class="'+rvc+'">RV '+rv.toFixed(1)+'</span>';
+    h+=' <span class="'+cfc+'">⚡'+cf.toFixed(0)+'</span>';
+    if(cd.grade.notes.length)h+=' <span class="dim">'+e(cd.grade.notes.slice(0,2).join(', '))+'</span>';
+    h+='</span>';
+    h+='<span class="tc-grade" style="color:'+gradeCol+'">'+cd.grade.grade+'</span>';
+    h+='</div>';
+  }
+  h+='</div>';
+  el.innerHTML=h;
 }
 
 // Match scanner setup string to registry key
@@ -491,7 +606,7 @@ function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.t
   var _ae=document.activeElement;
   var _noteId=_ae&&_ae.id&&_ae.id.startsWith('note_')?_ae.id:null;
   var _noteCur=_noteId?_ae.selectionStart:0;
-  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rActiveSetups(d);rBrief(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInPlay(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
+  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rActiveSetups(d);rTradeCandidates(d);rBrief(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rInPlay(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
   // Restore textarea focus
   if(_noteId){var _el=document.getElementById(_noteId);if(_el){_el.focus();_el.selectionStart=_el.selectionEnd=_noteCur;}}
 }
