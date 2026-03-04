@@ -328,9 +328,13 @@ function quickGrade(ticker,setupKey,subModeLabel,gpLetter,side){
     if(secCount===0)g++;else if(secCount===1){y++;notes.push('1 in '+sector);}else{r++;notes.push(secCount+' in '+sector);}
   } else {g++;}
   var grade;
-  if(g>=7&&r===0)grade='A';
-  else if(g>=6&&r<=1)grade='B';
-  else if(r<=2&&g+y>=6)grade='C';
+  // A = exceptional: 7+ green, zero reds, max 1 yellow
+  if(g>=7&&r===0&&y<=1)grade='A';
+  // B = solid: 6+ green, zero reds
+  else if(g>=6&&r===0)grade='B';
+  // C = tradeable with issues: max 1 red, 5+ green
+  else if(r<=1&&g>=5)grade='C';
+  // F = don't trade
   else grade='F';
   return{grade:grade,greens:g,yellows:y,reds:r,notes:notes,total:g+y+r};
 }
@@ -390,7 +394,10 @@ function rTradeCandidates(d){
     var setupCls=cd.caution?'st-warn':'st-ok';
     var gradeCol=cd.grade.grade==='A'?'#00c853':cd.grade.grade==='B'?'#42a5f5':'#ff9800';
     h+='<div class="tc-card" onclick="openPT(\''+cd.ticker+'\')">';
-    h+='<span class="tc-tk">'+e(cd.ticker)+'</span>';
+    // Position indicator
+    var isHeld=false;
+    if(_lastD&&_lastD.positions)for(var ph=0;ph<_lastD.positions.length;ph++){if((_lastD.positions[ph].ticker||'')===cd.ticker)isHeld=true;}
+    h+='<span class="tc-tk">'+e(cd.ticker)+(isHeld?' <span style="font-size:8px;color:#3fb950;vertical-align:middle">●</span>':'')+'</span>';
     h+='<span class="tc-setup '+setupCls+'">'+e(C_REGISTRY[cd.key].label)+'</span>';
     h+='<span class="tc-meta">';
     h+='<span class="'+chgCls+'">'+e(q.chg||'')+'</span>';
@@ -2707,6 +2714,55 @@ function renderPTModal(d){
   if(d.gpSubMode)h+='<span class="tag-sub tag-sub-stable" style="font-size:10px">'+e(d.gpSubMode)+'</span>';
   if(sbInfo)h+='<span class="size-badge '+sbInfo.cls+'">'+sbInfo.txt+'</span>';
   h+='</div>';
+
+  // ── Position awareness ──
+  var heldPos=null,heldPaper=null,heldArete=null;
+  if(_lastD){
+    var allPos=_lastD.positions||[];
+    for(var pi=0;pi<allPos.length;pi++){if((allPos[pi].ticker||'')===d.symbol)heldPos=allPos[pi];}
+    var paperPos=_lastD.paperPositions||[];
+    for(var pp=0;pp<paperPos.length;pp++){if((paperPos[pp].ticker||'')===d.symbol)heldPaper=paperPos[pp];}
+    var aretePos=_lastD.aretePositions||[];
+    for(var ap=0;ap<aretePos.length;ap++){if((aretePos[ap].ticker||'')===d.symbol)heldArete=aretePos[ap];}
+  }
+  if(heldPos||heldPaper){
+    var pos=heldPos||heldPaper;
+    var isPaper=!heldPos;
+    var plN=parseFloat(String(pos.totalPL||pos.dayPL||'0').replace(/[$,]/g,''))||0;
+    var plCls=plN>0?'g':plN<0?'r':'dim';
+    var shares=pos.shares||pos.qty||'?';
+    var avg=pos.avgCost||pos.avg||'?';
+    var side=pos.side||'Long';
+    h+='<div style="margin-top:8px;padding:8px 12px;background:'+(isPaper?'#0d1117':'#0d1a0d')+';border:1px solid '+(isPaper?'#30363d':'#238636')+';border-radius:6px;font-size:12px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<span><span style="color:'+(isPaper?'#8b949e':'#3fb950')+';font-weight:700">'+(isPaper?'📋 PAPER':'💰 LIVE')+' POSITION</span>';
+    if(pos.accountType)h+=' <span class="dim" style="font-size:10px">'+e(pos.accountType)+'</span>';
+    h+='</span>';
+    h+='<span class="'+plCls+' bold mono">'+e(pos.totalPL||pos.dayPL||'$0')+'</span></div>';
+    h+='<div style="margin-top:3px;color:#8b949e">'+e(side)+' '+e(shares)+' sh @ $'+e(avg)+' → $'+e(d.last.toFixed(2))+'</div>';
+    // Context: what does this mean for the trade?
+    var distFromAvg=avg!=='?'?((d.last-parseFloat(avg))/parseFloat(avg)*100):0;
+    h+='<div style="margin-top:4px;color:#c8cdd8">';
+    if(plN>0&&distFromAvg>1){
+      h+='<span class="g">✓ In profit (+'+(distFromAvg).toFixed(1)+'%)</span> — Consider: add on pullback to avg ($'+e(avg)+'), or trail stop to breakeven.';
+    } else if(plN>0){
+      h+='<span class="g">✓ Slightly green</span> — Near entry. This is a Tier 2 add zone if setup confirms. Move stop to breakeven on core.';
+    } else if(plN<0&&distFromAvg<-2){
+      h+='<span class="r">⚠ Underwater ('+distFromAvg.toFixed(1)+'%)</span> — Adding here averages down. Only add if the setup is A-grade AND thesis intact. Otherwise manage the loss.';
+    } else if(plN<0){
+      h+='<span class="y">△ Slightly red</span> — Near entry but underwater. If adding, this is an intentional Tier 2 at a better price. Recalculate total risk.';
+    }
+    h+='</div></div>';
+  }
+  if(heldArete&&!heldPos){
+    h+='<div style="margin-top:6px;padding:6px 12px;background:#1f1a0f;border:1px solid #9e6a03;border-radius:6px;font-size:11px">';
+    h+='<span style="color:#e3b341;font-weight:700">ARETE</span> ';
+    if(heldArete.tag)h+='<span class="dim">'+e(heldArete.tag)+'</span> ';
+    if(heldArete.entry)h+='Entry: '+e(heldArete.entry)+' ';
+    if(heldArete.stop)h+='SL: <span class="r">'+e(heldArete.stop)+'</span> ';
+    if(heldArete.thesis)h+='<div style="color:#c9d1d9;margin-top:2px">'+e(heldArete.thesis)+'</div>';
+    h+='</div>';
+  }
   h+='</div>';
 
   // ── Section 2: Setup Selector + Side ──
