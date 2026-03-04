@@ -1071,7 +1071,7 @@ function rAreteEmails(d){
   if(!emails.length){el.innerHTML='';return;}
 
   var isCol=false;try{isCol=localStorage.getItem('sec_col_areteemails')==='1';}catch(e){}
-  var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleSec(\'areteemails\')"><span id="secArrow_areteemails" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 📧 Arete Emails <span class="dim" style="font-size:11px;font-weight:400">('+emails.length+' this week)</span></h2>';
+  var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleSec(\'areteemails\')"><span id="secArrow_areteemails" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 📧 Arete Emails <span class="dim" style="font-size:10px;font-weight:400">Alpha Chasers</span> <span class="dim" style="font-size:11px;font-weight:400">('+emails.length+' this week)</span></h2>';
   h+='<div id="secBody_areteemails" style="'+(isCol?'display:none':'')+'">';
 
   // Group by date
