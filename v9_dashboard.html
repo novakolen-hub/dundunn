@@ -407,10 +407,14 @@ function rTradeCandidates(d){
     var setupCls=cd.caution?'st-warn':'st-ok';
     var gradeCol=cd.grade.grade==='A'?'#00c853':cd.grade.grade==='B'?'#42a5f5':'#ff9800';
     h+='<div class="tc-card" onclick="openPT(\''+cd.ticker+'\')">';
-    // Position indicator
+    // Position indicator + Dynamic badge
     var isHeld=false;
     if(_lastD&&_lastD.positions)for(var ph=0;ph<_lastD.positions.length;ph++){if((_lastD.positions[ph].ticker||'')===cd.ticker)isHeld=true;}
-    h+='<span class="tc-tk">'+e(cd.ticker)+(isHeld?' <span style="font-size:8px;color:#3fb950;vertical-align:middle">●</span>':'')+'</span>';
+    var isDynamic=_lastD&&_lastD.dynamicTickers&&_lastD.dynamicTickers[cd.ticker];
+    h+='<span class="tc-tk">'+e(cd.ticker);
+    if(isHeld)h+=' <span style="font-size:8px;color:#3fb950;vertical-align:middle">●</span>';
+    if(isDynamic)h+=' <span style="font-size:8px;color:#ffc107;vertical-align:middle" title="Dynamic: '+e(isDynamic.source+' — '+isDynamic.reason)+'">⚡</span>';
+    h+='</span>';
     h+='<span class="tc-setup '+setupCls+'">'+e(C_REGISTRY[cd.key].label)+'</span>';
     h+='<span class="tc-meta">';
     h+='<span class="'+chgCls+'">'+e(q.chg||'')+'</span>';
