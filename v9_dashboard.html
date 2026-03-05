@@ -436,7 +436,7 @@ function uCard(tk, mode, opts) {
 
   // --- COMPACT ROW (always rendered) ---
   var h = '<div class="uc" id="' + cardId + '" style="border-left:3px solid ' + bCol + '"';
-  if (!isExpanded) h += ' onclick="ucToggle(\'' + cardId + '\')"';
+  if (!isExpanded) h += ' onclick="openPT(\'' + tk + '\')"';
   h += '>';
   h += '<div class="uc-row">';
 
@@ -508,12 +508,13 @@ function uCard(tk, mode, opts) {
   h += sparkSvg(tk, 60, 18);
 
   // Expand arrow
-  if (!isExpanded) h += '<span class="uc-arrow" id="' + cardId + '_arr">\u25b6</span>';
+  // Arrow removed — compact click opens modal
 
   h += '</div>'; // end uc-row
 
   // --- EXPANDED DETAIL (hidden by default in compact mode) ---
-  h += '<div class="uc-detail" id="' + cardId + '_det"' + (isExpanded ? '' : ' style="display:none"') + '>';
+  if (!isExpanded) { h += '</div>'; return h; }
+  h += '<div class="uc-detail" id="' + cardId + '_det">';
 
   // Detail header — repeats key info from compact row
   h += '<div class="uc-det-hdr">';
@@ -3005,6 +3006,8 @@ function renderPTModal(d){
   // ── Section 1: Ticker Context ──
   var chgN=d.chg?parseFloat(String(d.chg).replace('%','')):0;
   var chgCls=chgN>0?'g':chgN<0?'r':'dim';
+  // TradingView chart embed
+  h+='<div style="margin:-4px -4px 8px -4px;border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:220px;border:none" loading="lazy"></iframe></div>';
   h+='<div class="pt-section">';
   h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
   h+='<span style="font-size:18px;font-weight:700;color:#e6edf3">$'+e(d.last)+'</span>';
