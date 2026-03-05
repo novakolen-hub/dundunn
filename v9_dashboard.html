@@ -717,7 +717,8 @@ function _renderQuotaChart(){
     var pct=d.v/max*100;
     // Stacked bar segments
     h+='<div style="flex:1;height:100%;display:flex;flex-direction:column-reverse;position:relative" onmouseenter="this.querySelector(\'.qc-tip\').style.display=\'block\'" onmouseleave="this.querySelector(\'.qc-tip\').style.display=\'none\'">';
-    if(d.c){
+    var _hasCats=d.c&&Object.keys(d.c).some(function(k){return d.c[k]>0;});
+    if(_hasCats){
       var running=0;
       for(var ci=0;ci<catOrder.length;ci++){
         var cv=d.c[catOrder[ci]]||0;
