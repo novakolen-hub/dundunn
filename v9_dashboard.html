@@ -337,8 +337,8 @@ function quickGrade(ticker,setupKey,subModeLabel,gpLetter,side){
   // 8. Sector (check if we have open positions in same sector from _lastD)
   var sector=_SEC[ticker]||'';
   if(sector&&_lastD&&_lastD.positions){
-    var secCount=0;for(var sc=0;sc<_lastD.positions.length;sc++){var pt=_lastD.positions[sc].ticker||'';if(_SEC[pt]===sector)secCount++;}
-    if(secCount===0)g++;else if(secCount===1){y++;notes.push('1 in '+sector);}else{r++;notes.push(secCount+' in '+sector);}
+    var secCount=0,secTks=[];for(var sc=0;sc<_lastD.positions.length;sc++){var pt=_lastD.positions[sc].ticker||'';if(_SEC[pt]===sector){secCount++;secTks.push(pt);}}
+    if(secCount===0)g++;else if(secCount===1){y++;notes.push('1 in '+sector+' ('+secTks[0]+')');}else{r++;notes.push(secCount+' in '+sector+' ('+secTks.join(',')+')');}
   } else {g++;}
   var grade;
   // A = exceptional: 7+ green, zero reds, max 1 yellow
