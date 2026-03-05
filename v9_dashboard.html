@@ -63,21 +63,19 @@
   .q-aplus{color:#56d364}.q-solid{color:#58a6ff}.q-playbook{color:#e3b341}.q-watch{color:#7d8590}.q-skip{color:#484f58}
 
   /* ── Quota Popup ── */
-  .qc{position:absolute;top:100%;left:-40px;background:#0f1318;border:1px solid #30363d;border-radius:8px;padding:12px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:none;width:420px}
+  .qc{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0b0e14;border:1px solid #30363d;border-radius:10px;padding:16px 20px;z-index:9999;box-shadow:0 12px 40px rgba(0,0,0,0.7);display:none;width:600px;max-width:95vw}
   .qc.open{display:block}
-  .qc-title{color:#e6edf3;font-size:12px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
-  .qc-close{cursor:pointer;color:#7d8590;font-size:16px;padding:2px 6px}
-  .qc-chart{display:flex;align-items:flex-end;gap:2px;height:60px;margin-bottom:6px}
-  .qc-col{display:flex;flex-direction:column-reverse;flex:1;min-width:0}
-  .qc-seg{min-height:1px;border-radius:1px 1px 0 0}
-  .qc-lbl{font-size:7px;color:#484f58;text-align:center;margin-top:2px;font-family:'JetBrains Mono',monospace;overflow:hidden}
-  .qc-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:9px;font-family:'JetBrains Mono',monospace}
-  .qc-leg{display:flex;align-items:center;gap:3px;color:#7d8590}
-  .qc-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
-  .qc-total{font-size:11px;color:#7d8590;margin-top:4px;font-family:'JetBrains Mono',monospace}
-  .qc-bar-gauge{height:6px;background:#161b22;border-radius:3px;overflow:hidden;margin-top:4px}
-  .qc-bar-fill{height:100%;border-radius:3px;transition:width 0.3s}
-  .qc-log{font-size:9px;color:#484f58;margin-top:6px;max-height:80px;overflow-y:auto;font-family:'JetBrains Mono',monospace;line-height:1.4;border-top:1px solid #1c2333;padding-top:4px}
+  .qc-back{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9998;background:rgba(0,0,0,0.4);display:none}
+  .qc-back.open{display:block}
+  .qc-title{color:#e6edf3;font-size:13px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+  .qc-close{cursor:pointer;color:#7d8590;font-size:18px;padding:2px 8px}
+  .qc-close:hover{color:#e6edf3}
+  .qc-gauge{height:8px;background:#161b22;border-radius:4px;overflow:hidden;margin-bottom:14px}
+  .qc-gauge-fill{height:100%;border-radius:4px;transition:width 0.3s}
+  .qc-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-size:10px;font-family:'JetBrains Mono',monospace}
+  .qc-leg{display:flex;align-items:center;gap:4px;color:#7d8590}
+  .qc-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+  .qc-log{font-size:9px;color:#484f58;margin-top:10px;max-height:120px;overflow-y:auto;font-family:'JetBrains Mono',monospace;line-height:1.5;border-top:1px solid #1c2333;padding-top:8px}
 
   .footer{text-align:center;color:#30363d;font-size:11px;margin-top:24px;font-family:'JetBrains Mono',monospace}
   .pos-block{background:#151b23;border:1px solid #2a313a;border-radius:6px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s}
@@ -212,7 +210,7 @@
 <body>
 <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 <div class="status-bar"><div><span class="pulse pulse-off" id="pl"></span><span id="st">Connecting...</span></div><div id="lu" class="mono">--:--</div></div>
-<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative" id="tQWrap" onmouseenter="showQuota()" onmouseleave="hideQuotaDelay()"><span class="tl" style="cursor:pointer" onclick="pinQuota()">Fetches</span><span class="tv" id="tQ" style="cursor:pointer" onclick="pinQuota()">--</span><div class="qc" id="qcPop" onmouseenter="keepQuota()" onmouseleave="hideQuotaDelay()"></div></div><span class="sp">·</span><div class="ti"><span class="tl">API $</span><span class="tv" id="tCost">--</span></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
+<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti"><span class="tl" style="cursor:pointer" onclick="toggleQuota()">Fetches</span><span class="tv" id="tQ" style="cursor:pointer" onclick="toggleQuota()">--</span></div><span class="sp">·</span><div class="ti"><span class="tl">API $</span><span class="tv" id="tCost">--</span></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
 <h1 id="hdr">📡 V9 Trading Dashboard</h1>
 <p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
@@ -803,73 +801,72 @@ function setBookPin(){
   var np=prompt('Set new 4-digit PIN:');if(np&&/^\d{4}$/.test(np)){try{localStorage.setItem('v9_book_pin',np);alert('PIN updated');}catch(e){}}
 }
 
-// ═══ QUOTA POPUP ═══
-var _quotaHourly=[],_quotaLog='',_qcPinned=false,_qcTimer=null;
-var QC_CATS={bars:'#58a6ff',sectors:'#3fb950',earnings:'#d2a8ff',news:'#e3b341',ai:'#f97583',broker:'#79c0ff',pulse:'#56d364',dynamic:'#ffc107',other:'#484f58'};
-function showQuota(){clearTimeout(_qcTimer);renderQuotaPopup();$('qcPop').classList.add('open');}
-function keepQuota(){clearTimeout(_qcTimer);}
-function hideQuotaDelay(){if(_qcPinned)return;_qcTimer=setTimeout(function(){$('qcPop').classList.remove('open');},300);}
-function pinQuota(){_qcPinned=!_qcPinned;if(_qcPinned){renderQuotaPopup();$('qcPop').classList.add('open');}else{$('qcPop').classList.remove('open');}}
+// ═══ QUOTA CHART ═══
+var _quotaHourly=[],_quotaLog='',_qcOpen=false;
+var QC_CATS={bars:'#f85149',quotes:'#3fb950',market:'#58a6ff',ai:'#d2a8ff',bridge:'#79c0ff',news:'#e3b341',sectors:'#56d364',earnings:'#ffc107',pulse:'#ff7b72',dynamic:'#f0883e',broker:'#a5d6ff',other:'#484f58'};
+function toggleQuota(){_qcOpen=!_qcOpen;if(_qcOpen){renderQuotaPopup();$('qcPop').classList.add('open');$('qcBack').classList.add('open');}else{$('qcPop').classList.remove('open');$('qcBack').classList.remove('open');}}
 function renderQuotaPopup(){
-  var el=$('qcPop');if(!el)return;
+  var el=$("qcPop");if(!el)return;
   var d=_lastD||{};
   var hourly=_quotaHourly;
   var total=d.quotaCount||0;
   var pct=Math.min(100,total/20000*100);
-  var barCol=pct>80?'#f85149':pct>60?'#e3b341':'#3fb950';
-  var h='<div class="qc-title"><span>Quota: '+total.toLocaleString()+' / 20,000</span>';
-  h+=(_qcPinned?'<span class="qc-close" onclick="pinQuota()">&times;</span>':'');
-  h+='</div>';
-  h+='<div class="qc-bar-gauge"><div class="qc-bar-fill" style="width:'+pct+'%;background:'+barCol+'"></div></div>';
-  if(hourly&&hourly.length){
-    var maxH=1;for(var i=0;i<hourly.length;i++){if(hourly[i].total>maxH)maxH=hourly[i].total;}
-    var chartH=120;
-    h+='<div style="display:flex;align-items:flex-end;gap:1px;height:'+chartH+'px;margin:8px 0 2px 0;padding:0 2px">';
-    for(var i=0;i<hourly.length;i++){
-      var hr=hourly[i],cats=hr.cats||{},barH=hr.total>0?Math.max(4,hr.total/maxH*chartH):2;
-      h+='<div style="flex:1;display:flex;flex-direction:column-reverse;height:'+chartH+'px;justify-content:flex-start;position:relative" title="'+e(hr.h)+'\n'+hr.total+' fetches';
-      var catKeys=Object.keys(QC_CATS);
-      for(var ci=0;ci<catKeys.length;ci++){var ck=catKeys[ci],cv=cats[ck]||0;if(cv>0)h+='\n'+ck+': '+cv;}
-      h+='">';
-      if(hr.total===0){
-        h+='<div style="height:2px;background:#1c2333;border-radius:1px"></div>';
-      } else {
-        var hasCats=false;
-        for(var ci2=0;ci2<catKeys.length;ci2++){
-          var ck2=catKeys[ci2],cv2=cats[ck2]||0;
-          if(cv2>0){hasCats=true;var segH=Math.max(1,cv2/maxH*chartH);h+='<div style="height:'+segH.toFixed(1)+'px;background:'+QC_CATS[ck2]+';min-width:100%;border-radius:1px 1px 0 0"></div>';}
-        }
-        if(!hasCats){var fullH=Math.max(4,hr.total/maxH*chartH);var bColor=hr.total>1500?'#f85149':hr.total>800?'#e3b341':'#3fb950';h+='<div style="height:'+fullH.toFixed(1)+'px;background:'+bColor+';min-width:100%;border-radius:1px 1px 0 0"></div>';}
+  var barCol=pct>80?"#f85149":pct>60?"#e3b341":"#3fb950";
+
+  var h='<div class="qc-title"><span>📡 UrlFetch Quota · '+total.toLocaleString()+' / 20,000 ('+pct.toFixed(0)+'%)</span>';
+  h+='<span class="qc-close" onclick="toggleQuota()">&times;</span></div>';
+
+  h+='<div class="qc-gauge"><div class="qc-gauge-fill" style="width:'+pct+'%;background:'+barCol+'"></div></div>';
+
+  var maxH=1;
+  if(hourly&&hourly.length){for(var i=0;i<hourly.length;i++){if(hourly[i].total>maxH)maxH=hourly[i].total;}}
+  var chartH=140;
+
+  h+='<div style="display:flex;align-items:flex-end;height:'+chartH+'px;gap:2px;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:8px 6px 4px 6px">';
+  for(var i=0;i<24;i++){
+    var hr=hourly&&hourly[i]?hourly[i]:{h:"",total:0,cats:{}};
+    var cats=hr.cats||{};
+    var catKeys=Object.keys(QC_CATS);
+    var tip=e(hr.h)+": "+hr.total+" total";
+    for(var ci=0;ci<catKeys.length;ci++){var cv=cats[catKeys[ci]]||0;if(cv>0)tip+="\n  "+catKeys[ci]+": "+cv;}
+    h+='<div style="flex:1;display:flex;flex-direction:column-reverse;height:'+chartH+'px;justify-content:flex-start;min-width:0;cursor:default" title="'+tip+'">';
+    if(hr.total===0){
+      h+='<div style="height:2px;background:#1c2333;border-radius:1px;width:100%"></div>';
+    } else {
+      var hasCats=false;
+      for(var ci2=0;ci2<catKeys.length;ci2++){
+        var ck=catKeys[ci2],cv2=cats[ck]||0;
+        if(cv2>0){hasCats=true;var segH=Math.max(2,cv2/maxH*(chartH-16));h+='<div style="height:'+segH.toFixed(1)+'px;background:'+QC_CATS[ck]+';width:100%;border-radius:1px;margin-top:1px"></div>';}
       }
-      h+='</div>';
+      if(!hasCats){var fullH=Math.max(4,hr.total/maxH*(chartH-16));var bc=hr.total>1500?"#f85149":hr.total>800?"#e3b341":"#3fb950";h+='<div style="height:'+fullH.toFixed(1)+'px;background:'+bc+';width:100%;border-radius:1px"></div>';}
     }
-    h+='</div>';
-    // Hour labels — show every 3rd to avoid crowding
-    h+='<div style="display:flex;gap:1px;padding:0 2px">';
-    for(var i=0;i<hourly.length;i++){
-      var showLbl=(i%3===0)||i===hourly.length-1;
-      h+='<div style="flex:1;text-align:center;font-size:6px;color:#484f58;font-family:JetBrains Mono,monospace;overflow:hidden">'+(showLbl?e(hourly[i].h):'')+'</div>';
-    }
-    h+='</div>';
-    // Legend
-    h+='<div class="qc-legend">';
-    var catKeys3=Object.keys(QC_CATS);
-    for(var li=0;li<catKeys3.length;li++){
-      var ck3=catKeys3[li],catTotal=0;
-      for(var hi=0;hi<hourly.length;hi++){catTotal+=(hourly[hi].cats||{})[ck3]||0;}
-      if(catTotal>0)h+='<span class="qc-leg"><span class="qc-dot" style="background:'+QC_CATS[ck3]+'"></span>'+ck3+' '+catTotal+'</span>';
-    }
-    h+='</div>';
-  } else {
-    h+='<div class="dim" style="font-size:10px;margin-top:8px">Waiting for hourly category data from scanner...</div>';
-    // Show fallback with just the log
-    h+='<div class="qc-bar-gauge" style="margin-top:6px"><div class="qc-bar-fill" style="width:'+pct+'%;background:'+barCol+'"></div></div>';
+    h+="</div>";
   }
+  h+="</div>";
+
+  h+='<div style="display:flex;gap:2px;padding:2px 6px 0 6px">';
+  for(var i=0;i<24;i++){
+    var hr2=hourly&&hourly[i]?hourly[i]:{h:""};
+    var show=(i%4===0)||i===23;
+    h+='<div style="flex:1;text-align:center;font-size:8px;color:'+(show?"#7d8590":"transparent")+';font-family:JetBrains Mono,monospace;overflow:hidden">'+e(hr2.h||"")+'</div>';
+  }
+  h+="</div>";
+
+  h+='<div class="qc-legend">';
+  var catKeys3=Object.keys(QC_CATS);
+  for(var li=0;li<catKeys3.length;li++){
+    var ck3=catKeys3[li],catTotal=0;
+    if(hourly)for(var hi=0;hi<hourly.length;hi++){catTotal+=(hourly[hi].cats||{})[ck3]||0;}
+    if(catTotal>0)h+='<span class="qc-leg"><span class="qc-dot" style="background:'+QC_CATS[ck3]+'"></span>'+ck3+': '+catTotal.toLocaleString()+'</span>';
+  }
+  if(!hourly||!hourly.length)h+='<span class="qc-leg dim">Category data populates as scans run</span>';
+  h+="</div>";
+
   if(_quotaLog){
-    var ll=_quotaLog.split('|').slice(-8);
+    var ll=_quotaLog.split("|").slice(-15);
     h+='<div class="qc-log">';
-    for(var li2=ll.length-1;li2>=0;li2--)h+=e(ll[li2])+'<br>';
-    h+='</div>';
+    for(var li2=ll.length-1;li2>=0;li2--)h+=e(ll[li2])+"<br>";
+    h+="</div>";
   }
   el.innerHTML=h;
 }
@@ -3626,5 +3623,6 @@ document.addEventListener('click',function(ev){
   saveFocused();
 });
 </script>
+<div class="qc-back" id="qcBack" onclick="toggleQuota()"></div><div class="qc" id="qcPop"></div>
 </body>
 </html>
