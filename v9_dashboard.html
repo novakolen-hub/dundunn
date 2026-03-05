@@ -210,7 +210,7 @@
 <body>
 <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 <div class="status-bar"><div><span class="pulse pulse-off" id="pl"></span><span id="st">Connecting...</span></div><div id="lu" class="mono">--:--</div></div>
-<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative;cursor:pointer" onmouseenter="showQuotaChart()" onclick="toggleQuotaChart()"><span class="tl">Fetches</span><span class="tv" id="tQ">--</span><div id="quotaPopup" onmouseenter="this.style.display='block'" onmouseleave="if(!_quotaChartPinned)this.style.display='none'" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti"><span class="tl">API $</span><span class="tv" id="tCost">--</span></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
+<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative;cursor:pointer" onmouseenter="showQuotaChart()" onclick="toggleQuotaChart()"><span class="tl">Fetches</span><span class="tv" id="tQ">--</span><div id="quotaPopup" onmouseenter="this.style.display='block'" onmouseleave="if(!_quotaChartPinned)this.style.display='none'" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti" style="position:relative;cursor:pointer" onmouseenter="showApiChart()" onclick="toggleApiChart()"><span class="tl">API $</span><span class="tv" id="tCost">--</span><div id="apiPopup" onmouseenter="this.style.display='block'" onmouseleave="if(!_apiChartPinned)this.style.display='none'" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
 <h1 id="hdr">📡 V9 Trading Dashboard</h1>
 <p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
@@ -701,7 +701,7 @@ function rTimer(d){var t=d.timerState||d;function cd(s){if(s===undefined||s===nu
   $('tQ').innerHTML='<span class="'+qCol+'">'+qc+'</span><span class="dim" style="font-size:9px">/20K</span>';
   // Cache hourly data for popup
   _quotaHourly=d.quotaHourly||t.quotaHourly||[];
-  _quotaLog=d.quotaLog||t.quotaLog||'';
+  _quotaLog=d.quotaLog||t.quotaLog||'';_apiCostHourly=t.apiCostHourly||d.apiCostHourly||[];_apiCostTotal=parseFloat(t.apiCostTotal||d.apiCostTotal||0);
   _quotaTotal=qc;
   var cst=d.dashboardCost||'';var cum=d.dashboardCostCum||'';if(cst||cum){var disp=cum?'$'+parseFloat(cum).toFixed(2):cst;$('tCost').innerHTML='<span class="y">'+e(disp)+'</span>';var tip='Last: '+cst;if(d.dashboardTokens)tip+=' ('+d.dashboardTokens+')';if(cum)tip+='\nSession total: $'+parseFloat(cum).toFixed(4);$('tCost').title=tip;}else{$('tCost').innerHTML='<span class="dim">--</span>';}$('tPh').textContent=sL(d.phase)||'--';}
 
@@ -802,6 +802,59 @@ function _renderQuotaChart(){
     h+='</div>';
   }
 
+  h+='</div>';
+  el.innerHTML=h;
+  el.style.display='block';
+}
+
+
+// ═══ API COST CHART ═══
+var _apiCostHourly=[],_apiCostTotal=0,_apiChartPinned=false;
+function showApiChart(){_renderApiChart();}
+function hideApiChart(){_apiChartPinned=false;$('apiPopup').style.display='none';}
+function toggleApiChart(){_apiChartPinned=!_apiChartPinned;if(_apiChartPinned)_renderApiChart();else $('apiPopup').style.display='none';}
+
+function _renderApiChart(){
+  var el=$('apiPopup');if(!el)return;
+  var hourly=_apiCostHourly;
+  if(!hourly||!hourly.length){
+    el.innerHTML='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center"><div class="qc-title" style="margin:0">Claude API Cost</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideApiChart()">✕</span></div><div class="qc-total" style="margin-top:8px"><span style="color:#ab47bc">$'+_apiCostTotal.toFixed(2)+'</span> session total</div><div class="dim" style="font-size:10px;margin-top:4px">Hourly data populates as Claude API runs</div></div>';
+    el.style.display='block';return;
+  }
+  var max=0.001;for(var i=0;i<hourly.length;i++){if(hourly[i].cost>max)max=hourly[i].cost;}
+
+  var h='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="qc-title" style="margin:0">Claude API · 24h Cost Breakdown</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideApiChart()">✕</span></div>';
+  h+='<div style="display:flex;align-items:flex-end;gap:3px;height:160px;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 8px">';
+  for(var i=0;i<hourly.length;i++){
+    var d=hourly[i];
+    var tok=d.tok||{};
+    var tip=e(d.h)+': $'+d.cost.toFixed(4);
+    if(tok.calls)tip+='\n'+tok.calls+' call'+(tok.calls>1?'s':'');
+    if(tok['in'])tip+='\n'+tok['in'].toLocaleString()+' in / '+(tok['out']||0).toLocaleString()+' out';
+    h+='<div class="qc-col" style="flex:1;height:100%;display:flex;flex-direction:column-reverse;min-width:0;position:relative" title="'+tip.replace(/"/g,'&quot;').replace(/\n/g,'&#10;')+'">';
+    if(d.cost===0){
+      h+='<div style="flex:1;border:1px dashed #30363d;border-radius:2px"></div>';
+    } else {
+      var pct=d.cost/max*100;
+      var col=d.cost>0.05?'#f85149':d.cost>0.02?'#e3b341':'#ab47bc';
+      h+='<div style="height:'+Math.max(pct,4)+'%;background:'+col+';border-radius:2px 2px 0 0;width:100%"></div>';
+    }
+    // Hover tooltip
+    var tipHtml2='<div class="qc-tip"><div class="qc-tip-h">'+e(d.h)+': $'+d.cost.toFixed(4)+'</div>';
+    if(tok.calls)tipHtml2+='<div>'+tok.calls+' call'+(tok.calls>1?'s':'')+'</div>';
+    if(tok["in"])tipHtml2+='<div>'+tok["in"].toLocaleString()+' in / '+(tok["out"]||0).toLocaleString()+' out</div>';
+    if(d.cost===0)tipHtml2+='<div class="dim">No API calls</div>';
+    tipHtml2+='</div>';
+    h+=tipHtml2;
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='<div style="display:flex;gap:3px;padding:3px 8px 0 8px">';
+  for(var i=0;i<hourly.length;i++){var show=(i%4===0)||i===hourly.length-1;h+='<div style="flex:1;text-align:center;font-size:8px;color:'+(show?'#7d8590':'transparent')+';font-family:JetBrains Mono,monospace">'+e(hourly[i].h||'')+'</div>';}
+  h+='</div>';
+  var totalCalls=0,totalIn=0,totalOut=0,totalCost=0;
+  for(var i=0;i<hourly.length;i++){var t=hourly[i].tok||{};totalCalls+=(t.calls||0);totalIn+=(t['in']||0);totalOut+=(t['out']||0);totalCost+=hourly[i].cost;}
+  h+='<div style="margin-top:8px;font-family:JetBrains Mono,monospace;font-size:11px"><span style="color:#ab47bc">$'+totalCost.toFixed(4)+'</span> <span style="color:#7d8590">total · '+totalCalls+' calls · '+(totalIn/1000).toFixed(1)+'K in / '+(totalOut/1000).toFixed(1)+'K out</span></div>';
   h+='</div>';
   el.innerHTML=h;
   el.style.display='block';
