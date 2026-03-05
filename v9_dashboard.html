@@ -834,10 +834,12 @@ function renderQuotaPopup(){
       if(hr.total===0){
         h+='<div style="height:2px;background:#1c2333;border-radius:1px"></div>';
       } else {
+        var hasCats=false;
         for(var ci2=0;ci2<catKeys.length;ci2++){
           var ck2=catKeys[ci2],cv2=cats[ck2]||0;
-          if(cv2>0){var segH=Math.max(1,cv2/maxH*chartH);h+='<div style="height:'+segH.toFixed(1)+'px;background:'+QC_CATS[ck2]+';min-width:100%;border-radius:1px 1px 0 0"></div>';}
+          if(cv2>0){hasCats=true;var segH=Math.max(1,cv2/maxH*chartH);h+='<div style="height:'+segH.toFixed(1)+'px;background:'+QC_CATS[ck2]+';min-width:100%;border-radius:1px 1px 0 0"></div>';}
         }
+        if(!hasCats){var fullH=Math.max(4,hr.total/maxH*chartH);var bColor=hr.total>1500?'#f85149':hr.total>800?'#e3b341':'#3fb950';h+='<div style="height:'+fullH.toFixed(1)+'px;background:'+bColor+';min-width:100%;border-radius:1px 1px 0 0"></div>';}
       }
       h+='</div>';
     }
