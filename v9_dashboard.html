@@ -233,7 +233,6 @@
   .ic-lnk{color:#58a6ff;font-size:13px;font-weight:700;text-decoration:none}.ic-lnk:hover{color:#79c0ff}
   .tv-d{display:inline-block;width:7px;height:7px;border-radius:50%;background:#58a6ff;margin-right:3px;vertical-align:middle;cursor:pointer;opacity:0.7}.tv-d:hover{opacity:1;box-shadow:0 0 4px #58a6ff}
 </style>
-<script src="https://s.tradingview.com/tv.js"></script>
 </head>
 <body>
 <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
@@ -3077,26 +3076,25 @@ function renderSmartBoxes(d, setupKey) {
   return h;
 }
 
-// ═══ SETUP → TRADINGVIEW STUDIES MAP ═══
-// TradingView widget constructor format: array of study descriptors
-var TV_STUDY_LIST = {
-  'VWAP-Hold':     [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'MASimple@tv-basicstudies',inputs:{length:20}}],
-  'OR-Break':      [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
-  'Pullback-EMA':  [{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'MASimple@tv-basicstudies',inputs:{length:20}},{id:'MASimple@tv-basicstudies',inputs:{length:50}},{id:'RSI@tv-basicstudies'}],
-  'Momentum':      [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'RSI@tv-basicstudies'}],
-  'Failed-BD':     [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
-  'BigDog':        [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'MASimple@tv-basicstudies',inputs:{length:20}},{id:'Volume@tv-basicstudies'}],
-  'BigDogBounce':  [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'},{id:'RSI@tv-basicstudies'}],
-  'GapGo':         [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
-  'DailyBreakout': [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:20}},{id:'Volume@tv-basicstudies'}],
-  'OpeningDrive':  [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
-  'SecondDay':     [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'Volume@tv-basicstudies'}],
-  'ReturnPullback':[{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'MASimple@tv-basicstudies',inputs:{length:20}}],
-  'Scalping':      [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
-  'RS-Override':   [{id:'VWAP@tv-basicstudies'},{id:'RSI@tv-basicstudies'}],
-  'Rotation-ETF':  [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
-  'MarketPlay':    [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'RSI@tv-basicstudies'}],
-  '_default':      [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}]
+// ═══ SETUP → TRADINGVIEW STUDIES (URL-encoded JSON arrays) ═══
+var TV_STUDY_ENCODED = {
+  'VWAP-Hold':     '%5B%22VWAP%40tv-basicstudies%22%2C%22MASimple%40tv-basicstudies%22%2C%22MASimple%40tv-basicstudies%22%5D',
+  'OR-Break':      '%5B%22VWAP%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D',
+  'Pullback-EMA':  '%5B%22MASimple%40tv-basicstudies%22%2C%22MASimple%40tv-basicstudies%22%2C%22RSI%40tv-basicstudies%22%5D',
+  'Momentum':      '%5B%22VWAP%40tv-basicstudies%22%2C%22MASimple%40tv-basicstudies%22%2C%22RSI%40tv-basicstudies%22%5D',
+  'Failed-BD':     '%5B%22VWAP%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D',
+  'BigDog':        '%5B%22VWAP%40tv-basicstudies%22%2C%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D',
+  'BigDogBounce':  '%5B%22VWAP%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%2C%22RSI%40tv-basicstudies%22%5D',
+  'GapGo':         '%5B%22VWAP%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D',
+  'DailyBreakout': '%5B%22VWAP%40tv-basicstudies%22%2C%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D',
+  'OpeningDrive':  '%5B%22VWAP%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D',
+  'SecondDay':     '%5B%22VWAP%40tv-basicstudies%22%2C%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D',
+  'ReturnPullback':'%5B%22VWAP%40tv-basicstudies%22%2C%22MASimple%40tv-basicstudies%22%5D',
+  'Scalping':      '%5B%22VWAP%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D',
+  'RS-Override':   '%5B%22VWAP%40tv-basicstudies%22%2C%22RSI%40tv-basicstudies%22%5D',
+  'Rotation-ETF':  '%5B%22VWAP%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D',
+  'MarketPlay':    '%5B%22VWAP%40tv-basicstudies%22%2C%22RSI%40tv-basicstudies%22%5D',
+  '_default':      '%5B%22VWAP%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D'
 };
 
 function renderPTModal(d){
@@ -3124,31 +3122,8 @@ function renderPTModal(d){
 
   // TradingView chart embed
   var _tvSetupKey=_matchSetupKey(d.setup);
-  var _tvChartId='tvchart_'+Date.now();
-  h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333;height:280px" id="'+_tvChartId+'"></div>';
-  // Defer widget creation until DOM is ready
-  setTimeout(function(){
-    var container=document.getElementById(_tvChartId);
-    if(!container)return;
-    var studies=TV_STUDY_LIST[_tvSetupKey]||TV_STUDY_LIST['_default'];
-    new TradingView.widget({
-      container_id:_tvChartId,
-      symbol:d.symbol,
-      interval:'5',
-      timezone:'America/Phoenix',
-      theme:'dark',
-      style:'1',
-      toolbar_bg:'#0b0e14',
-      hide_side_toolbar:true,
-      hide_top_toolbar:false,
-      allow_symbol_change:false,
-      save_image:false,
-      studies:studies,
-      width:'100%',
-      height:280,
-      locale:'en'
-    });
-  },100);
+  var _tvStudyStr=TV_STUDY_ENCODED[_tvSetupKey]||TV_STUDY_ENCODED['_default'];
+  h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tv_'+Date.now()+'&symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies='+_tvStudyStr+'&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en&utm_source=v9" style="width:100%;height:280px;border:none" loading="lazy"></iframe></div>';
 
 
   // Sub-mode + sizing context  h+='</div>';
