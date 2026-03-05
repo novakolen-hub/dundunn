@@ -205,7 +205,7 @@
 <body>
 <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 <div class="status-bar"><div><span class="pulse pulse-off" id="pl"></span><span id="st">Connecting...</span></div><div id="lu" class="mono">--:--</div></div>
-<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative;cursor:pointer" onmouseenter="showQuotaChart()" onmouseleave="hideQuotaChart()" onclick="toggleQuotaChart()"><span class="tl">Fetches</span><span class="tv" id="tQ">--</span><div id="quotaPopup" style="display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);z-index:100;margin-top:6px"></div></div><span class="sp">·</span><div class="ti"><span class="tl">API $</span><span class="tv" id="tCost">--</span></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
+<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative;cursor:pointer" onclick="toggleQuotaChart()"><span class="tl">Fetches</span><span class="tv" id="tQ">--</span><div id="quotaPopup" style="display:none;position:absolute;top:100%;right:-40px;z-index:100;margin-top:6px"></div></div><span class="sp">·</span><div class="ti"><span class="tl">API $</span><span class="tv" id="tCost">--</span></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
 <h1 id="hdr">📡 V9 Trading Dashboard</h1>
 <p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
@@ -689,8 +689,8 @@ function rTimer(d){var t=d.timerState||d;function cd(s){if(s===undefined||s===nu
 
 var _quotaHourly=[],_quotaLog='',_quotaTotal=0,_quotaChartPinned=false;
 
-function showQuotaChart(){if(_quotaChartPinned)return;_renderQuotaChart();}
-function hideQuotaChart(){if(_quotaChartPinned)return;$('quotaPopup').style.display='none';}
+function showQuotaChart(){_renderQuotaChart();}
+function hideQuotaChart(){$('quotaPopup').style.display='none';_quotaChartPinned=false;}
 function toggleQuotaChart(){_quotaChartPinned=!_quotaChartPinned;if(_quotaChartPinned)_renderQuotaChart();else $('quotaPopup').style.display='none';}
 
 function _renderQuotaChart(){
@@ -702,7 +702,7 @@ function _renderQuotaChart(){
   var catColors={bars:'#ef5350',quotes:'#00c853',market:'#42a5f5',claude:'#ab47bc',bridge:'#26c6da',news:'#ffc107',positions:'#ff9800',other:'#6e7590'};
   var catOrder=['bars','quotes','market','claude','bridge','news','positions','other'];
 
-  var h='<div class="qc"><div class="qc-title">UrlFetch · 24h Hourly Breakdown</div><div class="qc-bars">';
+  var h='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center"><div class="qc-title" style="margin:0">UrlFetch · 24h Hourly Breakdown</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideQuotaChart()">✕</span></div><div class="qc-bars" style="margin-top:6px">';
   for(var i=0;i<_quotaHourly.length;i++){
     var d=_quotaHourly[i];
     var pct=d.v/max*100;
