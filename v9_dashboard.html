@@ -3098,12 +3098,16 @@ function buildScorecardHTML(d,setupKey,side){
   else if(vr==='Elevated')checks.push({name:'VIX Regime',val:'YELLOW',cls:'chk-y',tip:d.vix+' ('+vr+')'});
   else checks.push({name:'VIX Regime',val:'RED',cls:'chk-r',tip:d.vix+' ('+vr+')'});
 
-  // Check 7: Sector correlation
+  // Check 7: Sector correlation (skip if ticker has no sector mapping)
   var sec=d.sector||'';
-  var openCount=0;if(d.openTrades)for(var t=0;t<d.openTrades.length;t++){if(d.openTrades[t].sector===sec)openCount++;}
-  if(openCount===0)checks.push({name:'Sector Exp',val:'GREEN',cls:'chk-g',tip:'No overlap'});
-  else if(openCount===1)checks.push({name:'Sector Exp',val:'YELLOW',cls:'chk-y',tip:openCount+' open in '+sec});
-  else checks.push({name:'Sector Exp',val:'RED',cls:'chk-r',tip:openCount+' open in '+sec});
+  if(sec){
+    var openCount=0,openTks=[];if(d.openTrades)for(var t=0;t<d.openTrades.length;t++){if(d.openTrades[t].sector===sec){openCount++;openTks.push(d.openTrades[t].symbol);}}
+    if(openCount===0)checks.push({name:'Sector Exp',val:'GREEN',cls:'chk-g',tip:'No overlap'});
+    else if(openCount===1)checks.push({name:'Sector Exp',val:'YELLOW',cls:'chk-y',tip:openCount+' in '+sec+' ('+openTks[0]+')'});
+    else checks.push({name:'Sector Exp',val:'RED',cls:'chk-r',tip:openCount+' in '+sec+' ('+openTks.join(', ')+')'});
+  } else {
+    checks.push({name:'Sector Exp',val:'GREEN',cls:'chk-g',tip:'No sector mapped'});
+  }
 
   // Check 8: RSI
   var rsiN=parseFloat(d.rsi)||50;
