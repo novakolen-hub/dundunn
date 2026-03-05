@@ -651,48 +651,22 @@ function rTradeCandidates(d){
     candidates.push({ticker:tk,key:key,grade:gr,q:q,caution:chk.caution});
   }
   var gradeOrder={A:0,B:1,C:2,F:3};
-  candidates.sort(function(a,b){
-    var gd=(gradeOrder[a.grade.grade]||3)-(gradeOrder[b.grade.grade]||3);
-    if(gd!==0)return gd;
-    return(parseFloat(b.q.conf)||0)-(parseFloat(a.q.conf)||0);
-  });
+  candidates.sort(function(a,b){var gd=(gradeOrder[a.grade.grade]||3)-(gradeOrder[b.grade.grade]||3);if(gd!==0)return gd;return(parseFloat(b.q.conf)||0)-(parseFloat(a.q.conf)||0);});
   candidates=candidates.slice(0,8);
   if(!candidates.length){el.innerHTML='';return;}
-  var _ipMap={};
-  if(d.inPlayToday)for(var ip=0;ip<d.inPlayToday.length;ip++){var ipt=d.inPlayToday[ip];if(ipt.symbol)_ipMap[ipt.symbol]=ipt;}
-  var h='<div class="tc-section"><div class="tc-hdr">🎯 Trade Candidates · '+e(subModeLabel||'GP-'+gp)+'</div>';
-  for(var c=0;c<candidates.length;c++){
-    var cd=candidates[c],q=cd.q;
-    var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
-    var chgCls=chgN>0?'g':chgN<0?'r':'dim';
-    var rv=parseFloat(q.rvol)||0;var rvc=rv>=2?'g':rv>=1.5?'y':'dim';
-    var cf=parseFloat(q.conf)||0;var cfc=cf>=28?'g':cf>=24?'y':'dim';
-    var setupCls=cd.caution?'st-warn':'st-ok';
-    var gradeCol=cd.grade.grade==='A'?'#00c853':cd.grade.grade==='B'?'#42a5f5':'#ff9800';
-    h+='<div class="tc-card" onclick="openPT(\''+cd.ticker+'\')">'; 
-    var isHeld=false;
-    if(_lastD&&_lastD.positions)for(var ph=0;ph<_lastD.positions.length;ph++){if((_lastD.positions[ph].ticker||'')===cd.ticker)isHeld=true;}
-    var isDynamic=_lastD&&_lastD.dynamicTickers&&_lastD.dynamicTickers[cd.ticker];
-    h+='<span class="tc-tk" onclick="event.stopPropagation()">'+tkLink(cd.ticker);
-    if(isHeld)h+=' <span style="font-size:8px;color:#3fb950;vertical-align:middle">●</span>';
-    if(isDynamic)h+=' <span style="font-size:8px;color:#ffc107;vertical-align:middle" title="Dynamic: '+e(isDynamic.source+' — '+isDynamic.reason)+'">⚡</span>';
-    h+='</span>';
-    var _ps=_parseSetup(cd.q.setup||'');
-    h+='<span class="tc-setup '+setupCls+'" title="Score: '+_ps.score.toFixed(1)+'">'+e(C_REGISTRY[cd.key].label)+(_ps.score?' <span style="font-size:8px;opacity:0.7">'+_ps.score.toFixed(0)+'</span>':'')+'</span>';
-    if(_ps.secondary){var _s2k=_matchSetupKey(_ps.secondary);if(_s2k&&C_REGISTRY[_s2k])h+='<span class="tc-setup" style="background:#1a1a2e;color:#7d8590;border:1px solid #30363d;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px" title="Alt: '+e(C_REGISTRY[_s2k].label)+' ('+_ps.score2.toFixed(1)+')">'+e(C_REGISTRY[_s2k].label)+'</span>';}
-    h+='<span class="tc-meta">';
-    h+='<span class="'+chgCls+'">'+e(q.chg||'')+'</span>';
-    h+=' <span class="'+rvc+'">RV '+rv.toFixed(1)+'</span>';
-    h+=' <span class="'+cfc+'">⚡'+cf.toFixed(0)+'</span>';
-    var ipInfo=_ipMap[cd.ticker];
-    if(ipInfo&&ipInfo.reasons){for(var ri=0;ri<ipInfo.reasons.length;ri++){var rText=ipInfo.reasons[ri],rc='reason-rvol';if(rText.indexOf('GAP')===0)rc='reason-gap';else if(rText.indexOf('CATALYST')===0)rc='reason-catalyst';else if(rText.indexOf('NEWS')===0)rc='reason-newsvol';h+=' <span class="inplay-reason '+rc+'">'+e(rText)+'</span>';}}
-    var secWarn='';
-    if(cd.grade&&cd.grade.notes){for(var sn=0;sn<cd.grade.notes.length;sn++){var nt=cd.grade.notes[sn];if(nt.match(/^\d+ in /)||nt.indexOf('1 in ')===0){secWarn=nt;break;}}}
-    if(secWarn)h+=' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#2c1519;color:#ffa198;border:1px solid #f85149;font-weight:700;font-family:\'JetBrains Mono\',monospace">⚠️ '+e(secWarn)+'</span>';
-    if(!ipInfo&&!secWarn&&cd.grade.notes.length)h+=' <span class="dim">'+e(cd.grade.notes.slice(0,2).join(', '))+'</span>';
-    h+='</span>';
-    h+='<span class="tc-grade" style="color:'+gradeCol+'">'+cd.grade.grade+'</span>';
-    h+='</div>';
+  // Build In Play reasons map
+  var ipMap={};if(d.inPlayToday)for(var ip=0;ip<d.inPlayToday.length;ip++){var ipt=d.inPlayToday[ip];if(ipt.symbol)ipMap[ipt.symbol]=ipt;}
+  var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
+  var h='<div class="tc-section"><div class="tc-hdr">🎯 Trade Candidates · '+e(subModeLabel||'GP-'+gp)+' <span class="dim" style="font-size:10px">('+candidates.length+')</span></div>';
+  for(var ci=0;ci<candidates.length;ci++){
+    var cd=candidates[ci];
+    var ipInfo=ipMap[cd.ticker];
+    h+=uCard(cd.ticker,'compact',{
+      reasons:ipInfo?ipInfo.reasons:[],
+      areteInfo:areteMap[cd.ticker]||null,
+      showModal:true,
+      showFocus:true
+    });
   }
   h+='</div>';
   el.innerHTML=h;
@@ -1872,32 +1846,18 @@ function rStory(d){
 function rInPlay(d){
   var items=d.inPlayToday;
   if(!items||items.length===0){$('sInPlay').innerHTML='';return;}
-  var h='<h2 style="color:#d2a8ff">🔥 In Play Today <span class="dim" style="font-size:11px;font-weight:400">('+items.length+' tickers)</span></h2>';
-  h+='<div style="margin:4px 0">';
-  var qCls={'A+':'q-aplus','Solid':'q-solid','Playbook':'q-playbook','Watch':'q-watch','Skip':'q-skip'};
-  for(var i=0;i<Math.min(items.length,15);i++){
-    var it=items[i],sym=it.symbol||'',qc=qCls[it.quality||'']||'q-watch';
-    h+='<div class="inplay-card">';
-    h+=tkLink(sym);
-    h+='<span class="dim mono" style="font-size:12px">'+e(String(it.last||''))+'</span>';
-    var np=parseFloat(it.netPct)||0;
-    h+='<span class="mono" style="font-size:12px;'+(np>=0?'color:#3fb950':'color:#f85149')+'">'+(np>=0?'+':'')+e(it.netPct||'0')+'%</span>';
-    h+='<span class="mono '+qc+'" style="font-size:10px;font-weight:700">'+e(it.quality||'')+'·'+e(String(it.confluence||''))+'</span>';
-    if(it.setup){
-      var _sml=(d.gpSubMode&&d.gpSubMode.subMode)?d.gpSubMode.subMode:'';
-      var _gpl=d.gpLetter||'C';
-      h+=setupTagHtml(it.setup,_sml,_gpl,sym);
-    }
-    var reasons=it.reasons||[];
-    for(var r=0;r<reasons.length;r++){
-      var rText=reasons[r],rc='reason-rvol';
-      if(rText.indexOf('GAP')===0)rc='reason-gap';
-      else if(rText.indexOf('CATALYST')===0)rc='reason-catalyst';
-      else if(rText.indexOf('NEWS')===0)rc='reason-newsvol';
-      h+='<span class="inplay-reason '+rc+'">'+e(rText)+'</span>';
-    }
-    if(it.isPosition)h+='<span class="tag-live" style="font-size:8px">POSITION</span>';
-    h+='</div>';
+  var isCol=false;try{var _v=localStorage.getItem('sec_col_inplay');if(_v!==null)isCol=_v==='1';}catch(e){}
+  var h='<h2 style="color:#d2a8ff;cursor:pointer;user-select:none" onclick="toggleSec(\'inplay\')"><span id="secArrow_inplay" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 🔥 In Play Today <span class="dim" style="font-size:11px;font-weight:400">('+items.length+' tickers)</span></h2>';
+  h+='<div id="secBody_inplay" style="'+(isCol?'display:none':'')+'">';
+  var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
+  for(var i=0;i<Math.min(items.length,20);i++){
+    var it=items[i],sym=it.symbol||'';
+    h+=uCard(sym,'compact',{
+      reasons:it.reasons||[],
+      areteInfo:areteMap[sym]||null,
+      showModal:true,
+      showFocus:true
+    });
   }
   h+='</div>';$('sInPlay').innerHTML=h;
 }
@@ -2271,87 +2231,26 @@ function newsItem(n,nt,autoPass,conf22){
 // ═══ YOUR BOOK (positions + Opus alerts merged) ═══
 // Helper to render a position card
 function posCard(p,alert,areteInfo){
-  var tk=p.ticker,q=_tq[tk]||{},op=_to[tk]||{};
-  var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
-  var h='<div class="pos-block"><div style="display:flex;justify-content:space-between;align-items:center">';
-  h+='<span>'+tkLink(tk,1);
-  h+=' <span class="mono dim" style="font-size:11px">$'+e(p.last)+'</span> <span style="font-size:10px">'+pct(p.dayPLPct)+'</span>'+sparkSvg(tk);
-  if(p.accountType)h+=' <span class="tag tag-acct">'+e(p.accountType)+'</span>';
-  if(p.tag)h+=' <span class="tag" style="background:#13111a;color:#d2a8ff;border:1px solid #2d1f4e">'+e(p.tag)+'</span>';
-  // Setup type label on position cards
-  if(q.setup){var _smlB=(_lastD&&_lastD.gpSubMode&&_lastD.gpSubMode.subMode)?_lastD.gpSubMode.subMode:'';h+=setupTagHtml(q.setup,_smlB,(_lastD&&_lastD.gpLetter)||'C',tk);}
-  // RS inline
-  if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
-  h+='</span><span class="'+pc(p.totalPL)+' bold mono" style="font-size:14px">'+e(p.totalPL)+'</span></div>';
-  h+='<p style="font-size:12px;color:#7d8590;margin:2px 0">'+e(p.side)+' '+e(p.shares)+'sh @ $'+e(p.avgCost)+' → $'+e(p.last)+'</p>';
-  h+='<p style="font-size:12px;margin:0">Day: <span class="'+pc(p.dayPL)+' bold">'+e(p.dayPL)+' ('+e(p.dayPLPct)+')</span> · Total: <span class="'+pc(p.totalPL)+' bold">'+e(p.totalPLPct)+'</span></p>';
-  // Options data
-  if(op){var oH='';if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';if(oH)h+='<p style="font-size:11px;margin:2px 0 0">📊 '+oH+'</p>';}
-  // Enriched data (RVOL, gap, 52w, EMA50, flags)
-  var eH='';
-  if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
-  if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
-  if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
-  if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
-  var _fl=[];
-  if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');
-  if(q.rsF&&q.rsF!=='—')_fl.push('RS');
-  if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');
-  if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
-  if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
-  if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
-  h+=levelsHtml(tk);
-  // Arete cross-reference
-  if(areteInfo){
-    h+='<div style="margin-top:4px;padding:4px 8px;background:#1f1a0f;border:1px solid #9e6a03;border-radius:4px;font-size:11px">';
-    h+='<span style="color:#e3b341;font-weight:700;font-size:10px">ARETE</span> ';
-    h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03;font-size:9px">'+e(areteInfo.tag||'')+'</span>';
-    if(areteInfo.entry)h+=' <span class="dim">Entry: '+e(areteInfo.entry)+'</span>';
-    if(areteInfo.stop)h+=' <span class="dim">SL: <span class="r">'+e(areteInfo.stop)+'</span></span>';
-    if(areteInfo.thesis)h+='<div style="color:#c9d1d9;margin-top:2px">💡 '+e(areteInfo.thesis)+'</div>';
-    if(areteInfo.note)h+='<div class="dim" style="font-style:italic;margin-top:1px">'+e(areteInfo.note)+'</div>';
-    h+='</div>';
-  }
-  h+=posNewsHtml(tk);
-  // Bias signal
-  var bull=0,bear=0,reasons=[];
-  var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;
-  var _rv=q.rvol?parseFloat(q.rvol):NaN;
-  var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;
-  var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;
-  var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
-  if(!isNaN(_rs)){if(_rs>1){bull++;reasons.push('RS+');}else if(_rs<-1){bear++;reasons.push('RS−');}}
-  if(!isNaN(_rv)&&_rv>=1.5){bull++;reasons.push('RVOL '+_rv.toFixed(1)+'x');}
-  if(!isNaN(_gp)){if(_gp>0.3){bull++;reasons.push('gap↑');}else if(_gp<-0.3){bear++;reasons.push('gap↓');}}
-  if(!isNaN(_w5)){if(_w5>70){bull++;reasons.push('near 52wH');}else if(_w5<30){bear++;reasons.push('near 52wL');}}
-  if(!isNaN(_ed)){if(_ed>0){bull++;reasons.push('>EMA50');}else if(_ed<-2){bear++;reasons.push('<EMA50');}}
-  if(q.vwapF&&q.vwapF!=='—'){bull++;reasons.push('VWAP✓');}
-  if(q.rsF&&q.rsF!=='—'){bull++;reasons.push('RSflag');}
-  if(chgN>0.5){bull++;reasons.push('price↑');}else if(chgN<-0.5){bear++;reasons.push('price↓');}
-  if(bull>0||bear>0){
-    var net=bull-bear;
-    var biasIcon=net>=2?'🟢 ↑':net<=-2?'🔴 ↓':'⚪ →';
-    var biasCol=net>=2?'#238636':net<=-2?'#da3633':'#7d8590';
-    var verd='';
-    if(net>=3)verd='Strong bullish stack — watch for entry';
-    else if(net===2)verd='Leaning bullish — needs catalyst';
-    else if(net===1)verd='Slight bullish lean — be selective';
-    else if(net===0)verd='Mixed signals — wait for clarity';
-    else if(net===-1)verd='Slight bearish lean — caution';
-    else if(net===-2)verd='Leaning bearish — avoid or short setup';
-    else verd='Strong bearish stack — short or avoid';
-    h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid '+biasCol+';border-radius:4px;font-size:11px">';
-    h+='<span style="font-size:13px">'+biasIcon+'</span> ';
-    h+='<span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> ';
-    h+='<span class="dim">'+reasons.join(' · ')+'</span>';
-    h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div>';
-    h+='</div>';
-  }
-  if(alert){var acl=String(alert.action||'').match(/trim|exit|review|broken|stop/i)?'r':String(alert.action||'').match(/hold|monitor/i)?'y':'b';
-    h+='<p style="font-size:12px;margin-top:4px"><span class="'+acl+' bold">→ '+e(alert.action)+'</span></p>';}
-  h+=cardNotes(tk);
-  h+='</div>';return h;
+  var tk=p.ticker;
+  var d=_lastD||{};
+  // Build In Play reasons
+  var ipMap={};if(d.inPlayToday)for(var ip=0;ip<d.inPlayToday.length;ip++){var ipt=d.inPlayToday[ip];if(ipt.symbol)ipMap[ipt.symbol]=ipt;}
+  var ipInfo=ipMap[tk];
+  // Opus notes
+  var opusMap={};
+  var nar=d.dashboardNarrative||'',sec=parseN(nar);
+  var wn=gN(sec,['WATCHING NOTES']);
+  if(wn){wn.split('\n').forEach(function(ln){ln=ln.trim();if(!ln||ln.indexOf('\u2014')<0)return;var parts=ln.split('\u2014'),ttk=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim().toUpperCase();var rest=(parts[1]||'').trim(),segs=rest.split('|');opusMap[ttk]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};});}
+  return uCard(tk,'position',{
+    position:p,
+    reasons:ipInfo?ipInfo.reasons:[],
+    areteInfo:areteInfo||null,
+    opus:opusMap[tk]||null,
+    showModal:true,
+    showFocus:true
+  });
 }
+
 function getAlertMap(d){
   var nar=d.dashboardNarrative||'',sec=parseN(nar),pa=gN(sec,['POSITION ALERTS','POSITIONS','ALERTS','YOUR BOOK','BOOK','ACTIVE POSITIONS','PORTFOLIO ALERTS']);
   var am={};if(pa){var lines=pa.split('\n');for(var i=0;i<lines.length;i++){var parts=lines[i].split('|').map(function(x){return x.trim()}).filter(function(x){return x});if(parts.length>=2){var tk=parts[0].replace(/\*\*/g,'').trim();am[tk]={status:parts.length>=2?parts[1]:'',action:parts.length>=3?parts[2]:(parts.length>=2?parts[1]:'')};}}}return am;
@@ -2431,98 +2330,15 @@ function rBook(d){
 // ═══ ARETE BOOK (carries/swings + day trade carry-overs — separate from your book) ═══
 // ═══ ARETE BOOK (from Arete Trades tab — reference only) ═══
 function areteCard(p){
-  var tk=p.ticker,q=_tq[tk]||{},op=_to[tk]||{};
-  // Fallback: if no quote data but position has curPrice from Arete sheet
-  if(!q.last && p.curPrice) q = {last: p.curPrice, chg: ''};
-  // Border color by change
-  var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
-  var bCol=chgN>0.05?'#238636':chgN<-0.05?'#da3633':'#9e6a03';
-  var h='<div class="pos-block" style="border-left:3px solid '+bCol+';padding:8px 10px;margin-bottom:4px">';
-  // Row 1: ticker, tag, flag, price, change
-  h+='<div style="display:flex;justify-content:space-between;align-items:center">';
-  h+='<span>';
-  if(p.displayName && p.displayName !== p.ticker) h+=tkLink(p.ticker,1)+' <span class="dim" style="font-size:12px">'+e(p.displayName.replace(p.ticker,'').trim())+'</span>';
-  else { h+=tkLink(p.ticker,1); if(p.side)h+=' <span class="dim" style="font-size:11px">('+e(p.side)+')</span>'; }
-  h+=' <span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03;font-size:10px">'+e(p.tag)+'</span>';
-  if(p.flag)h+=' <span class="g bold" style="font-size:10px">'+e(p.flag)+'</span>';
-  // RS if available
-  if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
-  // Setup type label
-  if(q.setup){var _smlA=(_lastD&&_lastD.gpSubMode&&_lastD.gpSubMode.subMode)?_lastD.gpSubMode.subMode:'';h+=setupTagHtml(q.setup,_smlA,(_lastD&&_lastD.gpLetter)||'C',tk);}
-  h+='</span>';
-  h+='<span class="mono" style="font-size:12px">';
-  if(q.last)h+=e(q.last)+' ';
-  if(q.chg)h+=pct(q.chg);
-  h+=sparkSvg(tk)+'</span></div>';
-  // Row 2: entry, date, stop details
-  var details=[];
-  if(p.entry)details.push('Entry: <span class="mono">'+e(p.entry)+'</span>');
-  if(p.date)details.push(e(p.date));
-  if(p.stop)details.push('SL: <span class="mono r">'+e(p.stop)+'</span>');
-  if(details.length)h+='<div style="font-size:11px;margin-top:3px;color:#8b949e">'+details.join(' · ')+'</div>';
-  // Row 3: thesis
-  if(p.thesis){h+='<div style="font-size:11px;margin-top:3px;color:#c9d1d9">💡 '+e(p.thesis).replace(/\*{0,2}\$([A-Z]{1,5})\*{0,2}/g,function(m,tk2){var sl=_icSlugs[tk2],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk2),tu='https://www.tradingview.com/chart/?symbol='+tk2;return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" title="TV"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk">'+tk2+'</a></span>';})+'</div>';}
-  if(p.note)h+='<div class="dim" style="font-size:11px;margin-top:2px;font-style:italic">'+e(p.note)+'</div>';
-  // Row 4: options data
-  var oH='';
-  if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';
-  if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';
-  if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';
-  if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';
-  if(oH)h+='<div style="font-size:11px;margin-top:2px">📊 '+oH+'</div>';
-  // Row 5: enriched data (RVOL, gap, 52w, EMA50, flags)
-  var eH='';
-  if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
-  if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
-  if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
-  if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
-  var _fl=[];
-  if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');
-  if(q.rsF&&q.rsF!=='—')_fl.push('RS');
-  if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');
-  if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
-  if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
-  if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
-  h+=levelsHtml(tk);
-  // Row 6: news
-  h+=posNewsHtml(tk);
-  // Row 7: Bias signal summary
-  var bull=0,bear=0,reasons=[];
-  var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;
-  var _rv=q.rvol?parseFloat(q.rvol):NaN;
-  var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;
-  var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;
-  var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
-  if(!isNaN(_rs)){if(_rs>1){bull++;reasons.push('RS+');}else if(_rs<-1){bear++;reasons.push('RS−');}}
-  if(!isNaN(_rv)&&_rv>=1.5){bull++;reasons.push('RVOL '+_rv.toFixed(1)+'x');}
-  if(!isNaN(_gp)){if(_gp>0.3){bull++;reasons.push('gap↑');}else if(_gp<-0.3){bear++;reasons.push('gap↓');}}
-  if(!isNaN(_w5)){if(_w5>70){bull++;reasons.push('near 52wH');}else if(_w5<30){bear++;reasons.push('near 52wL');}}
-  if(!isNaN(_ed)){if(_ed>0){bull++;reasons.push('>EMA50');}else if(_ed<-2){bear++;reasons.push('<EMA50');}}
-  if(q.vwapF&&q.vwapF!=='—'){bull++;reasons.push('VWAP✓');}
-  if(q.rsF&&q.rsF!=='—'){bull++;reasons.push('RSflag');}
-  if(chgN>0.5){bull++;reasons.push('price↑');}else if(chgN<-0.5){bear++;reasons.push('price↓');}
-  if(bull>0||bear>0){
-    var net=bull-bear;
-    var biasIcon=net>=2?'🟢 ↑':net<=-2?'🔴 ↓':'⚪ →';
-    var biasCol=net>=2?'#238636':net<=-2?'#da3633':'#7d8590';
-    var verd='';
-    if(net>=3)verd='Strong bullish stack — watch for entry';
-    else if(net===2)verd='Leaning bullish — needs catalyst';
-    else if(net===1)verd='Slight bullish lean — be selective';
-    else if(net===0)verd='Mixed signals — wait for clarity';
-    else if(net===-1)verd='Slight bearish lean — caution';
-    else if(net===-2)verd='Leaning bearish — avoid or short setup';
-    else verd='Strong bearish stack — short or avoid';
-    h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid '+biasCol+';border-radius:4px;font-size:11px">';
-    h+='<span style="font-size:13px">'+biasIcon+'</span> ';
-    h+='<span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> ';
-    h+='<span class="dim">'+reasons.join(' · ')+'</span>';
-    h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div>';
-    h+='</div>';
-  }
-  h+=cardNotes(tk);
-  h+='</div>';return h;
+  var tk=p.ticker||'';
+  return uCard(tk,'position',{
+    position:{ticker:tk,side:p.side||'Long',shares:p.shares||'',avgCost:p.entry||'',last:(_tq[tk]||{}).last||p.curPrice||'',totalPL:'',dayPL:'',accountType:'Arete'},
+    areteInfo:p,
+    showModal:true,
+    showFocus:true
+  });
 }
+
 function rAreteBook(d){
   var all=d.aretePositions||[];
   var aw=d.areteWatching||[];
@@ -2965,117 +2781,39 @@ function rCoach(d){
 }
 
 function rFocused(d){
-  if(!_focusedTickers||!_focusedTickers.size){$('sFocused').innerHTML='';return}
+  if(!_focusedTickers||!_focusedTickers.size){$('sFocused').innerHTML='';return;}
   var tks=Array.from(_focusedTickers);
-  // Build source map: where does each ticker come from?
   var posMap={};(d.positions||[]).forEach(function(p){posMap[p.ticker||p.sym]=p;});
-  var areteMap={};(d.aretePositions||[]).forEach(function(p){areteMap[p.ticker]=p;});
-  var myWatch=new Set(d.myWatching||[]);
-  var areteWatch=new Set((d.areteWatching||[]).map(function(w){return w.ticker||w;}));
-  var cm_map={};if(d.confluence){d.confluence.forEach(function(c){if(c.ticker)cm_map[c.ticker]=c;});}
-  tks=sortTickers(tks,cm_map,'focused');  // Opus watching notes
+  var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
+  var cm_map={};if(d.confluence){d.confluence.forEach(function(c2){if(c2.ticker)cm_map[c2.ticker]=c2;});}
+  tks=sortTickers(tks,cm_map,'focused');
+  // Opus watching notes
   var opusMap={};
   var nar=d.dashboardNarrative||'',sec=parseN(nar);
   var wn=gN(sec,['WATCHING NOTES']);
-  if(wn){wn.split('\n').forEach(function(ln){
-    ln=ln.trim();if(!ln||ln.indexOf('—')<0)return;
-    var parts=ln.split('—'),tk=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim().toUpperCase();
-    var rest=(parts[1]||'').trim(),segs=rest.split('|');
-    opusMap[tk]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};
-  });}
+  if(wn){wn.split('\n').forEach(function(ln){ln=ln.trim();if(!ln||ln.indexOf('\u2014')<0)return;var parts=ln.split('\u2014'),tk=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim().toUpperCase();var rest=(parts[1]||'').trim(),segs=rest.split('|');opusMap[tk]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};});}
+  // In Play reasons
+  var ipMap={};if(d.inPlayToday)for(var ip=0;ip<d.inPlayToday.length;ip++){var ipt=d.inPlayToday[ip];if(ipt.symbol)ipMap[ipt.symbol]=ipt;}
   var isCol=false;try{var _v=localStorage.getItem('sec_col_focused');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none;color:#0969da" onclick="toggleSec(\'focused\')"><span id="secArrow_focused" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 🔍 Focused <span class="dim" style="font-size:12px;font-weight:400">('+tks.length+')</span>'+sortPills('focused')+' <span style="font-size:10px;color:#7d8590;font-weight:400;cursor:pointer" onclick="event.stopPropagation();_focusedTickers.clear();saveFocused();R(_lastD);">clear all</span></h2>';
   h+='<div id="secBody_focused" style="'+(isCol?'display:none':'')+'">';
   for(var i=0;i<tks.length;i++){
-    var tk=tks[i],q=_tq[tk]||{},op=_to[tk]||{},cm=cm_map[tk]||{},opus=opusMap[tk]||{};
-    var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
-    var bCol=chgN>0.05?'#238636':chgN<-0.05?'#da3633':'#30363d';
-    // Source tag
-    var src=[];
-    if(posMap[tk])src.push('<span class="tag" style="background:#238636;color:#fff;border:0;font-size:9px">POSITION</span>');
-    if(areteMap[tk])src.push('<span class="tag" style="background:#1f6feb;color:#fff;border:0;font-size:9px">ARETE</span>');
-    if(myWatch.has(tk))src.push('<span class="tag" style="background:#6e40c9;color:#fff;border:0;font-size:9px">WATCHING</span>');
-    if(areteWatch.has(tk))src.push('<span class="tag" style="background:#1f6feb33;color:#58a6ff;border:1px solid #1f6feb;font-size:9px">ARETE WATCH</span>');
-    if(!src.length)src.push('<span class="tag" style="font-size:9px">TICKER</span>');
-    h+='<div class="pos-block card-focus" style="border-left:3px solid '+bCol+';padding:12px!important;margin-bottom:4px">';
-    // Row 1: ticker, source tags, price
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">';
-    h+='<span>'+tkLink(tk,1)+' '+src.join(' ');
-    if(cm.conf){var ccc=cm.conf>=28?'g':cm.conf>=24?'y':'dim';h+=' <span class="mono '+ccc+'" style="font-size:11px" title="Confluence">⚡'+cm.conf.toFixed(0)+'</span>';}
-    if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
-    // Setup type label (clickable → opens pre-trade modal)
-    if(q.setup||cm.setup){var _smlF=(d.gpSubMode&&d.gpSubMode.subMode)?d.gpSubMode.subMode:'';h+=setupTagHtml(q.setup||cm.setup,_smlF,d.gpLetter||'C',tk);}
-    h+='</span>';
-    h+='<span class="mono" style="font-size:13px">';
-    if(q.last)h+=e(q.last)+' ';
-    if(q.chg)h+=pct(q.chg);
-    h+=sparkSvg(tk)+'</span></div>';
-    // Position info if held
-    var pos=posMap[tk]||areteMap[tk];
-    if(pos){
-      var pnl=pos.pnl||pos.unrealPnl||'';var pnlN=parseFloat(String(pnl).replace(/[$,]/g,''));
-      var pc=!isNaN(pnlN)?(pnlN>=0?'g':'r'):'dim';
-      var info=[];
-      if(pos.qty)info.push(pos.qty+' shs');
-      if(pos.avgCost)info.push('avg $'+parseFloat(pos.avgCost).toFixed(2));
-      if(pnl)info.push('<span class="'+pc+'">P/L '+e(String(pnl))+'</span>');
-      if(info.length)h+='<div style="font-size:11px;margin-top:2px">'+info.join(' · ')+'</div>';
-    }
-    // Enriched data row
-    var eH='';
-    if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
-    if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
-    if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
-    if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
-    var _fl=[];
-    if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');if(q.rsF&&q.rsF!=='—')_fl.push('RS');if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
-    if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
-    if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
-    h+=levelsHtml(tk);
-    // Setup + quality
-    if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
-    // Options
-    var oH='';
-    if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';
-    if(oH)h+='<div style="font-size:11px;margin-top:2px">📊 '+oH+'</div>';
-    // Opus analysis
-    if(opus.bias||opus.levels||opus.thesis){
-      var biasUp=opus.bias.toUpperCase();
-      var obCol=biasUp.indexOf('LONG')>=0?'#238636':biasUp.indexOf('SHORT')>=0?'#da3633':'#7d8590';
-      var obIcon=biasUp.indexOf('LONG')>=0?'🟢':biasUp.indexOf('SHORT')>=0?'🔴':'⚪';
-      h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid #30363d;border-radius:4px;font-size:11px">';
-      if(opus.bias)h+='<span style="color:'+obCol+'">'+obIcon+' '+e(opus.bias)+'</span>';
-      if(opus.levels)h+=' <span style="color:#58a6ff">📍 '+e(opus.levels)+'</span>';
-      if(opus.thesis)h+='<div style="color:#c9d1d9;margin-top:2px">'+e(opus.thesis)+'</div>';
-      h+='</div>';
-    }
-    // News
-    h+=posNewsHtml(tk);
-    // Bias signal
-    var bull=0,bear=0,reasons=[];
-    var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;var _rv=q.rvol?parseFloat(q.rvol):NaN;var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
-    if(!isNaN(_rs)){if(_rs>1){bull++;reasons.push('RS+');}else if(_rs<-1){bear++;reasons.push('RS−');}}
-    if(!isNaN(_rv)&&_rv>=1.5){bull++;reasons.push('RVOL '+_rv.toFixed(1)+'x');}
-    if(!isNaN(_gp)){if(_gp>0.3){bull++;reasons.push('gap↑');}else if(_gp<-0.3){bear++;reasons.push('gap↓');}}
-    if(!isNaN(_w5)){if(_w5>70){bull++;reasons.push('near 52wH');}else if(_w5<30){bear++;reasons.push('near 52wL');}}
-    if(!isNaN(_ed)){if(_ed>0){bull++;reasons.push('>EMA50');}else if(_ed<-2){bear++;reasons.push('<EMA50');}}
-    if(q.vwapF&&q.vwapF!=='—'){bull++;reasons.push('VWAP✓');}if(q.rsF&&q.rsF!=='—'){bull++;reasons.push('RSflag');}
-    if(chgN>0.5){bull++;reasons.push('price↑');}else if(chgN<-0.5){bear++;reasons.push('price↓');}
-    if(bull>0||bear>0){
-      var net=bull-bear;var biasIcon=net>=2?'🟢 ↑':net<=-2?'🔴 ↓':'⚪ →';var biasCol=net>=2?'#238636':net<=-2?'#da3633':'#7d8590';
-      var verd='';if(net>=3)verd='Strong bullish stack';else if(net===2)verd='Leaning bullish';else if(net===1)verd='Slight bullish lean';else if(net===0)verd='Mixed signals';else if(net===-1)verd='Slight bearish lean';else if(net===-2)verd='Leaning bearish';else verd='Strong bearish stack';
-      h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid '+biasCol+';border-radius:4px;font-size:11px">';
-      h+='<span style="font-size:13px">'+biasIcon+'</span> <span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> <span class="dim">'+reasons.join(' · ')+'</span>';
-      h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div></div>';
-    }
-    h+=cardNotes(tk);
-    // Unfocus button
-    h+='<div style="margin-top:4px;text-align:right"><span style="font-size:10px;color:#7d8590;cursor:pointer;border:1px solid #30363d;border-radius:4px;padding:1px 8px" onclick="event.stopPropagation();_focusedTickers.delete(\''+tk+'\');saveFocused();R(_lastD);">✕ unfocus</span></div>';
-    h+='</div>';
+    var tk=tks[i];
+    var ipInfo=ipMap[tk];
+    var pos=posMap[tk]||null;
+    h+=uCard(tk,'expanded',{
+      reasons:ipInfo?ipInfo.reasons:[],
+      position:pos,
+      areteInfo:areteMap[tk]||null,
+      opus:opusMap[tk]||null,
+      showModal:true,
+      showFocus:true
+    });
   }
   h+='</div>';
   $('sFocused').innerHTML=h;
 }
+
 function rHidden(d){
   var items=[];
   var gp=d.gpLetter||'C';
