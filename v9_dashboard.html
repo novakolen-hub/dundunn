@@ -3001,42 +3001,107 @@ document.addEventListener('keydown',function(ev){
   else if(ev.key==='Escape')closePT();
 });
 
+
+// ═══ SETUP-SPECIFIC SMART BOXES ═══
+var SETUP_CHECKS = {
+  'VWAP-Hold': [
+    {k:'VWAP',      fn:function(d){var v=d.vwapDist||0;return v>0?'GREEN':v>-0.3?'YELLOW':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP, within 0.5%'},
+    {k:'EMA Stack',  fn:function(d){var e9=parseFloat(d.ema9)||0,e20=parseFloat(d.ema20)||0;return e9>e20?'GREEN':'RED';}, fmt:function(d){return 'EMA9 '+(parseFloat(d.ema9)>parseFloat(d.ema20)?'>':'<')+' EMA20';}, need:'9 > 20 (bullish)'},
+    {k:'RSI Zone',   fn:function(d){var r=parseFloat(d.rsi)||50;return r>=40&&r<=60?'GREEN':r>=35&&r<=65?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'40-60 (neutral)'},
+    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1?'GREEN':r>=0.7?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.0x'}
+  ],
+  'OR-Break': [
+    {k:'Above OR',   fn:function(d){var l=parseFloat(d.last)||0,h=d.orHigh||0;return l>h&&h>0?'GREEN':'RED';}, fmt:function(d){return '$'+(d.orHigh||0).toFixed(2);}, need:'Price > OR High'},
+    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
+    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1.5?'GREEN':r>=1?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.5x'},
+    {k:'RSI',        fn:function(d){var r=parseFloat(d.rsi)||50;return r<75?'GREEN':r<80?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'< 75 (not OB)'}
+  ],
+  'Momentum': [
+    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
+    {k:'Above EMA9', fn:function(d){var l=parseFloat(d.last)||0,e=parseFloat(d.ema9)||0;return l>e?'GREEN':'RED';}, fmt:function(d){return '$'+(parseFloat(d.ema9)||0).toFixed(2);}, need:'Price > EMA9'},
+    {k:'Rel Str',    fn:function(d){var r=parseFloat(d.rs)||0;return r>=1?'GREEN':r>=0?'YELLOW':'RED';}, fmt:function(d){return (parseFloat(d.rs||0)>0?'+':'')+parseFloat(d.rs||0).toFixed(1)+'%';}, need:'\u2265 +1% vs SPY'},
+    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=2?'GREEN':r>=1.5?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 2.0x'},
+    {k:'RSI',        fn:function(d){var r=parseFloat(d.rsi)||50;return r>=55&&r<=75?'GREEN':r>=50&&r<=80?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'55-75 (strong)'}
+  ],
+  'BigDog': [
+    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
+    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=3?'GREEN':r>=2?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 3.0x'},
+    {k:'Confluence',  fn:function(d){var c=d.conf||0;return c>=24?'GREEN':c>=20?'YELLOW':'RED';}, fmt:function(d){return d.conf||0;}, need:'\u2265 20'}
+  ],
+  'GapGo': [
+    {k:'Gap %',      fn:function(d){var g=Math.abs(parseFloat(d.gap||d.chg||0));return g>=3?'GREEN':g>=2?'YELLOW':'RED';}, fmt:function(d){return (parseFloat(d.gap||d.chg||0)>0?'+':'')+parseFloat(d.gap||d.chg||0).toFixed(1)+'%';}, need:'\u2265 3%'},
+    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
+    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=2?'GREEN':r>=1.5?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 2.0x'}
+  ],
+  'Failed-BD': [
+    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Reclaimed VWAP'},
+    {k:'Above OR Lo',fn:function(d){var l=parseFloat(d.last)||0,o=d.orLow||0;return l>o&&o>0?'GREEN':'RED';}, fmt:function(d){return '$'+(d.orLow||0).toFixed(2);}, need:'Price > OR Low'},
+    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1?'GREEN':r>=0.7?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.0x'}
+  ],
+  'Pullback-EMA': [
+    {k:'Near EMA20',  fn:function(d){var l=parseFloat(d.last)||0,e=parseFloat(d.ema20)||0;var pct=e>0?Math.abs(l-e)/e*100:99;return pct<0.5?'GREEN':pct<1?'YELLOW':'RED';}, fmt:function(d){return '$'+(parseFloat(d.ema20)||0).toFixed(2);}, need:'Within 0.5% of EMA20'},
+    {k:'EMA Stack',   fn:function(d){return parseFloat(d.ema9)>parseFloat(d.ema20)?'GREEN':'RED';}, fmt:function(d){return parseFloat(d.ema9)>parseFloat(d.ema20)?'Bullish':'Bearish';}, need:'9 > 20'},
+    {k:'RSI',         fn:function(d){var r=parseFloat(d.rsi)||50;return r>=35&&r<=55?'GREEN':r>=30&&r<=60?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'35-55 (pullback zone)'},
+    {k:'RVOL',        fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1?'GREEN':r>=0.7?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.0x'}
+  ]
+};
+// Fallback for setups without specific checks
+var SETUP_CHECKS_DEFAULT = [
+  {k:'VWAP',  fn:function(d){return (d.vwapDist||0)>0?'GREEN':(d.vwapDist||0)>-0.5?'YELLOW':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
+  {k:'RVOL',  fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1.5?'GREEN':r>=1?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.5x'},
+  {k:'Conf',  fn:function(d){var c=d.conf||0;return c>=24?'GREEN':c>=20?'YELLOW':'RED';}, fmt:function(d){return d.conf||0;}, need:'\u2265 24'},
+  {k:'RSI',   fn:function(d){var r=parseFloat(d.rsi)||50;return r>=35&&r<=75?'GREEN':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'35-75'}
+];
+
+function renderSmartBoxes(d, setupKey) {
+  var checks = SETUP_CHECKS[setupKey] || SETUP_CHECKS_DEFAULT;
+  var reg = C_REGISTRY[setupKey] || {};
+  var h = '<div style="margin:8px 0"><div style="font-size:10px;color:#7d8590;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">' + e(reg.label || setupKey || 'Setup') + ' Criteria</div>';
+  h += '<div class="pt-grid">';
+  for (var i = 0; i < checks.length; i++) {
+    var chk = checks[i];
+    var result = chk.fn(d);
+    var val = chk.fmt(d);
+    var bg = result === 'GREEN' ? '#0d2818' : result === 'RED' ? '#1f1315' : '#1a1a0f';
+    var bor = result === 'GREEN' ? '#238636' : result === 'RED' ? '#da3633' : '#9e6a03';
+    var icon = result === 'GREEN' ? '\u2705' : result === 'RED' ? '\u274c' : '\u26a0\ufe0f';
+    var vcls = result === 'GREEN' ? 'g' : result === 'RED' ? 'r' : 'y';
+    h += '<div class="pt-stat" style="background:' + bg + ';border-left:3px solid ' + bor + ';border-radius:4px">';
+    h += '<div class="v ' + vcls + '">' + icon + ' ' + val + '</div>';
+    h += '<div class="k">' + e(chk.k) + '</div>';
+    h += '<div style="font-size:8px;color:#484f58;margin-top:1px">' + e(chk.need) + '</div>';
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
 function renderPTModal(d){
   var h='';
   // ── Section 1: Ticker Context ──
   var chgN=d.chg?parseFloat(String(d.chg).replace('%','')):0;
   var chgCls=chgN>0?'g':chgN<0?'r':'dim';
+  // Compact header — repeats what you saw in the list
+  var _psM=_parseSetup(d.setup||'');
+  var _skM=_matchSetupKey(d.setup);
+  var _grM=_skM?quickGrade(d.symbol,_skM,(d.gpSubMode||''),(d.gameplan||'C'),'LONG'):null;
+  h+='<div style="padding:6px 0 8px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #1c2333;margin-bottom:8px">';
+  h+='<span style="font-size:16px;font-weight:700;color:#e6edf3">$'+e(d.last)+'</span>';
+  var _chgM=d.chg?parseFloat(String(d.chg).replace('%','')):0;
+  h+='<span class="mono '+(_chgM>0?'g':_chgM<0?'r':'dim')+'" style="font-size:13px">'+e(d.chg||'')+'</span>';
+  if(_skM&&C_REGISTRY[_skM]){h+=setupTagHtml(d.setup,(d.gpSubMode||''),(d.gameplan||'C'),d.symbol);if(_psM.score)h+='<span class="uc-score">'+_psM.score.toFixed(0)+'</span>';}
+  if(_grM&&_grM.grade!=='F')h+=gradeHtml(_grM);
+  var _rvM=parseFloat(d.rvol)||0;if(_rvM>0){var _rvcM=_rvM>=2?'g':_rvM>=1.5?'y':'dim';h+='<span class="'+_rvcM+' mono" style="font-size:11px">RV '+_rvM.toFixed(1)+'</span>';}
+  var _cfM=d.conf||0;if(_cfM>0){var _cfcM=_cfM>=28?'g':_cfM>=24?'y':'dim';h+='<span class="'+_cfcM+' mono" style="font-size:11px">\u26a1'+_cfM+'</span>';}
+  h+='</div>';
+
   // TradingView chart embed
-  h+='<div style="margin:-4px -4px 8px -4px;border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:280px;border:none" loading="lazy"></iframe></div>';
-  h+='<div class="pt-section">';
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-  h+='<span style="font-size:18px;font-weight:700;color:#e6edf3">$'+e(d.last)+'</span>';
-  h+='<span class="mono '+chgCls+'" style="font-size:14px">'+e(d.chg||'')+'</span>';
-  h+='</div>';
-  h+='<div class="pt-grid">';
-  var vdc=d.vwapDist>0?'g':d.vwapDist<-0.5?'r':'y';
-  var vdBg=d.vwapDist>0?'#0d2818':d.vwapDist<-0.5?'#1f1315':'#1a1a0f';
-  var vdBor=d.vwapDist>0?'#238636':d.vwapDist<-0.5?'#da3633':'#9e6a03';
-  h+='<div class="pt-stat" style="background:'+vdBg+';border-left:3px solid '+vdBor+'"><div class="v '+vdc+'">'+(d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%</div><div class="k">VWAP Dist</div></div>';
-  var rvN=parseFloat(d.rvol)||0;var rvc=rvN>=2?'g':rvN>=1.5?'y':'dim';
-  var rvBg=rvN>=2?'#0d2818':rvN>=1.5?'#1a1a0f':'#0f1318';
-  var rvBor=rvN>=2?'#238636':rvN>=1.5?'#9e6a03':'#30363d';
-  h+='<div class="pt-stat" style="background:'+rvBg+';border-left:3px solid '+rvBor+'"><div class="v '+rvc+'">'+rvN.toFixed(1)+'x</div><div class="k">RVOL</div></div>';
-  var cfc=d.conf>=28?'g':d.conf>=24?'y':'dim';
-  var cfBg=d.conf>=28?'#0d2818':d.conf>=24?'#1a1a0f':'#0f1318';
-  var cfBor=d.conf>=28?'#238636':d.conf>=24?'#9e6a03':'#30363d';
-  h+='<div class="pt-stat" style="background:'+cfBg+';border-left:3px solid '+cfBor+'"><div class="v '+cfc+'">'+d.conf+'</div><div class="k">Confluence</div></div>';
-  var rsiN=parseFloat(d.rsi)||50;var rsic=rsiN>=55&&rsiN<=70?'g':rsiN>=40&&rsiN<=75?'y':(rsiN>75||rsiN<35)?'r':'dim';
-  var rsiBg=rsic==='g'?'#0d2818':rsic==='r'?'#1f1315':'#0f1318';
-  var rsiBor=rsic==='g'?'#238636':rsic==='r'?'#da3633':'#30363d';
-  h+='<div class="pt-stat" style="background:'+rsiBg+';border-left:3px solid '+rsiBor+'"><div class="v '+rsic+'">'+rsiN.toFixed(0)+'</div><div class="k">RSI</div></div>';
-  var atrN=parseFloat(d.atr)||0;
-  h+='<div class="pt-stat" style="border-left:3px solid #58a6ff;background:#0d1a2e"><div class="v b">$'+atrN.toFixed(2)+'</div><div class="k">ATR</div></div>';
-  var ivrN=d.ivr||0;var ic=ivrN>50?'y':ivrN>30?'dim':'g';
-  var ivrBg=ivrN>50?'#1a1a0f':ivrN>30?'#0f1318':'#0d2818';
-  var ivrBor=ivrN>50?'#9e6a03':ivrN>30?'#30363d':'#238636';
-  h+='<div class="pt-stat" style="background:'+ivrBg+';border-left:3px solid '+ivrBor+'"><div class="v '+ic+'">'+(ivrN>0?ivrN.toFixed(0):'\u2014')+'</div><div class="k">IVR</div></div>';
-  h+='</div>';
+  h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:280px;border:none" loading="lazy"></iframe></div>';
+
+  // Setup-specific smart boxes
+  h+=renderSmartBoxes(d,_skM);
+
+  // Sub-mode + sizing context  h+='</div>';
   // Sub-mode + sizing context
   var sbInfo=_SIZE_BADGES[d.gpSizingAdj];
   h+='<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
