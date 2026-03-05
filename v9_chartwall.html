@@ -155,7 +155,8 @@ function buildChart(containerId,tk){
     }
   }
   if(validPts.length<2){
-    el.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#30363d;font-size:10px">'+(sparkPts.length?'Only '+validPts.length+' points':'No data yet')+'</div>';
+    // Fallback: TradingView iframe when spark data insufficient
+    el.innerHTML='<iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tvf_'+Date.now()+'&symbol='+encodeURIComponent(tk)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:100%;border:none"></iframe>';
     return;
   }
 
