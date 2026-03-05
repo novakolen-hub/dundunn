@@ -971,7 +971,7 @@ function _renderQuotaChart(){
   h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="qc-title" style="margin:0">UrlFetch \u00b7 24h Hourly Breakdown</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideQuotaChart()">\u2715</span></div>';
 
   // Chart area — dark box, 160px tall, 24 bars
-  h+='<div style="display:flex;align-items:flex-end;gap:3px;height:160px;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 8px">';
+  h+='<div style="overflow-x:auto;overflow-y:hidden;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 8px"><div style="display:flex;align-items:flex-end;gap:2px;height:160px;min-width:'+Math.max(600,_quotaHourly.length*8)+'px">';
   for(var i=0;i<_quotaHourly.length;i++){
     var d=_quotaHourly[i];
     var hasCats=d.c&&Object.keys(d.c).some(function(k){return d.c[k]>0;});
@@ -1011,12 +1011,18 @@ function _renderQuotaChart(){
   h+='</div>';
 
   // Hour labels
-  h+='<div style="display:flex;gap:3px;padding:3px 8px 0 8px">';
+  h+='<div style="overflow-x:auto;padding:3px 8px 0 8px"><div style="display:flex;gap:2px;min-width:'+Math.max(600,_quotaHourly.length*8)+'px">';
+  var _prevDay='';
   for(var i=0;i<_quotaHourly.length;i++){
-    var show=(i%4===0)||i===_quotaHourly.length-1;
-    h+='<div style="flex:1;text-align:center;font-size:8px;color:'+(show?'#7d8590':'transparent')+';font-family:JetBrains Mono,monospace">'+e(_quotaHourly[i].h||'')+'</div>';
+    var hr=_quotaHourly[i].h||'';
+    // Detect day boundary (when hour label wraps from PM to AM or changes day)
+    var isNewDay=false;
+    if(hr.indexOf('12a')===0||hr==='12AM'){isNewDay=true;}
+    var showLbl=(i%6===0)||i===_quotaHourly.length-1||isNewDay;
+    var dayBorder=isNewDay?';border-left:2px solid #30363d;padding-left:2px':'';
+    h+='<div style="flex:1;text-align:center;font-size:7px;color:'+(showLbl?'#7d8590':'transparent')+';font-family:JetBrains Mono,monospace'+dayBorder+'">'+e(hr)+'</div>';
   }
-  h+='</div>';
+  h+='</div></div>';
 
   // Legend — only categories with data
   var byCat=_lastD&&_lastD.quotaByCat?_lastD.quotaByCat:null;
@@ -1065,7 +1071,7 @@ function _renderApiChart(){
   var max=0.001;for(var i=0;i<hourly.length;i++){if(hourly[i].cost>max)max=hourly[i].cost;}
 
   var h='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="qc-title" style="margin:0">Claude API · 24h Cost Breakdown</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideApiChart()">✕</span></div>';
-  h+='<div style="display:flex;align-items:flex-end;gap:3px;height:160px;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 8px">';
+  h+='<div style="overflow-x:auto;overflow-y:hidden;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 8px"><div style="display:flex;align-items:flex-end;gap:2px;height:160px;min-width:'+Math.max(600,_quotaHourly.length*8)+'px">';
   for(var i=0;i<hourly.length;i++){
     var d=hourly[i];
     var tok=d.tok||{};
