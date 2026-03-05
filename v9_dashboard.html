@@ -449,9 +449,10 @@ function uCard(tk, mode, opts) {
   if (isDyn) h += ' <span style="font-size:8px;color:#ffc107;vertical-align:middle" title="Dynamic: ' + e((isDyn.source || '') + ' \u2014 ' + (isDyn.reason || '')) + '">\u26a1</span>';
   h += '</span>';
 
-  // Price + change
+  // Price + change (always show something)
   h += '<span class="uc-price">';
-  if (q.last) h += '<span class="mono">' + e(q.last) + '</span> ';
+  if (q.last) { h += '<span class="mono">' + e(q.last) + '</span> '; }
+  else { h += '<span class="dim mono">--</span> '; }
   if (q.chg) h += pct(q.chg);
   h += '</span>';
 
