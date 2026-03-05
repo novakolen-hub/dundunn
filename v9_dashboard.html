@@ -3121,55 +3121,7 @@ function renderPTModal(d){
   h+='</div>';
 
   // TradingView chart embed
-  var _tvSetupKey=_matchSetupKey(d.setup);
-  var _tvId='tvc_'+Math.floor(Math.random()*99999);
-  var _tvStudyArr=TV_STUDY_ARR[_tvSetupKey]||TV_STUDY_ARR['_default'];
-  h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333;height:280px"><div id="'+_tvId+'"></div></div>';
-  setTimeout(function(){
-    if(!document.getElementById(_tvId))return;
-    var sc=document.createElement('script');
-    sc.src='https://s.tradingview.com/tv.js';
-    sc.onload=function(){
-      new TradingView.widget({
-        container_id:_tvId,
-        autosize:false,
-        width:'100%',
-        height:280,
-        symbol:d.symbol,
-        interval:'5',
-        timezone:'America/Phoenix',
-        theme:'dark',
-        style:'1',
-        toolbar_bg:'#0b0e14',
-        hide_side_toolbar:true,
-        allow_symbol_change:false,
-        save_image:false,
-        locale:'en',
-        studies:_tvStudyArr
-      });
-    };
-    if(window.TradingView){
-      new TradingView.widget({
-        container_id:_tvId,
-        autosize:false,
-        width:'100%',
-        height:280,
-        symbol:d.symbol,
-        interval:'5',
-        timezone:'America/Phoenix',
-        theme:'dark',
-        style:'1',
-        toolbar_bg:'#0b0e14',
-        hide_side_toolbar:true,
-        allow_symbol_change:false,
-        save_image:false,
-        locale:'en',
-        studies:_tvStudyArr
-      });
-    } else {
-      document.head.appendChild(sc);
-    }
-  },50);
+  h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tv_'+Date.now()+'&symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:280px;border:none" loading="lazy"></iframe></div>';
 
 
   // Sub-mode + sizing context  h+='</div>';
