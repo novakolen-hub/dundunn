@@ -699,31 +699,60 @@ function _renderQuotaChart(){
   var max=0;for(var i=0;i<_quotaHourly.length;i++){if(_quotaHourly[i].v>max)max=_quotaHourly[i].v;}
   if(max===0)max=1;
 
+  var catColors={bars:'#ef5350',quotes:'#00c853',market:'#42a5f5',claude:'#ab47bc',bridge:'#26c6da',news:'#ffc107',positions:'#ff9800',other:'#6e7590'};
+  var catOrder=['bars','quotes','market','claude','bridge','news','positions','other'];
+
   var h='<div class="qc"><div class="qc-title">UrlFetch · 24h Hourly Breakdown</div><div class="qc-bars">';
   for(var i=0;i<_quotaHourly.length;i++){
     var d=_quotaHourly[i];
     var pct=d.v/max*100;
-    var col=d.v>1500?'#ef5350':d.v>800?'#ffc107':d.v>0?'#00c853':'#21262d';
-    h+='<div class="qc-bar" style="height:'+Math.max(pct,2)+'%;background:'+col+'"><div class="qc-tip">'+e(d.h)+': '+d.v+'</div></div>';
+    // Stacked bar segments
+    h+='<div style="flex:1;height:100%;display:flex;flex-direction:column-reverse;position:relative">';
+    if(d.c){
+      var running=0;
+      for(var ci=0;ci<catOrder.length;ci++){
+        var cv=d.c[catOrder[ci]]||0;
+        if(cv<=0)continue;
+        var segPct=cv/max*100;
+        h+='<div style="height:'+segPct+'%;background:'+catColors[catOrder[ci]]+';min-height:'+(segPct>0?'1px':'0')+';border-radius:'+(running===0?'0 0 ':'')+'1px 1px'+(cv===d.v?' 1px 1px':'')+'" title="'+catOrder[ci]+': '+cv+'"></div>';
+        running+=cv;
+      }
+    } else {
+      var col=d.v>1500?'#ef5350':d.v>800?'#ffc107':d.v>0?'#00c853':'#21262d';
+      h+='<div style="height:'+Math.max(pct,2)+'%;background:'+col+';border-radius:2px 2px 0 0"></div>';
+    }
+    h+='<div class="qc-tip">'+e(d.h)+': '+d.v+'</div>';
+    h+='</div>';
   }
   h+='</div>';
 
-  // Axis labels — show every 4th hour
+  // Axis labels
   h+='<div class="qc-axis">';
-  for(var i=0;i<_quotaHourly.length;i++){
-    if(i%4===0)h+='<span>'+e(_quotaHourly[i].h)+'</span>';
-  }
+  for(var i=0;i<_quotaHourly.length;i++){if(i%4===0)h+='<span>'+e(_quotaHourly[i].h)+'</span>';}
   h+='</div>';
 
-  // Total + bar
+  // Total bar
   var pctTotal=_quotaTotal/20000*100;
   var tCol=pctTotal>80?'#ef5350':pctTotal>60?'#ffc107':'#00c853';
   h+='<div class="qc-total"><span style="color:'+tCol+'">'+_quotaTotal.toLocaleString()+'</span> / 20,000 <span class="dim">('+pctTotal.toFixed(1)+'%)</span></div>';
   h+='<div style="height:4px;background:#21262d;border-radius:2px;margin:4px 0"><div style="height:100%;width:'+Math.min(pctTotal,100)+'%;background:'+tCol+';border-radius:2px"></div></div>';
 
-  // Recent log entries
+  // Category breakdown (24h totals)
+  var byCat=_lastD&&_lastD.quotaByCat?_lastD.quotaByCat:null;
+  if(byCat){
+    h+='<div style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:2px;font-family:\'JetBrains Mono\',monospace;font-size:9.5px">';
+    var catLabels={bars:'📊 Bars',quotes:'💬 Quotes',market:'📈 Market 1m',claude:'🤖 Claude AI',bridge:'🌉 Bridge',news:'📰 News/RSS',positions:'💰 Positions',other:'⚙️ Other'};
+    for(var ci=0;ci<catOrder.length;ci++){
+      var ck=catOrder[ci],cv=byCat[ck]||0;
+      if(cv===0)continue;
+      h+='<div style="display:flex;justify-content:space-between;padding:1px 4px;border-radius:2px;background:'+catColors[ck]+'15"><span>'+catLabels[ck]+'</span><span style="color:'+catColors[ck]+';font-weight:600">'+cv.toLocaleString()+'</span></div>';
+    }
+    h+='</div>';
+  }
+
+  // Recent log
   if(_quotaLog){
-    var lines=_quotaLog.split('|').slice(-8);
+    var lines=_quotaLog.split('|').slice(-6);
     h+='<div class="qc-log">';
     for(var li=lines.length-1;li>=0;li--)h+=e(lines[li])+'<br>';
     h+='</div>';
