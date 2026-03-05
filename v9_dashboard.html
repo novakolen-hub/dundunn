@@ -3076,6 +3076,27 @@ function renderSmartBoxes(d, setupKey) {
   return h;
 }
 
+// ═══ SETUP → TRADINGVIEW INDICATORS MAP ═══
+var TV_STUDIES = {
+  'VWAP-Hold':     'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=MASimple@tv-basicstudies%7B20%7D',
+  'OR-Break':      'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
+  'Pullback-EMA':  'MASimple@tv-basicstudies%7B9%7D&studies=MASimple@tv-basicstudies%7B20%7D&studies=MASimple@tv-basicstudies%7B50%7D&studies=RSI@tv-basicstudies',
+  'Momentum':      'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=RSI@tv-basicstudies',
+  'Failed-BD':     'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
+  'BigDog':        'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=MASimple@tv-basicstudies%7B20%7D&studies=Volume@tv-basicstudies',
+  'BigDogBounce':  'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies&studies=RSI@tv-basicstudies',
+  'GapGo':         'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
+  'DailyBreakout': 'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B20%7D&studies=Volume@tv-basicstudies',
+  'OpeningDrive':  'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
+  'SecondDay':     'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=Volume@tv-basicstudies',
+  'ReturnPullback':'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=MASimple@tv-basicstudies%7B20%7D',
+  'Scalping':      'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
+  'RS-Override':   'VWAP@tv-basicstudies&studies=RSI@tv-basicstudies',
+  'Rotation-ETF':  'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
+  'MarketPlay':    'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=RSI@tv-basicstudies'
+};
+var TV_DEFAULT_STUDIES = 'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies';
+
 function renderPTModal(d){
   var h='';
   // ── Section 1: Ticker Context ──
@@ -3088,14 +3109,21 @@ function renderPTModal(d){
   h+='<div style="padding:6px 0 8px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #1c2333;margin-bottom:8px">';
   h+='<span style="font-size:16px;font-weight:700;color:#e6edf3">$'+e(d.last)+'</span>';
   var _chgM=d.chg?parseFloat(String(d.chg).replace('%','')):0;
-  h+='<span class="mono '+(_chgM>0?'g':_chgM<0?'r':'dim')+'" style="font-size:13px">'+e(d.chg||'')+'</span>';
+  var _chgCls=_chgM>0?'g':_chgM<0?'r':'dim';
+  var _dolChg=d.last&&d.vwap?((parseFloat(d.last)-parseFloat(d.vwap))*1).toFixed(2):'';
+  if(d.atr){var _dc=_chgM*parseFloat(d.last)/100;_dolChg=(_dc>=0?'+':'')+_dc.toFixed(2);}
+  h+='<span class="mono '+_chgCls+'" style="font-size:13px">';
+  if(_dolChg)h+=_dolChg+' ';
+  h+='('+(_chgM>0?'+':'')+_chgM.toFixed(2)+'%)</span>';
   if(_skM&&C_REGISTRY[_skM]){h+=setupTagHtml(d.setup,(d.gpSubMode||''),(d.gameplan||'C'),d.symbol);if(_psM.score)h+='<span class="uc-score">'+_psM.score.toFixed(0)+'</span>';}
   if(_grM&&_grM.grade!=='F')h+=gradeHtml(_grM);
 
   h+='</div>';
 
   // TradingView chart embed
-  h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:280px;border:none" loading="lazy"></iframe></div>';
+  var _tvSetupKey=_matchSetupKey(d.setup);
+  var _tvStudies=TV_STUDIES[_tvSetupKey]||TV_DEFAULT_STUDIES;
+  h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies='+_tvStudies+'&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:280px;border:none" loading="lazy"></iframe></div>';
 
 
   // Sub-mode + sizing context  h+='</div>';
@@ -3316,6 +3344,46 @@ function buildScorecardHTML(d,setupKey,side){
 
   // Guidance
   h+=buildGuidanceHTML(checks,setupKey,(_ptData&&_ptData.gpSizingAdj)||'');
+
+  // Catalyst from In Play data
+  var _ipMapM={};if(_lastD&&_lastD.inPlayToday)for(var _ipm=0;_ipm<_lastD.inPlayToday.length;_ipm++){var _ipt=_lastD.inPlayToday[_ipm];if(_ipt.symbol)_ipMapM[_ipt.symbol]=_ipt;}
+  var _ipTk=_ipMapM[d.symbol];
+  if(_ipTk&&_ipTk.reasons&&_ipTk.reasons.length){
+    h+='<div style="margin-top:6px;padding:6px 10px;background:#1f1a0f;border:1px solid #9e6a03;border-radius:6px;font-size:11px">';
+    h+='<span style="color:#e3b341;font-weight:700">Catalysts:</span> ';
+    for(var _ri=0;_ri<_ipTk.reasons.length;_ri++){
+      var _rT=_ipTk.reasons[_ri],_rc='reason-rvol';
+      if(_rT.indexOf('GAP')===0)_rc='reason-gap';else if(_rT.indexOf('CATALYST')===0)_rc='reason-catalyst';else if(_rT.indexOf('NEWS')===0)_rc='reason-newsvol';
+      h+='<span class="inplay-reason '+_rc+'">'+e(_rT)+'</span> ';
+    }
+    h+='</div>';
+  }
+
+  // Opus analysis if available
+  var _opusM={};
+  if(_lastD){
+    var _narM=_lastD.dashboardNarrative||'',_secM=parseN(_narM);
+    var _wnM=gN(_secM,['WATCHING NOTES']);
+    if(_wnM){_wnM.split('\n').forEach(function(ln){ln=ln.trim();if(!ln||ln.indexOf('\u2014')<0)return;var parts=ln.split('\u2014'),tk2=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim().toUpperCase();var rest=(parts[1]||'').trim(),segs=rest.split('|');_opusM[tk2]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};});}
+  }
+  var _opus=_opusM[d.symbol];
+  if(_opus&&(_opus.bias||_opus.thesis)){
+    var _obUp=(_opus.bias||'').toUpperCase();
+    var _obCol=_obUp.indexOf('LONG')>=0?'#238636':_obUp.indexOf('SHORT')>=0?'#da3633':'#7d8590';
+    h+='<div style="margin-top:6px;padding:6px 10px;background:#0d1117;border:1px solid '+_obCol+';border-radius:6px;font-size:11px">';
+    h+='<span style="color:#ab47bc;font-weight:700">Opus:</span> ';
+    if(_opus.bias)h+='<span style="color:'+_obCol+'">'+e(_opus.bias)+'</span> ';
+    if(_opus.levels)h+='<span style="color:#58a6ff">'+e(_opus.levels)+'</span> ';
+    if(_opus.thesis)h+='<div style="color:#c9d1d9;margin-top:2px">'+e(_opus.thesis)+'</div>';
+    h+='</div>';
+  }
+
+  // API cost
+  var _apiCost=_lastD?(_lastD.dashboardCost||''):'';
+  var _apiCum=_lastD?(_lastD.dashboardCostCum||''):'';
+  if(_apiCost||_apiCum){
+    h+='<div style="margin-top:4px;font-size:9px;color:#484f58;text-align:right">Opus: '+e(_apiCost)+((_apiCum&&_apiCum!==_apiCost)?' \u00b7 Session: $'+parseFloat(_apiCum).toFixed(2):'')+'</div>';
+  }
   h+='</div>';
   return h;
 }
