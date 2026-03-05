@@ -1880,6 +1880,17 @@ function rInPlay(d){
   var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
   for(var i=0;i<Math.min(items.length,20);i++){
     var it=items[i],sym=it.symbol||'';
+    // Ensure _tq has data from inPlayToday if not already populated
+    if(!_tq[sym]||!_tq[sym].last){
+      if(!_tq[sym])_tq[sym]={};
+      if(it.last)_tq[sym].last=String(it.last);
+      if(it.netPct)_tq[sym].chg=it.netPct+'%';
+      if(it.confluence)_tq[sym].conf=String(it.confluence);
+      if(it.quality)_tq[sym].quality=it.quality;
+      if(it.setup)_tq[sym].setup=it.setup;
+      if(it.rvol)_tq[sym].rvol=String(it.rvol);
+      if(it.gapPct)_tq[sym].gap=String(it.gapPct);
+    }
     h+=uCard(sym,'compact',{
       reasons:it.reasons||[],
       areteInfo:areteMap[sym]||null,
