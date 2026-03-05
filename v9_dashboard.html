@@ -76,6 +76,8 @@
   .uc-secwarn{font-size:9px;padding:1px 5px;border-radius:3px;background:#2c1519;color:#ffa198;border:1px solid #f85149;font-weight:700;font-family:'JetBrains Mono',monospace}
   .uc-arrow{color:#484f58;font-size:9px;margin-left:auto;flex-shrink:0;transition:transform 0.2s}
   .uc-detail{padding:0 10px 8px 14px;font-size:11px;border-top:1px solid #1c2333}
+  .uc-det-hdr{padding:8px 0 6px 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid #1c2333;margin-bottom:6px}
+  .uc-chart{margin:6px 0;border-radius:4px;overflow:hidden;background:#0d1117;border:1px solid #1c2333}
   .uc-enriched{margin-top:4px}
   .uc-pos{margin-top:4px;color:#7d8590;font-size:12px}
   .uc-reasons{margin-top:4px}
@@ -512,6 +514,25 @@ function uCard(tk, mode, opts) {
 
   // --- EXPANDED DETAIL (hidden by default in compact mode) ---
   h += '<div class="uc-detail" id="' + cardId + '_det"' + (isExpanded ? '' : ' style="display:none"') + '>';
+
+  // Detail header — repeats key info from compact row
+  h += '<div class="uc-det-hdr">';
+  h += '<span onclick="event.stopPropagation()">' + tkLink(tk, 1) + '</span>';
+  if (q.last) h += ' <span class="mono" style="font-size:14px">' + e(q.last) + '</span>';
+  if (q.chg) h += ' ' + pct(q.chg);
+  h += sparkSvg(tk, 80, 22);
+  if (setupKey && C_REGISTRY[setupKey]) {
+    h += ' ' + setupTagHtml(q.setup, subM, gpl, tk);
+    if (_ps.score) h += '<span class="uc-score">' + _ps.score.toFixed(0) + '</span>';
+  }
+  if (gr && gr.grade !== 'F') h += ' ' + gradeHtml(gr);
+  if (rv > 0) { var rvc3 = rv >= 2 ? 'g' : rv >= 1.5 ? 'y' : 'dim'; h += ' <span class="' + rvc3 + ' mono" style="font-size:11px">RV ' + rv.toFixed(1) + '</span>'; }
+  if (cf > 0) { var cfc3 = cf >= 28 ? 'g' : cf >= 24 ? 'y' : 'dim'; h += ' <span class="' + cfc3 + ' mono" style="font-size:11px">\u26a1' + cf.toFixed(0) + '</span>'; }
+  if (pos && pos.totalPL) h += ' <span class="' + pc(pos.totalPL) + ' bold mono" style="font-size:13px">' + e(pos.totalPL) + '</span>';
+  h += '</div>';
+
+  // TradingView mini chart embed
+  h += '<div class="uc-chart"><iframe src="https://s.tradingview.com/widgetembed/?symbol=' + encodeURIComponent(tk) + '&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=&utm_medium=widget&utm_campaign=chart" style="width:100%;height:200px;border:none;border-radius:4px" loading="lazy"></iframe></div>';
 
   // Position info
   if (pos) {
