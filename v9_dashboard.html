@@ -233,6 +233,7 @@
   .ic-lnk{color:#58a6ff;font-size:13px;font-weight:700;text-decoration:none}.ic-lnk:hover{color:#79c0ff}
   .tv-d{display:inline-block;width:7px;height:7px;border-radius:50%;background:#58a6ff;margin-right:3px;vertical-align:middle;cursor:pointer;opacity:0.7}.tv-d:hover{opacity:1;box-shadow:0 0 4px #58a6ff}
 </style>
+<script src="https://s.tradingview.com/tv.js"></script>
 </head>
 <body>
 <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
@@ -3076,26 +3077,27 @@ function renderSmartBoxes(d, setupKey) {
   return h;
 }
 
-// ═══ SETUP → TRADINGVIEW INDICATORS MAP ═══
-var TV_STUDIES = {
-  'VWAP-Hold':     'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=MASimple@tv-basicstudies%7B20%7D',
-  'OR-Break':      'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
-  'Pullback-EMA':  'MASimple@tv-basicstudies%7B9%7D&studies=MASimple@tv-basicstudies%7B20%7D&studies=MASimple@tv-basicstudies%7B50%7D&studies=RSI@tv-basicstudies',
-  'Momentum':      'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=RSI@tv-basicstudies',
-  'Failed-BD':     'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
-  'BigDog':        'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=MASimple@tv-basicstudies%7B20%7D&studies=Volume@tv-basicstudies',
-  'BigDogBounce':  'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies&studies=RSI@tv-basicstudies',
-  'GapGo':         'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
-  'DailyBreakout': 'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B20%7D&studies=Volume@tv-basicstudies',
-  'OpeningDrive':  'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
-  'SecondDay':     'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=Volume@tv-basicstudies',
-  'ReturnPullback':'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=MASimple@tv-basicstudies%7B20%7D',
-  'Scalping':      'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
-  'RS-Override':   'VWAP@tv-basicstudies&studies=RSI@tv-basicstudies',
-  'Rotation-ETF':  'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies',
-  'MarketPlay':    'VWAP@tv-basicstudies&studies=MASimple@tv-basicstudies%7B9%7D&studies=RSI@tv-basicstudies'
+// ═══ SETUP → TRADINGVIEW STUDIES MAP ═══
+// TradingView widget constructor format: array of study descriptors
+var TV_STUDY_LIST = {
+  'VWAP-Hold':     [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'MASimple@tv-basicstudies',inputs:{length:20}}],
+  'OR-Break':      [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
+  'Pullback-EMA':  [{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'MASimple@tv-basicstudies',inputs:{length:20}},{id:'MASimple@tv-basicstudies',inputs:{length:50}},{id:'RSI@tv-basicstudies'}],
+  'Momentum':      [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'RSI@tv-basicstudies'}],
+  'Failed-BD':     [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
+  'BigDog':        [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'MASimple@tv-basicstudies',inputs:{length:20}},{id:'Volume@tv-basicstudies'}],
+  'BigDogBounce':  [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'},{id:'RSI@tv-basicstudies'}],
+  'GapGo':         [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
+  'DailyBreakout': [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:20}},{id:'Volume@tv-basicstudies'}],
+  'OpeningDrive':  [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
+  'SecondDay':     [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'Volume@tv-basicstudies'}],
+  'ReturnPullback':[{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'MASimple@tv-basicstudies',inputs:{length:20}}],
+  'Scalping':      [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
+  'RS-Override':   [{id:'VWAP@tv-basicstudies'},{id:'RSI@tv-basicstudies'}],
+  'Rotation-ETF':  [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}],
+  'MarketPlay':    [{id:'VWAP@tv-basicstudies'},{id:'MASimple@tv-basicstudies',inputs:{length:9}},{id:'RSI@tv-basicstudies'}],
+  '_default':      [{id:'VWAP@tv-basicstudies'},{id:'Volume@tv-basicstudies'}]
 };
-var TV_DEFAULT_STUDIES = 'VWAP@tv-basicstudies&studies=Volume@tv-basicstudies';
 
 function renderPTModal(d){
   var h='';
@@ -3122,8 +3124,31 @@ function renderPTModal(d){
 
   // TradingView chart embed
   var _tvSetupKey=_matchSetupKey(d.setup);
-  var _tvStudies=TV_STUDIES[_tvSetupKey]||TV_DEFAULT_STUDIES;
-  h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies='+_tvStudies+'&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:280px;border:none" loading="lazy"></iframe></div>';
+  var _tvChartId='tvchart_'+Date.now();
+  h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333;height:280px" id="'+_tvChartId+'"></div>';
+  // Defer widget creation until DOM is ready
+  setTimeout(function(){
+    var container=document.getElementById(_tvChartId);
+    if(!container)return;
+    var studies=TV_STUDY_LIST[_tvSetupKey]||TV_STUDY_LIST['_default'];
+    new TradingView.widget({
+      container_id:_tvChartId,
+      symbol:d.symbol,
+      interval:'5',
+      timezone:'America/Phoenix',
+      theme:'dark',
+      style:'1',
+      toolbar_bg:'#0b0e14',
+      hide_side_toolbar:true,
+      hide_top_toolbar:false,
+      allow_symbol_change:false,
+      save_image:false,
+      studies:studies,
+      width:'100%',
+      height:280,
+      locale:'en'
+    });
+  },100);
 
 
   // Sub-mode + sizing context  h+='</div>';
