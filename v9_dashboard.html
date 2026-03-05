@@ -418,7 +418,9 @@ function rTradeCandidates(d){
     if(isHeld)h+=' <span style="font-size:8px;color:#3fb950;vertical-align:middle">●</span>';
     if(isDynamic)h+=' <span style="font-size:8px;color:#ffc107;vertical-align:middle" title="Dynamic: '+e(isDynamic.source+' — '+isDynamic.reason)+'">\u26a1</span>';
     h+='</span>';
-    h+='<span class="tc-setup '+setupCls+'">'+e(C_REGISTRY[cd.key].label)+'</span>';
+    var _ps=_parseSetup(cd.q.setup||'');
+    h+='<span class="tc-setup '+setupCls+'" title="Score: '+_ps.score.toFixed(1)+'">'+e(C_REGISTRY[cd.key].label)+' <span style="font-size:8px;opacity:0.7">'+_ps.score.toFixed(0)+'</span></span>';
+    if(_ps.secondary){var _s2k=_matchSetupKey(_ps.secondary);if(_s2k&&C_REGISTRY[_s2k])h+='<span class="tc-setup" style="background:#1a1a2e;color:#7d8590;border:1px solid #30363d;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px" title="Alt: '+e(C_REGISTRY[_s2k].label)+' ('+_ps.score2.toFixed(1)+')">'+e(C_REGISTRY[_s2k].label)+' <span style="font-size:7px">'+_ps.score2.toFixed(0)+'</span></span>';}
     h+='<span class="tc-meta">';
     h+='<span class="'+chgCls+'">'+e(q.chg||'')+'</span>';
     h+=' <span class="'+rvc+'">RV '+rv.toFixed(1)+'</span>';
@@ -457,8 +459,16 @@ function rTradeCandidates(d){
 }
 
 // Match scanner setup string to registry key
+// Parse pipe-delimited setup string: "VWAP-Hold|18.5|Momentum|12.3"
+function _parseSetup(raw){
+  if(!raw||raw==='-')return{primary:'',score:0,secondary:'',score2:0};
+  var parts=(raw||'').split('|');
+  return{primary:parts[0]||'',score:parseFloat(parts[1])||0,secondary:parts[2]||'',score2:parseFloat(parts[3])||0};
+}
 function _matchSetupKey(s){
   if(!s)return null;
+  // Strip pipe-delimited scores if present
+  if(s.indexOf('|')>=0)s=s.split('|')[0];
   s=s.toUpperCase();
   if(s.indexOf('VWAP')>=0)return 'VWAP-Hold';
   if(s.indexOf('OR-BREAK')>=0||s.indexOf('OR BREAK')>=0||s.indexOf('OPENING RANGE')>=0)return 'OR-Break';
@@ -2972,6 +2982,14 @@ function renderPTModal(d){
   h+='</select>';
   h+='<select class="pt-select" id="ptSide" onchange="ptUpdateSC()" style="width:110px">';
   h+='<option value="LONG">Long</option><option value="SHORT">Short</option>';
+  // Show setup scores + secondary
+  var _psd=_parseSetup(d.setup||'');
+  if(_psd.score>0){
+    h+='</div><div style="font-size:10px;margin-top:4px;color:#7d8590">';
+    h+='Score: <span class="mono" style="color:#58a6ff">'+_psd.score.toFixed(1)+'</span>';
+    if(_psd.secondary){var _s2r=C_REGISTRY[_psd.secondary];if(_s2r)h+=' · Alt: <span style="color:#9e9e9e">'+e(_s2r.label)+'</span> <span class="mono" style="color:#9e9e9e">'+_psd.score2.toFixed(1)+'</span>';}
+    h+='</div><div>';
+  }
   h+='</select>';
   h+='</div></div>';
 
