@@ -533,7 +533,7 @@ function uCard(tk, mode, opts) {
   h += '</div>';
 
   // TradingView mini chart embed
-  h += '<div class="uc-chart"><iframe src="https://s.tradingview.com/widgetembed/?symbol=' + encodeURIComponent(tk) + '&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=&utm_medium=widget&utm_campaign=chart" style="width:100%;height:200px;border:none;border-radius:4px" loading="lazy"></iframe></div>';
+  h += '<div class="uc-chart"><iframe src="https://s.tradingview.com/widgetembed/?symbol=' + encodeURIComponent(tk) + '&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=&utm_medium=widget&utm_campaign=chart" style="width:100%;height:350px;border:none;border-radius:4px" loading="lazy"></iframe></div>';
 
   // Position info
   if (pos) {
@@ -3007,7 +3007,7 @@ function renderPTModal(d){
   var chgN=d.chg?parseFloat(String(d.chg).replace('%','')):0;
   var chgCls=chgN>0?'g':chgN<0?'r':'dim';
   // TradingView chart embed
-  h+='<div style="margin:-4px -4px 8px -4px;border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:220px;border:none" loading="lazy"></iframe></div>';
+  h+='<div style="margin:-4px -4px 8px -4px;border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:350px;border:none" loading="lazy"></iframe></div>';
   h+='<div class="pt-section">';
   h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
   h+='<span style="font-size:18px;font-weight:700;color:#e6edf3">$'+e(d.last)+'</span>';
@@ -3015,15 +3015,27 @@ function renderPTModal(d){
   h+='</div>';
   h+='<div class="pt-grid">';
   var vdc=d.vwapDist>0?'g':d.vwapDist<-0.5?'r':'y';
-  h+='<div class="pt-stat"><div class="v '+vdc+'">'+(d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%</div><div class="k">VWAP Dist</div></div>';
+  var vdBg=d.vwapDist>0?'#0d2818':d.vwapDist<-0.5?'#1f1315':'#1a1a0f';
+  var vdBor=d.vwapDist>0?'#238636':d.vwapDist<-0.5?'#da3633':'#9e6a03';
+  h+='<div class="pt-stat" style="background:'+vdBg+';border-left:3px solid '+vdBor+'"><div class="v '+vdc+'">'+(d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%</div><div class="k">VWAP Dist</div></div>';
   var rvN=parseFloat(d.rvol)||0;var rvc=rvN>=2?'g':rvN>=1.5?'y':'dim';
-  h+='<div class="pt-stat"><div class="v '+rvc+'">'+rvN.toFixed(1)+'x</div><div class="k">RVOL</div></div>';
+  var rvBg=rvN>=2?'#0d2818':rvN>=1.5?'#1a1a0f':'#0f1318';
+  var rvBor=rvN>=2?'#238636':rvN>=1.5?'#9e6a03':'#30363d';
+  h+='<div class="pt-stat" style="background:'+rvBg+';border-left:3px solid '+rvBor+'"><div class="v '+rvc+'">'+rvN.toFixed(1)+'x</div><div class="k">RVOL</div></div>';
   var cfc=d.conf>=28?'g':d.conf>=24?'y':'dim';
-  h+='<div class="pt-stat"><div class="v '+cfc+'">'+d.conf+'</div><div class="k">Confluence</div></div>';
-  h+='<div class="pt-stat"><div class="v">'+e(d.rsi||'—')+'</div><div class="k">RSI</div></div>';
-  h+='<div class="pt-stat"><div class="v">$'+d.atr.toFixed(2)+'</div><div class="k">ATR</div></div>';
+  var cfBg=d.conf>=28?'#0d2818':d.conf>=24?'#1a1a0f':'#0f1318';
+  var cfBor=d.conf>=28?'#238636':d.conf>=24?'#9e6a03':'#30363d';
+  h+='<div class="pt-stat" style="background:'+cfBg+';border-left:3px solid '+cfBor+'"><div class="v '+cfc+'">'+d.conf+'</div><div class="k">Confluence</div></div>';
+  var rsiN=parseFloat(d.rsi)||50;var rsic=rsiN>=55&&rsiN<=70?'g':rsiN>=40&&rsiN<=75?'y':(rsiN>75||rsiN<35)?'r':'dim';
+  var rsiBg=rsic==='g'?'#0d2818':rsic==='r'?'#1f1315':'#0f1318';
+  var rsiBor=rsic==='g'?'#238636':rsic==='r'?'#da3633':'#30363d';
+  h+='<div class="pt-stat" style="background:'+rsiBg+';border-left:3px solid '+rsiBor+'"><div class="v '+rsic+'">'+rsiN.toFixed(0)+'</div><div class="k">RSI</div></div>';
+  var atrN=parseFloat(d.atr)||0;
+  h+='<div class="pt-stat" style="border-left:3px solid #58a6ff;background:#0d1a2e"><div class="v b">$'+atrN.toFixed(2)+'</div><div class="k">ATR</div></div>';
   var ivrN=d.ivr||0;var ic=ivrN>50?'y':ivrN>30?'dim':'g';
-  h+='<div class="pt-stat"><div class="v '+ic+'">'+(ivrN>0?ivrN.toFixed(0):'—')+'</div><div class="k">IVR</div></div>';
+  var ivrBg=ivrN>50?'#1a1a0f':ivrN>30?'#0f1318':'#0d2818';
+  var ivrBor=ivrN>50?'#9e6a03':ivrN>30?'#30363d':'#238636';
+  h+='<div class="pt-stat" style="background:'+ivrBg+';border-left:3px solid '+ivrBor+'"><div class="v '+ic+'">'+(ivrN>0?ivrN.toFixed(0):'\u2014')+'</div><div class="k">IVR</div></div>';
   h+='</div>';
   // Sub-mode + sizing context
   var sbInfo=_SIZE_BADGES[d.gpSizingAdj];
