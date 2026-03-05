@@ -353,8 +353,8 @@ function quickGrade(ticker,setupKey,subModeLabel,gpLetter,side){
   // 8. Sector (check if we have open positions in same sector from _lastD)
   var sector=_SEC[ticker]||'';
   if(sector&&_lastD&&_lastD.positions){
-    var secCount=0;for(var sc=0;sc<_lastD.positions.length;sc++){var pt=_lastD.positions[sc].ticker||'';if(_SEC[pt]===sector)secCount++;}
-    if(secCount===0)g++;else if(secCount===1){y++;notes.push('1 in '+sector);}else{r++;notes.push(secCount+' in '+sector);}
+    var secCount=0,secTks=[];for(var sc=0;sc<_lastD.positions.length;sc++){var pt=_lastD.positions[sc].ticker||'';if(_SEC[pt]===sector){secCount++;secTks.push(pt);}}
+    if(secCount===0)g++;else if(secCount===1){y++;notes.push('1 in '+sector+' ('+secTks[0]+')');}else{r++;notes.push(secCount+' in '+sector+' ('+secTks.join(',')+')');}
   } else {g++;}
   var grade;
   // A = exceptional: 7+ green, zero reds, max 1 yellow
@@ -413,6 +413,8 @@ function rTradeCandidates(d){
   });
   candidates=candidates.slice(0,8);
   if(!candidates.length){el.innerHTML='';return;}
+  var _ipMap={};
+  if(d.inPlayToday)for(var ip=0;ip<d.inPlayToday.length;ip++){var ipt=d.inPlayToday[ip];if(ipt.symbol)_ipMap[ipt.symbol]=ipt;}
   var h='<div class="tc-section"><div class="tc-hdr">🎯 Trade Candidates · '+e(subModeLabel||'GP-'+gp)+'</div>';
   for(var c=0;c<candidates.length;c++){
     var cd=candidates[c],q=cd.q;
@@ -422,21 +424,27 @@ function rTradeCandidates(d){
     var cf=parseFloat(q.conf)||0;var cfc=cf>=28?'g':cf>=24?'y':'dim';
     var setupCls=cd.caution?'st-warn':'st-ok';
     var gradeCol=cd.grade.grade==='A'?'#00c853':cd.grade.grade==='B'?'#42a5f5':'#ff9800';
-    h+='<div class="tc-card" onclick="openPT(\''+cd.ticker+'\')">';
-    // Position indicator + Dynamic badge
+    h+='<div class="tc-card" onclick="openPT(\''+cd.ticker+'\')">'; 
     var isHeld=false;
     if(_lastD&&_lastD.positions)for(var ph=0;ph<_lastD.positions.length;ph++){if((_lastD.positions[ph].ticker||'')===cd.ticker)isHeld=true;}
     var isDynamic=_lastD&&_lastD.dynamicTickers&&_lastD.dynamicTickers[cd.ticker];
-    h+='<span class="tc-tk">'+e(cd.ticker);
+    h+='<span class="tc-tk" onclick="event.stopPropagation()">'+tkLink(cd.ticker);
     if(isHeld)h+=' <span style="font-size:8px;color:#3fb950;vertical-align:middle">●</span>';
     if(isDynamic)h+=' <span style="font-size:8px;color:#ffc107;vertical-align:middle" title="Dynamic: '+e(isDynamic.source+' — '+isDynamic.reason)+'">⚡</span>';
     h+='</span>';
-    h+='<span class="tc-setup '+setupCls+'">'+e(C_REGISTRY[cd.key].label)+'</span>';
+    var _ps=_parseSetup(cd.q.setup||'');
+    h+='<span class="tc-setup '+setupCls+'" title="Score: '+_ps.score.toFixed(1)+'">'+e(C_REGISTRY[cd.key].label)+(_ps.score?' <span style="font-size:8px;opacity:0.7">'+_ps.score.toFixed(0)+'</span>':'')+'</span>';
+    if(_ps.secondary){var _s2k=_matchSetupKey(_ps.secondary);if(_s2k&&C_REGISTRY[_s2k])h+='<span class="tc-setup" style="background:#1a1a2e;color:#7d8590;border:1px solid #30363d;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px" title="Alt: '+e(C_REGISTRY[_s2k].label)+' ('+_ps.score2.toFixed(1)+')">'+e(C_REGISTRY[_s2k].label)+'</span>';}
     h+='<span class="tc-meta">';
     h+='<span class="'+chgCls+'">'+e(q.chg||'')+'</span>';
     h+=' <span class="'+rvc+'">RV '+rv.toFixed(1)+'</span>';
     h+=' <span class="'+cfc+'">⚡'+cf.toFixed(0)+'</span>';
-    if(cd.grade.notes.length)h+=' <span class="dim">'+e(cd.grade.notes.slice(0,2).join(', '))+'</span>';
+    var ipInfo=_ipMap[cd.ticker];
+    if(ipInfo&&ipInfo.reasons){for(var ri=0;ri<ipInfo.reasons.length;ri++){var rText=ipInfo.reasons[ri],rc='reason-rvol';if(rText.indexOf('GAP')===0)rc='reason-gap';else if(rText.indexOf('CATALYST')===0)rc='reason-catalyst';else if(rText.indexOf('NEWS')===0)rc='reason-newsvol';h+=' <span class="inplay-reason '+rc+'">'+e(rText)+'</span>';}}
+    var secWarn='';
+    if(cd.grade&&cd.grade.notes){for(var sn=0;sn<cd.grade.notes.length;sn++){var nt=cd.grade.notes[sn];if(nt.match(/^\d+ in /)||nt.indexOf('1 in ')===0){secWarn=nt;break;}}}
+    if(secWarn)h+=' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#2c1519;color:#ffa198;border:1px solid #f85149;font-weight:700;font-family:\'JetBrains Mono\',monospace">⚠️ '+e(secWarn)+'</span>';
+    if(!ipInfo&&!secWarn&&cd.grade.notes.length)h+=' <span class="dim">'+e(cd.grade.notes.slice(0,2).join(', '))+'</span>';
     h+='</span>';
     h+='<span class="tc-grade" style="color:'+gradeCol+'">'+cd.grade.grade+'</span>';
     h+='</div>';
@@ -445,9 +453,14 @@ function rTradeCandidates(d){
   el.innerHTML=h;
 }
 
-// Match scanner setup string to registry key
+function _parseSetup(raw){
+  if(!raw||raw==='-')return{primary:'',score:0,secondary:'',score2:0};
+  var parts=(raw||'').split('|');
+  return{primary:parts[0]||'',score:parseFloat(parts[1])||0,secondary:parts[2]||'',score2:parseFloat(parts[3])||0};
+}
 function _matchSetupKey(s){
   if(!s)return null;
+  if(s.indexOf('|')>=0)s=s.split('|')[0];
   s=s.toUpperCase();
   if(s.indexOf('VWAP')>=0)return 'VWAP-Hold';
   if(s.indexOf('OR-BREAK')>=0||s.indexOf('OR BREAK')>=0||s.indexOf('OPENING RANGE')>=0)return 'OR-Break';
@@ -3165,12 +3178,16 @@ function buildScorecardHTML(d,setupKey,side){
   else if(vr==='Elevated')checks.push({name:'VIX Regime',val:'YELLOW',cls:'chk-y',tip:d.vix+' ('+vr+')'});
   else checks.push({name:'VIX Regime',val:'RED',cls:'chk-r',tip:d.vix+' ('+vr+')'});
 
-  // Check 7: Sector correlation
+  // Check 7: Sector correlation (skip if no sector mapping)
   var sec=d.sector||'';
-  var openCount=0;if(d.openTrades)for(var t=0;t<d.openTrades.length;t++){if(d.openTrades[t].sector===sec)openCount++;}
-  if(openCount===0)checks.push({name:'Sector Exp',val:'GREEN',cls:'chk-g',tip:'No overlap'});
-  else if(openCount===1)checks.push({name:'Sector Exp',val:'YELLOW',cls:'chk-y',tip:openCount+' open in '+sec});
-  else checks.push({name:'Sector Exp',val:'RED',cls:'chk-r',tip:openCount+' open in '+sec});
+  if(sec){
+    var openCount=0,openTks=[];if(d.openTrades)for(var t=0;t<d.openTrades.length;t++){if(d.openTrades[t].sector===sec){openCount++;openTks.push(d.openTrades[t].symbol);}}
+    if(openCount===0)checks.push({name:'Sector Exp',val:'GREEN',cls:'chk-g',tip:'No overlap'});
+    else if(openCount===1)checks.push({name:'Sector Exp',val:'YELLOW',cls:'chk-y',tip:openCount+' in '+sec+' ('+openTks[0]+')'});
+    else checks.push({name:'Sector Exp',val:'RED',cls:'chk-r',tip:openCount+' in '+sec+' ('+openTks.join(', ')+')'});
+  } else {
+    checks.push({name:'Sector Exp',val:'GREEN',cls:'chk-g',tip:'No sector mapped'});
+  }
 
   // Check 8: RSI
   var rsiN=parseFloat(d.rsi)||50;
