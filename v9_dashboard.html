@@ -2291,7 +2291,7 @@ function posCard(p,alert,areteInfo){
   var nar=d.dashboardNarrative||'',sec=parseN(nar);
   var wn=gN(sec,['WATCHING NOTES']);
   if(wn){wn.split('\n').forEach(function(ln){ln=ln.trim();if(!ln||ln.indexOf('\u2014')<0)return;var parts=ln.split('\u2014'),ttk=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim().toUpperCase();var rest=(parts[1]||'').trim(),segs=rest.split('|');opusMap[ttk]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};});}
-  return uCard(tk,'position',{
+  return uCard(tk,'compact',{
     position:p,
     reasons:ipInfo?ipInfo.reasons:[],
     areteInfo:areteInfo||null,
@@ -2381,7 +2381,7 @@ function rBook(d){
 // ═══ ARETE BOOK (from Arete Trades tab — reference only) ═══
 function areteCard(p){
   var tk=p.ticker||'';
-  return uCard(tk,'position',{
+  return uCard(tk,'compact',{
     position:{ticker:tk,side:p.side||'Long',shares:p.shares||'',avgCost:p.entry||'',last:(_tq[tk]||{}).last||p.curPrice||'',totalPL:'',dayPL:'',accountType:'Arete'},
     areteInfo:p,
     showModal:true,
@@ -2851,7 +2851,7 @@ function rFocused(d){
     var tk=tks[i];
     var ipInfo=ipMap[tk];
     var pos=posMap[tk]||null;
-    h+=uCard(tk,'expanded',{
+    h+=uCard(tk,'compact',{
       reasons:ipInfo?ipInfo.reasons:[],
       position:pos,
       areteInfo:areteMap[tk]||null,
