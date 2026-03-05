@@ -743,7 +743,7 @@ function _renderQuotaChart(){
     // Styled hover tooltip
     var tipHtml='<div class="qc-tip"><div class="qc-tip-h">'+e(d.h)+': '+d.v+' total</div>';
     if(d.c){for(var ci3=0;ci3<catOrder.length;ci3++){var cv3=d.c[catOrder[ci3]]||0;if(cv3>0)tipHtml+='<div><span style="color:'+catColors[catOrder[ci3]]+'">■</span> '+catLabels[catOrder[ci3]]+': '+cv3+'</div>';}}
-    if(d.v>0&&!hasCats)tipHtml+='<div class="dim">No category breakdown yet</div>';
+    if(d.v>0&&!hasCats){var col2=d.v>1500?'#ef5350':d.v>800?'#ffc107':'#00c853';tipHtml+='<div><span style="color:'+col2+'">\u25a0</span> Total: '+d.v+'</div>';}
     tipHtml+='</div>';
     h+=tipHtml;
 
