@@ -910,6 +910,18 @@ function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.t
   var _ae=document.activeElement;
   var _noteId=_ae&&_ae.id&&_ae.id.startsWith('note_')?_ae.id:null;
   var _noteCur=_noteId?_ae.selectionStart:0;
+  // Populate _tq from watchlistTop when tickerQuotes is sparse
+  if(d.watchlistTop&&d.watchlistTop.length){
+    for(var _wi=0;_wi<d.watchlistTop.length;_wi++){
+      var _wt=d.watchlistTop[_wi];if(!_wt.ticker)continue;
+      if(!_tq[_wt.ticker])_tq[_wt.ticker]={};
+      var _wq=_tq[_wt.ticker];
+      if(!_wq.last&&_wt.last)_wq.last=String(_wt.last);
+      if(!_wq.chg&&_wt.chg)_wq.chg=String(_wt.chg);
+      if(!_wq.conf&&_wt.confluence)_wq.conf=String(_wt.confluence);
+      if(!_wq.setup&&_wt.setup)_wq.setup=_wt.setup;
+    }
+  }
   buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rActiveSetups(d);rTradeCandidates(d);rBrief(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rAreteEmails(d);rInPlay(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
   // Restore textarea focus
   if(_noteId){var _el=document.getElementById(_noteId);if(_el){_el.focus();_el.selectionStart=_el.selectionEnd=_noteCur;}}
@@ -1881,16 +1893,15 @@ function rInPlay(d){
   for(var i=0;i<Math.min(items.length,20);i++){
     var it=items[i],sym=it.symbol||'';
     // Ensure _tq has data from inPlayToday if not already populated
-    if(!_tq[sym]||!_tq[sym].last){
-      if(!_tq[sym])_tq[sym]={};
-      if(it.last)_tq[sym].last=String(it.last);
-      if(it.netPct)_tq[sym].chg=it.netPct+'%';
-      if(it.confluence)_tq[sym].conf=String(it.confluence);
-      if(it.quality)_tq[sym].quality=it.quality;
-      if(it.setup)_tq[sym].setup=it.setup;
-      if(it.rvol)_tq[sym].rvol=String(it.rvol);
-      if(it.gapPct)_tq[sym].gap=String(it.gapPct);
-    }
+    if(!_tq[sym])_tq[sym]={};
+    var _qt=_tq[sym];
+    if(!_qt.last&&it.last)_qt.last=parseFloat(it.last).toFixed(2);
+    if(!_qt.chg&&it.netPct)_qt.chg=(parseFloat(it.netPct)>0?'+':'')+parseFloat(it.netPct).toFixed(2)+'%';
+    if(!_qt.conf&&it.confluence)_qt.conf=String(it.confluence);
+    if(!_qt.setup&&it.setup)_qt.setup=it.setup;
+    if(!_qt.rvol&&it.rvol)_qt.rvol=String(it.rvol);
+    if(!_qt.gap&&it.gapPct)_qt.gap=String(it.gapPct);
+    if(!_qt.rs&&it.relStr)_qt.rs=String(it.relStr);
     h+=uCard(sym,'compact',{
       reasons:it.reasons||[],
       areteInfo:areteMap[sym]||null,
