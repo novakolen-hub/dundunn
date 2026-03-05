@@ -141,15 +141,21 @@ function buildChart(containerId,tk){
   var todayStart=new Date(azMid.getFullYear(),azMid.getMonth(),azMid.getDate()).getTime()-azOffset;
   var startMin=7*60+30;
 
+  // Filter valid price points and assign timestamps
   var validPts=[];
+  var today=new Date();
+  // Use local date to build today's midnight in AZ (UTC-7)
+  var azNow=new Date(today.getTime()-7*3600000);
+  var y=azNow.getUTCFullYear(),m=azNow.getUTCMonth(),dd=azNow.getUTCDate();
+  var azMidnightUTC=Date.UTC(y,m,dd)+7*3600000; // midnight AZ in UTC ms
   for(var i=0;i<sparkPts.length;i++){
     if(sparkPts[i]!==null&&sparkPts[i]>0){
-      var t=Math.floor((todayStart+(startMin+i*5)*60000)/1000);
-      validPts.push({time:t,value:sparkPts[i],idx:i});
+      var slotMs=azMidnightUTC+(startMin+i*5)*60000;
+      validPts.push({time:Math.floor(slotMs/1000),value:sparkPts[i],idx:i});
     }
   }
   if(validPts.length<2){
-    el.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#30363d;font-size:10px">Insufficient data</div>';
+    el.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#30363d;font-size:10px">'+(sparkPts.length?'Only '+validPts.length+' points':'No data yet')+'</div>';
     return;
   }
 
@@ -296,17 +302,18 @@ function clearWall(){
 }
 
 function loadFromScanner(){
-  // Load top Trade Candidates by grade + confluence
   var tks=Object.keys(_tq);
   var cands=[];
   for(var i=0;i<tks.length;i++){
     var tk=tks[i],q=_tq[tk];
-    if(!q||!q.setup||!q.last||tk.charAt(0)==='$')continue;
-    var setup=matchSetup(q.setup);
-    if(!setup)continue;
-    cands.push({tk:tk,conf:parseFloat(q.conf)||0});
+    if(!q||!q.last||tk.charAt(0)==='$'||tk.charAt(0)==='/')continue;
+    var setup=matchSetup(q.setup||'');
+    var conf=parseFloat(q.conf)||0;
+    if(conf<16)continue;
+    cands.push({tk:tk,conf:conf,hasSetup:setup?1:0});
   }
-  cands.sort(function(a,b){return b.conf-a.conf;});
+  // Sort: tickers with setups first, then by confluence
+  cands.sort(function(a,b){if(a.hasSetup!==b.hasSetup)return b.hasSetup-a.hasSetup;return b.conf-a.conf;});
   _wallTickers=cands.slice(0,12).map(function(c){return c.tk;});
   renderWall();
   saveWall();
