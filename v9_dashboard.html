@@ -182,6 +182,10 @@
   .qc-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#161b22;border:1px solid #30363d;border-radius:4px;padding:2px 6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#e6edf3;white-space:nowrap;margin-bottom:2px;z-index:10}
   .qc-axis{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:8px;color:#484f58;margin-top:2px}
   .qc-total{font-family:'JetBrains Mono',monospace;font-size:11px;margin-top:6px;text-align:center}
+  .qc-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px 10px;font-size:10px;font-family:'JetBrains Mono',monospace;color:#c4cad4;white-space:nowrap;z-index:10;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.5);line-height:1.6}
+  .qc-tip .qc-tip-h{color:#e6edf3;font-weight:700;font-size:11px;margin-bottom:3px}
+  .qc-col:hover .qc-tip{display:block}
+  .qc-col:hover{background:rgba(255,255,255,0.05);border-radius:2px}
   .qc-log{font-family:'JetBrains Mono',monospace;font-size:9px;color:#6e7590;margin-top:6px;max-height:160px;overflow-y:auto;border-top:1px solid #21262d;padding-top:4px;line-height:1.5}
   .ratio-row{padding:6px 0;border-bottom:1px solid #161b22}
   @media(max-width:480px){body{padding:8px;font-size:13px}.heatmap{grid-template-columns:repeat(3,1fr)}table{font-size:12px}.inst-grid{grid-template-columns:1fr !important}}
@@ -721,7 +725,13 @@ function _renderQuotaChart(){
     var tip=e(d.h)+': '+d.v+' total';
     if(d.c){for(var ci=0;ci<catOrder.length;ci++){var cv=d.c[catOrder[ci]]||0;if(cv>0)tip+='\n'+catOrder[ci]+': '+cv;}}
 
-    h+='<div style="flex:1;height:100%;display:flex;flex-direction:column-reverse;min-width:0" title="'+tip.replace(/"/g,'&quot;').replace(/\n/g,'&#10;')+'">';
+    h+='<div class="qc-col" style="flex:1;height:100%;display:flex;flex-direction:column-reverse;min-width:0;position:relative">';
+    // Styled hover tooltip
+    var tipHtml='<div class="qc-tip"><div class="qc-tip-h">'+e(d.h)+': '+d.v+' total</div>';
+    if(d.c){for(var ci3=0;ci3<catOrder.length;ci3++){var cv3=d.c[catOrder[ci3]]||0;if(cv3>0)tipHtml+='<div><span style="color:'+catColors[catOrder[ci3]]+'">■</span> '+catLabels[catOrder[ci3]]+': '+cv3+'</div>';}}
+    if(d.v>0&&!hasCats)tipHtml+='<div class="dim">No category breakdown yet</div>';
+    tipHtml+='</div>';
+    h+=tipHtml;
 
     if(d.v===0){
       // Empty hour — full height dashed placeholder
