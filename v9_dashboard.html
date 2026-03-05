@@ -707,21 +707,29 @@ function _renderQuotaChart(){
     var d=_quotaHourly[i];
     var pct=d.v/max*100;
     // Stacked bar segments
-    h+='<div style="flex:1;height:100%;display:flex;flex-direction:column-reverse;position:relative">';
+    h+='<div style="flex:1;height:100%;display:flex;flex-direction:column-reverse;position:relative" onmouseenter="this.querySelector(\'.qc-tip\').style.display=\'block\'" onmouseleave="this.querySelector(\'.qc-tip\').style.display=\'none\'">';
     if(d.c){
       var running=0;
       for(var ci=0;ci<catOrder.length;ci++){
         var cv=d.c[catOrder[ci]]||0;
         if(cv<=0)continue;
         var segPct=cv/max*100;
-        h+='<div style="height:'+segPct+'%;background:'+catColors[catOrder[ci]]+';min-height:'+(segPct>0?'1px':'0')+';border-radius:'+(running===0?'0 0 ':'')+'1px 1px'+(cv===d.v?' 1px 1px':'')+'" title="'+catOrder[ci]+': '+cv+'"></div>';
+        h+='<div style="height:'+segPct+'%;background:'+catColors[catOrder[ci]]+';min-height:'+(segPct>0?'1px':'0')+'"></div>';
         running+=cv;
       }
     } else {
       var col=d.v>1500?'#ef5350':d.v>800?'#ffc107':d.v>0?'#00c853':'#21262d';
       h+='<div style="height:'+Math.max(pct,2)+'%;background:'+col+';border-radius:2px 2px 0 0"></div>';
     }
-    h+='<div class="qc-tip">'+e(d.h)+': '+d.v+'</div>';
+    // Tooltip with full breakdown
+    var tipText=e(d.h)+': '+d.v+' total';
+    if(d.c){
+      for(var ci2=0;ci2<catOrder.length;ci2++){
+        var cv2=d.c[catOrder[ci2]]||0;
+        if(cv2>0)tipText+='<br><span style="color:'+catColors[catOrder[ci2]]+'">■</span> '+catOrder[ci2]+': '+cv2;
+      }
+    }
+    h+='<div class="qc-tip" style="text-align:left;min-width:90px">'+tipText+'</div>';
     h+='</div>';
   }
   h+='</div>';
