@@ -662,6 +662,7 @@ function rTradeCandidates(d){
   var subModeLabel=(sm&&sm.subMode)?sm.subMode:'';
   var tqKeys=Object.keys(_tq||{});
   var candidates=[];
+  // Pull from _tq
   for(var i=0;i<tqKeys.length;i++){
     var tk=tqKeys[i],q=_tq[tk];
     if(!q||!q.setup||!q.last)continue;
@@ -672,10 +673,33 @@ function rTradeCandidates(d){
     if(!gr||gr.grade==='F')continue;
     candidates.push({ticker:tk,key:key,grade:gr,q:q,caution:chk.caution});
   }
+  // Fallback: also pull from inPlayToday when _tq is sparse
+  if(candidates.length<4&&d.inPlayToday){
+    var _seen={};for(var ci2=0;ci2<candidates.length;ci2++)_seen[candidates[ci2].ticker]=1;
+    for(var ipi=0;ipi<d.inPlayToday.length;ipi++){
+      var ipt=d.inPlayToday[ipi],sym=ipt.symbol||'';
+      if(_seen[sym]||!sym)continue;
+      if(!_tq[sym])_tq[sym]={};
+      var qt=_tq[sym];
+      if(!qt.last&&ipt.last)qt.last=parseFloat(ipt.last).toFixed(2);
+      if(!qt.chg&&ipt.netPct)qt.chg=(parseFloat(ipt.netPct)>0?'+':'')+parseFloat(ipt.netPct).toFixed(2)+'%';
+      if(!qt.conf&&ipt.confluence)qt.conf=String(ipt.confluence);
+      if(!qt.setup&&ipt.setup)qt.setup=ipt.setup;
+      if(!qt.rvol&&ipt.rvol)qt.rvol=String(ipt.rvol);
+      if(!qt.gap&&ipt.gapPct)qt.gap=String(ipt.gapPct);
+      if(!qt.rs&&ipt.relStr)qt.rs=String(ipt.relStr);
+      var key2=_matchSetupKey(qt.setup);
+      if(key2){
+        var gr2=quickGrade(sym,key2,subModeLabel,gp,'LONG');
+        if(gr2&&gr2.grade!=='F')candidates.push({ticker:sym,key:key2,grade:gr2,q:qt,caution:false});
+        _seen[sym]=1;
+      }
+    }
+  }
   var gradeOrder={A:0,B:1,C:2,F:3};
   candidates.sort(function(a,b){var gd=(gradeOrder[a.grade.grade]||3)-(gradeOrder[b.grade.grade]||3);if(gd!==0)return gd;return(parseFloat(b.q.conf)||0)-(parseFloat(a.q.conf)||0);});
   candidates=candidates.slice(0,8);
-  if(!candidates.length){el.innerHTML='';return;}
+  if(!candidates.length){el.innerHTML='<div class="tc-section"><div class="tc-hdr">🎯 Top Setups · '+e(subModeLabel||'GP-'+gp)+'</div><div style="padding:12px;color:#484f58;font-size:11px;text-align:center">No qualifying setups right now. Waiting for scanner data.</div></div>';return;}
   // Build In Play reasons map
   var ipMap={};if(d.inPlayToday)for(var ip=0;ip<d.inPlayToday.length;ip++){var ipt=d.inPlayToday[ip];if(ipt.symbol)ipMap[ipt.symbol]=ipt;}
   var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
