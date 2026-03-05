@@ -61,6 +61,24 @@
   .reason-catalyst{background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03}
   .reason-newsvol{background:#0a2e15;color:#3fb950;border:1px solid #238636}
   .q-aplus{color:#56d364}.q-solid{color:#58a6ff}.q-playbook{color:#e3b341}.q-watch{color:#7d8590}.q-skip{color:#484f58}
+
+  /* ── Quota Popup ── */
+  .qc{position:absolute;top:100%;left:0;right:0;background:#0f1318;border:1px solid #30363d;border-radius:8px;padding:12px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:none;max-width:400px}
+  .qc.open{display:block}
+  .qc-title{color:#e6edf3;font-size:12px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .qc-close{cursor:pointer;color:#7d8590;font-size:16px;padding:2px 6px}
+  .qc-chart{display:flex;align-items:flex-end;gap:2px;height:60px;margin-bottom:6px}
+  .qc-col{display:flex;flex-direction:column-reverse;flex:1;min-width:0}
+  .qc-seg{min-height:1px;border-radius:1px 1px 0 0}
+  .qc-lbl{font-size:7px;color:#484f58;text-align:center;margin-top:2px;font-family:'JetBrains Mono',monospace;overflow:hidden}
+  .qc-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:9px;font-family:'JetBrains Mono',monospace}
+  .qc-leg{display:flex;align-items:center;gap:3px;color:#7d8590}
+  .qc-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+  .qc-total{font-size:11px;color:#7d8590;margin-top:4px;font-family:'JetBrains Mono',monospace}
+  .qc-bar-gauge{height:6px;background:#161b22;border-radius:3px;overflow:hidden;margin-top:4px}
+  .qc-bar-fill{height:100%;border-radius:3px;transition:width 0.3s}
+  .qc-log{font-size:9px;color:#484f58;margin-top:6px;max-height:80px;overflow-y:auto;font-family:'JetBrains Mono',monospace;line-height:1.4;border-top:1px solid #1c2333;padding-top:4px}
+
   .footer{text-align:center;color:#30363d;font-size:11px;margin-top:24px;font-family:'JetBrains Mono',monospace}
   .pos-block{background:#151b23;border:1px solid #2a313a;border-radius:6px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s}
   .pos-block.card-focus{background:#f5f0e8!important;border:2px solid #8b7355!important;border-radius:8px;margin:4px 0;padding:12px!important;box-shadow:0 0 12px rgba(139,115,85,0.25)}
@@ -194,7 +212,7 @@
 <body>
 <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 <div class="status-bar"><div><span class="pulse pulse-off" id="pl"></span><span id="st">Connecting...</span></div><div id="lu" class="mono">--:--</div></div>
-<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti"><span class="tl">Fetches</span><span class="tv" id="tQ">--</span></div><span class="sp">·</span><div class="ti"><span class="tl">API $</span><span class="tv" id="tCost">--</span></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
+<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative" id="tQWrap" onmouseenter="showQuota()" onmouseleave="hideQuotaDelay()"><span class="tl" style="cursor:pointer" onclick="pinQuota()">Fetches</span><span class="tv" id="tQ" style="cursor:pointer" onclick="pinQuota()">--</span><div class="qc" id="qcPop" onmouseenter="keepQuota()" onmouseleave="hideQuotaDelay()"></div></div><span class="sp">·</span><div class="ti"><span class="tl">API $</span><span class="tv" id="tCost">--</span></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
 <h1 id="hdr">📡 V9 Trading Dashboard</h1>
 <p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
@@ -701,7 +719,7 @@ function posNewsHtml(tk){
   h+='<div style="font-size:10px;margin-top:2px"><a href="'+e(icUrl)+'" target="_blank" class="pos-news-link" style="color:#58a6ff">more on Investing.com →</a></div>';
   return h+'</div>';
 }
-function rTimer(d){var t=d.timerState||d;function cd(s){if(s===undefined||s===null)return'<span class="dim">--</span>';if(s<=0)return'<span class="g">RUN</span>';var m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r;}$('t1m').innerHTML=cd(t.sec1m!==undefined?t.sec1m:d.sec1m);$('t5m').innerHTML=cd(t.sec5m!==undefined?t.sec5m:d.sec5m);$('t30m').innerHTML=cd(t.sec30m!==undefined?t.sec30m:d.sec30m);$('tQ').innerHTML=((d.quotaCount||t.quotaCount||t.fetchCount)||'--')+'<span class="dim" style="font-size:9px">/20K</span>';var cst=d.dashboardCost||'';var cum=d.dashboardCostCum||'';if(cst||cum){var disp=cum?'$'+parseFloat(cum).toFixed(2):cst;$('tCost').innerHTML='<span class="y">'+e(disp)+'</span>';var tip='Last: '+cst;if(d.dashboardTokens)tip+=' ('+d.dashboardTokens+')';if(cum)tip+='\nSession total: $'+parseFloat(cum).toFixed(4);$('tCost').title=tip;}else{$('tCost').innerHTML='<span class="dim">--</span>';}$('tPh').textContent=sL(d.phase)||'--';}
+function rTimer(d){var t=d.timerState||d;function cd(s){if(s===undefined||s===null)return'<span class="dim">--</span>';if(s<=0)return'<span class="g">RUN</span>';var m=Math.floor(s/60),r=s%60;return m+':'+(r<10?'0':'')+r;}$('t1m').innerHTML=cd(t.sec1m!==undefined?t.sec1m:d.sec1m);$('t5m').innerHTML=cd(t.sec5m!==undefined?t.sec5m:d.sec5m);$('t30m').innerHTML=cd(t.sec30m!==undefined?t.sec30m:d.sec30m);$('tQ').innerHTML=((d.quotaCount||t.quotaCount||t.fetchCount)||'--')+'<span class="dim" style="font-size:9px">/20K</span>';var cst=d.dashboardCost||'';var cum=d.dashboardCostCum||'';if(cst||cum){var disp=cum?'$'+parseFloat(cum).toFixed(2):cst;$('tCost').innerHTML='<span class="y">'+e(disp)+'</span>';var tip='Last: '+cst;if(d.dashboardTokens)tip+=' ('+d.dashboardTokens+')';if(cum)tip+='\nSession total: $'+parseFloat(cum).toFixed(4);$('tCost').title=tip;}else{$('tCost').innerHTML='<span class="dim">--</span>';}$('tPh').textContent=sL(d.phase)||'--';_quotaHourly=d.quotaHourly||[];_quotaLog=d.quotaLog||'';}
 var readUrls=(function(){try{var s=localStorage.getItem('v9_read_urls');return s?new Set(JSON.parse(s)):new Set();}catch(e){return new Set();}})();
 function saveReadUrls(){try{localStorage.setItem('v9_read_urls',JSON.stringify(Array.from(readUrls)));}catch(e){}}
 function initNewsRead(){
@@ -784,6 +802,63 @@ function unlockBook(){
 function setBookPin(){
   var np=prompt('Set new 4-digit PIN:');if(np&&/^\d{4}$/.test(np)){try{localStorage.setItem('v9_book_pin',np);alert('PIN updated');}catch(e){}}
 }
+
+// ═══ QUOTA POPUP ═══
+var _quotaHourly=[],_quotaLog='',_qcPinned=false,_qcTimer=null;
+var QC_CATS={bars:'#58a6ff',sectors:'#3fb950',earnings:'#d2a8ff',news:'#e3b341',ai:'#f97583',broker:'#79c0ff',pulse:'#56d364',dynamic:'#ffc107',other:'#484f58'};
+function showQuota(){clearTimeout(_qcTimer);renderQuotaPopup();$('qcPop').classList.add('open');}
+function keepQuota(){clearTimeout(_qcTimer);}
+function hideQuotaDelay(){if(_qcPinned)return;_qcTimer=setTimeout(function(){$('qcPop').classList.remove('open');},300);}
+function pinQuota(){_qcPinned=!_qcPinned;if(_qcPinned){renderQuotaPopup();$('qcPop').classList.add('open');}else{$('qcPop').classList.remove('open');}}
+function renderQuotaPopup(){
+  var el=$('qcPop');if(!el)return;
+  var d=_lastD||{};
+  var hourly=_quotaHourly;
+  var total=d.quotaCount||0;
+  var pct=Math.min(100,total/20000*100);
+  var barCol=pct>80?'#f85149':pct>60?'#e3b341':'#3fb950';
+  var h='<div class="qc-title"><span>Quota: '+total.toLocaleString()+' / 20K</span>';
+  h+=(_qcPinned?'<span class="qc-close" onclick="pinQuota()">&times;</span>':'');
+  h+='</div>';
+  h+='<div class="qc-bar-gauge"><div class="qc-bar-fill" style="width:'+pct+'%;background:'+barCol+'"></div></div>';
+  if(hourly&&hourly.length){
+    var maxH=1;for(var i=0;i<hourly.length;i++){if(hourly[i].total>maxH)maxH=hourly[i].total;}
+    h+='<div class="qc-chart">';
+    for(var i=0;i<hourly.length;i++){
+      var hr=hourly[i],cats=hr.cats||{};
+      h+='<div class="qc-col" title="'+e(hr.h)+': '+hr.total+' fetches">';
+      var catKeys=Object.keys(QC_CATS);
+      for(var ci=0;ci<catKeys.length;ci++){
+        var ck=catKeys[ci],cv=cats[ck]||0;
+        if(cv>0){var segH=Math.max(1,cv/maxH*55);h+='<div class="qc-seg" style="height:'+segH+'px;background:'+(QC_CATS[ck]||'#484f58')+'"></div>';}
+      }
+      if(hr.total===0)h+='<div class="qc-seg" style="height:1px;background:#1c2333"></div>';
+      h+='</div>';
+    }
+    h+='</div>';
+    h+='<div style="display:flex;justify-content:space-between;font-size:7px;color:#484f58;font-family:JetBrains Mono,monospace">';
+    if(hourly.length>0)h+='<span>'+e(hourly[0].h)+'</span><span>'+e(hourly[hourly.length-1].h)+'</span>';
+    h+='</div>';
+    h+='<div class="qc-legend">';
+    var catKeys2=Object.keys(QC_CATS);
+    for(var li=0;li<catKeys2.length;li++){
+      var ck2=catKeys2[li];
+      var catTotal=0;for(var hi=0;hi<hourly.length;hi++){catTotal+=(hourly[hi].cats||{})[ck2]||0;}
+      if(catTotal>0)h+='<span class="qc-leg"><span class="qc-dot" style="background:'+QC_CATS[ck2]+'"></span>'+ck2+' '+catTotal+'</span>';
+    }
+    h+='</div>';
+  } else {
+    h+='<div class="dim" style="font-size:10px;margin-top:6px">Hourly data available after scanner deploys with v90.10.4</div>';
+  }
+  if(_quotaLog){
+    var ll=_quotaLog.split('|').slice(-8);
+    h+='<div class="qc-log">';
+    for(var li2=ll.length-1;li2>=0;li2--)h+=e(ll[li2])+'<br>';
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
+
 function initSparkTips(){
   document.querySelectorAll('span[data-ttinit]').forEach(function(sp){
     var id=sp.getAttribute('data-ttinit');
