@@ -480,6 +480,13 @@ function uCard(tk, mode, opts) {
   var cf = parseFloat(q.conf) || 0;
   if (cf > 0) { var cfc = cf >= 28 ? 'g' : cf >= 24 ? 'y' : 'dim'; h += '<span class="uc-cf ' + cfc + '">\u26a1' + cf.toFixed(0) + '</span>'; }
 
+  // Fallback stats when setup/grade missing
+  if (!setupKey && q.quality) { 
+    var qCls = q.quality === 'A+' ? 'g' : q.quality === 'Solid' ? 'g' : q.quality === 'Playbook' ? 'y' : 'dim';
+    h += '<span class="' + qCls + '" style="font-size:10px;font-family:JetBrains Mono,monospace">' + e(q.quality) + '</span> '; 
+  }
+  if (q.rs) { var rsN2 = parseFloat(String(q.rs).replace('%','')); if (!isNaN(rsN2) && Math.abs(rsN2) > 0.5) { var rsCls2 = rsN2 > 1 ? 'g' : rsN2 < -1 ? 'r' : 'dim'; h += '<span class="' + rsCls2 + '" style="font-size:10px;font-family:JetBrains Mono,monospace">RS ' + (rsN2 > 0 ? '+' : '') + rsN2.toFixed(1) + '%</span> '; }}
+
   // Top badge (catalyst/gap/sector — just the most important one)
   var reasons = opts.reasons || [];
   if (reasons.length) {
