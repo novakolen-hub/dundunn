@@ -182,7 +182,7 @@
   .qc-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#161b22;border:1px solid #30363d;border-radius:4px;padding:2px 6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#e6edf3;white-space:nowrap;margin-bottom:2px;z-index:10}
   .qc-axis{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:8px;color:#484f58;margin-top:2px}
   .qc-total{font-family:'JetBrains Mono',monospace;font-size:11px;margin-top:6px;text-align:center}
-  .qc-log{font-family:'JetBrains Mono',monospace;font-size:9px;color:#6e7590;margin-top:6px;max-height:80px;overflow-y:auto;border-top:1px solid #21262d;padding-top:4px;line-height:1.5}
+  .qc-log{font-family:'JetBrains Mono',monospace;font-size:9px;color:#6e7590;margin-top:6px;max-height:160px;overflow-y:auto;border-top:1px solid #21262d;padding-top:4px;line-height:1.5}
   .ratio-row{padding:6px 0;border-bottom:1px solid #161b22}
   @media(max-width:480px){body{padding:8px;font-size:13px}.heatmap{grid-template-columns:repeat(3,1fr)}table{font-size:12px}.inst-grid{grid-template-columns:1fr !important}}
   .inst-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px}
@@ -752,7 +752,7 @@ function _renderQuotaChart(){
 
   // Recent log
   if(_quotaLog){
-    var lines=_quotaLog.split('|').slice(-6);
+    var lines=_quotaLog.split('|').slice(-15);
     h+='<div class="qc-log">';
     for(var li=lines.length-1;li>=0;li--)h+=e(lines[li])+'<br>';
     h+='</div>';
