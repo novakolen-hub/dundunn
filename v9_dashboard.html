@@ -414,7 +414,7 @@ function rTradeCandidates(d){
     var isHeld=false;
     if(_lastD&&_lastD.positions)for(var ph=0;ph<_lastD.positions.length;ph++){if((_lastD.positions[ph].ticker||'')===cd.ticker)isHeld=true;}
     var isDynamic=_lastD&&_lastD.dynamicTickers&&_lastD.dynamicTickers[cd.ticker];
-    h+='<span class="tc-tk">'+e(cd.ticker);
+    h+='<span class="tc-tk" onclick="event.stopPropagation()">'+tkLink(cd.ticker);
     if(isHeld)h+=' <span style="font-size:8px;color:#3fb950;vertical-align:middle">●</span>';
     if(isDynamic)h+=' <span style="font-size:8px;color:#ffc107;vertical-align:middle" title="Dynamic: '+e(isDynamic.source+' — '+isDynamic.reason)+'">\u26a1</span>';
     h+='</span>';
