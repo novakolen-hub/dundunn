@@ -175,7 +175,7 @@
   /* ── Quota chart popup ── */
   .qc{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 12px;width:320px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
   .qc-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6e7590;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px}
-  .qc-bars{display:flex;align-items:flex-end;gap:1px;height:60px}
+  .qc-bars{display:flex;align-items:flex-end;gap:2px;height:120px}
   .qc-bar{flex:1;border-radius:2px 2px 0 0;min-width:4px;position:relative;transition:opacity .15s}
   .qc-bar:hover{opacity:0.8}
   .qc-bar:hover .qc-tip{display:block}
@@ -728,9 +728,12 @@ function _renderQuotaChart(){
         running+=cv;
       }
     } else {
-      var col=d.v>1500?'#ef5350':d.v>800?'#ffc107':d.v>0?'#00c853':'#21262d';
-      h+='<div style="height:'+Math.max(pct,d.v>0?2:0)+'%;background:'+col+';border-radius:2px 2px 0 0"></div>';
-      if(d.v===0)h+='<div style="height:100%;background:#161b22;border-radius:2px;border:1px solid #1c2333;opacity:0.4"></div>';
+      if(d.v>0){
+        var col=d.v>1500?'#ef5350':d.v>800?'#ffc107':'#00c853';
+        h+='<div style="height:'+Math.max(pct,4)+'%;background:'+col+';border-radius:2px 2px 0 0"></div>';
+      } else {
+        h+='<div style="flex:1;background:#161b22;border-radius:2px;border:1px dashed #30363d"></div>';
+      }
     }
     // Tooltip with full breakdown
     var tipText=e(d.h)+': '+d.v+' total';
