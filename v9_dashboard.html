@@ -3091,15 +3091,12 @@ function renderPTModal(d){
   h+='<span class="mono '+(_chgM>0?'g':_chgM<0?'r':'dim')+'" style="font-size:13px">'+e(d.chg||'')+'</span>';
   if(_skM&&C_REGISTRY[_skM]){h+=setupTagHtml(d.setup,(d.gpSubMode||''),(d.gameplan||'C'),d.symbol);if(_psM.score)h+='<span class="uc-score">'+_psM.score.toFixed(0)+'</span>';}
   if(_grM&&_grM.grade!=='F')h+=gradeHtml(_grM);
-  var _rvM=parseFloat(d.rvol)||0;if(_rvM>0){var _rvcM=_rvM>=2?'g':_rvM>=1.5?'y':'dim';h+='<span class="'+_rvcM+' mono" style="font-size:11px">RV '+_rvM.toFixed(1)+'</span>';}
-  var _cfM=d.conf||0;if(_cfM>0){var _cfcM=_cfM>=28?'g':_cfM>=24?'y':'dim';h+='<span class="'+_cfcM+' mono" style="font-size:11px">\u26a1'+_cfM+'</span>';}
+
   h+='</div>';
 
   // TradingView chart embed
   h+='<div style="border-radius:6px;overflow:hidden;background:#0d1117;border:1px solid #1c2333"><iframe src="https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(d.symbol)+'&interval=5&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0b0e14&studies=&theme=dark&style=1&timezone=America%2FPhoenix&withdateranges=0&showpopupbutton=0&locale=en" style="width:100%;height:280px;border:none" loading="lazy"></iframe></div>';
 
-  // Setup-specific smart boxes
-  h+=renderSmartBoxes(d,_skM);
 
   // Sub-mode + sizing context  h+='</div>';
   // Sub-mode + sizing context
@@ -3247,102 +3244,79 @@ function renderPTModal(d){
 
 // Client-side scorecard checks (mirrors v90.9 evaluateScorecard Check 1)
 function buildScorecardHTML(d,setupKey,side){
-  var h='<div class="pt-label">Scorecard</div>';
-  var checks=[];
-  var subM=d.gpSubMode||'';var gpl=d.gameplan||'C';
   var reg=C_REGISTRY[setupKey]||{};
+  var subM=d.gpSubMode||'';var gpl=d.gameplan||'C';
+  var checks=[];
 
-  // Check 1: GP × Setup validity
+  // ── SETUP CRITERIA (setup-specific) ──
+  var setupChks=SETUP_CHECKS[setupKey]||SETUP_CHECKS_DEFAULT;
+  for(var sci=0;sci<setupChks.length;sci++){
+    var sc=setupChks[sci];
+    var result=sc.fn(d);
+    var val=sc.fmt(d);
+    checks.push({name:sc.k,val:result,tip:val,need:sc.need});
+  }
+
+  // ── MARKET CONTEXT (universal) ──
+  // GP × Setup
   var c1=_cSGP(setupKey,subM,gpl);
   if(side==='LONG'){
-    if(c1.ok&&!c1.caution)checks.push({name:'GP × Setup',val:'GREEN',cls:'chk-g',tip:c1.reason});
-    else if(c1.ok&&c1.caution)checks.push({name:'GP × Setup',val:'YELLOW',cls:'chk-y',tip:c1.reason});
-    else checks.push({name:'GP × Setup',val:'RED',cls:'chk-r',tip:c1.reason});
+    if(c1.ok&&!c1.caution)checks.push({name:'GP \u00d7 Setup',val:'GREEN',tip:c1.reason||'Allowed',need:'Setup valid for '+gpl});
+    else if(c1.ok&&c1.caution)checks.push({name:'GP \u00d7 Setup',val:'YELLOW',tip:c1.reason||'Caution',need:'Caution combo'});
+    else checks.push({name:'GP \u00d7 Setup',val:'RED',tip:c1.reason||'Blocked',need:'Not allowed in '+gpl});
   } else {
-    var sc=gpl==='D'?'GREEN':gpl==='C'?'YELLOW':'RED';
-    var scl=sc==='GREEN'?'chk-g':sc==='YELLOW'?'chk-y':'chk-r';
-    checks.push({name:'GP × Short',val:sc,cls:scl,tip:'GP-'+gpl+' for shorts'});
+    checks.push({name:'GP \u00d7 Short',val:gpl==='D'?'GREEN':gpl==='C'?'YELLOW':'RED',tip:'GP-'+gpl,need:'D for shorts'});
   }
 
-  // Check 2: RVOL
-  var rvN=parseFloat(d.rvol)||0;
-  var rvReq=reg.minRVOL||1;
-  if(rvN>=rvReq)checks.push({name:'RVOL ≥'+rvReq,val:'GREEN',cls:'chk-g',tip:rvN.toFixed(1)+'x'});
-  else if(rvN>=rvReq*0.7)checks.push({name:'RVOL ≥'+rvReq,val:'YELLOW',cls:'chk-y',tip:rvN.toFixed(1)+'x (close)'});
-  else checks.push({name:'RVOL ≥'+rvReq,val:'RED',cls:'chk-r',tip:rvN.toFixed(1)+'x (need '+rvReq+')'});
-
-  // Check 3: VWAP
-  var vd=d.vwapDist||0;
-  if(side==='LONG'){
-    if(vd>0)checks.push({name:'Above VWAP',val:'GREEN',cls:'chk-g',tip:'+'+vd.toFixed(2)+'%'});
-    else if(vd>-0.3)checks.push({name:'Above VWAP',val:'YELLOW',cls:'chk-y',tip:vd.toFixed(2)+'%'});
-    else checks.push({name:'Above VWAP',val:'RED',cls:'chk-r',tip:vd.toFixed(2)+'%'});
-  } else {
-    if(vd<0)checks.push({name:'Below VWAP',val:'GREEN',cls:'chk-g',tip:vd.toFixed(2)+'%'});
-    else if(vd<0.3)checks.push({name:'Below VWAP',val:'YELLOW',cls:'chk-y',tip:'+'+vd.toFixed(2)+'%'});
-    else checks.push({name:'Below VWAP',val:'RED',cls:'chk-r',tip:'+'+vd.toFixed(2)+'%'});
-  }
-
-  // Check 4: Confluence
-  var cf=d.conf||0;
-  if(cf>=24)checks.push({name:'Confluence',val:'GREEN',cls:'chk-g',tip:cf+'/38'});
-  else if(cf>=20)checks.push({name:'Confluence',val:'YELLOW',cls:'chk-y',tip:cf+'/38'});
-  else checks.push({name:'Confluence',val:'RED',cls:'chk-r',tip:cf+'/38'});
-
-  // Check 5: Session
+  // Session
   var phase=d.sessionPhase||'';
   var sess=reg.sessions||['OPEN','CORE'];
   var phMap={'PRE-MARKET':'PRE','OPEN':'OPEN','CORE':'CORE','POWER':'POWER','AFTER-HOURS':'AFTER'};
   var curSess=phMap[phase]||'CORE';
-  if(sess.indexOf(curSess)>=0||sess.indexOf(phase)>=0)checks.push({name:'Session',val:'GREEN',cls:'chk-g',tip:phase});
-  else checks.push({name:'Session',val:'YELLOW',cls:'chk-y',tip:phase+' (prefer '+sess.join('/')+')'});
+  checks.push({name:'Session',val:(sess.indexOf(curSess)>=0||sess.indexOf(phase)>=0)?'GREEN':'YELLOW',tip:phase||'--',need:sess.join('/')});
 
-  // Check 6: VIX Regime
+  // VIX
+  var vix=parseFloat(d.vix)||15;
   var vr=d.vixRegime||'Normal';
-  if(vr==='Low'||vr==='Normal')checks.push({name:'VIX Regime',val:'GREEN',cls:'chk-g',tip:d.vix+' ('+vr+')'});
-  else if(vr==='Elevated')checks.push({name:'VIX Regime',val:'YELLOW',cls:'chk-y',tip:d.vix+' ('+vr+')'});
-  else checks.push({name:'VIX Regime',val:'RED',cls:'chk-r',tip:d.vix+' ('+vr+')'});
+  checks.push({name:'VIX',val:(vr==='Low'||vr==='Normal')?'GREEN':vr==='Elevated'?'YELLOW':'RED',tip:vix.toFixed(1)+' ('+vr+')',need:'< 25'});
 
-  // Check 7: Sector correlation (skip if no sector mapping)
+  // Sector
   var sec=d.sector||'';
   if(sec){
-    var openCount=0,openTks=[];if(d.openTrades)for(var t=0;t<d.openTrades.length;t++){if(d.openTrades[t].sector===sec){openCount++;openTks.push(d.openTrades[t].symbol);}}
-    if(openCount===0)checks.push({name:'Sector Exp',val:'GREEN',cls:'chk-g',tip:'No overlap'});
-    else if(openCount===1)checks.push({name:'Sector Exp',val:'YELLOW',cls:'chk-y',tip:openCount+' in '+sec+' ('+openTks[0]+')'});
-    else checks.push({name:'Sector Exp',val:'RED',cls:'chk-r',tip:openCount+' in '+sec+' ('+openTks.join(', ')+')'});
+    var oc=0,ot=[];if(d.openTrades)for(var t=0;t<d.openTrades.length;t++){if(d.openTrades[t].sector===sec){oc++;ot.push(d.openTrades[t].symbol);}}
+    checks.push({name:'Sector',val:oc===0?'GREEN':oc===1?'YELLOW':'RED',tip:oc===0?'No overlap':oc+' in '+sec+' ('+ot.join(',')+')',need:'No concentration'});
   } else {
-    checks.push({name:'Sector Exp',val:'GREEN',cls:'chk-g',tip:'No sector mapped'});
+    checks.push({name:'Sector',val:'GREEN',tip:'No sector mapped',need:'--'});
   }
 
-  // Check 8: RSI
-  var rsiN=parseFloat(d.rsi)||50;
-  if(side==='LONG'){
-    if(rsiN>=35&&rsiN<=70)checks.push({name:'RSI Range',val:'GREEN',cls:'chk-g',tip:rsiN.toFixed(0)});
-    else if(rsiN>=25&&rsiN<=80)checks.push({name:'RSI Range',val:'YELLOW',cls:'chk-y',tip:rsiN.toFixed(0)});
-    else checks.push({name:'RSI Range',val:'RED',cls:'chk-r',tip:rsiN.toFixed(0)+' (extreme)'});
-  } else {
-    if(rsiN>=30&&rsiN<=65)checks.push({name:'RSI Range',val:'GREEN',cls:'chk-g',tip:rsiN.toFixed(0)});
-    else if(rsiN>=20&&rsiN<=75)checks.push({name:'RSI Range',val:'YELLOW',cls:'chk-y',tip:rsiN.toFixed(0)});
-    else checks.push({name:'RSI Range',val:'RED',cls:'chk-r',tip:rsiN.toFixed(0)+' (extreme)'});
-  }
-
-  // Render
+  // ── RENDER ──
   var gC=0,yC=0,rC=0;
-  h+='<div class="pt-checks">';
+  var h='<div style="margin-top:10px"><div style="font-size:11px;color:#7d8590;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">'+(reg.label||'Setup')+' Scorecard</div>';
+  h+='<div class="pt-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px">';
   for(var i=0;i<checks.length;i++){
     var ck=checks[i];
     if(ck.val==='GREEN')gC++;else if(ck.val==='YELLOW')yC++;else rC++;
-    h+='<div class="pt-chk" title="'+e(ck.tip)+'"><span class="chk-name">'+e(ck.name)+'</span><span class="chk-val '+ck.cls+'">'+ck.val+'</span></div>';
+    var bg=ck.val==='GREEN'?'#0d2818':ck.val==='RED'?'#1f1315':'#1a1a0f';
+    var bor=ck.val==='GREEN'?'#238636':ck.val==='RED'?'#da3633':'#9e6a03';
+    var icon=ck.val==='GREEN'?'\u2705':ck.val==='RED'?'\u274c':'\u26a0\ufe0f';
+    var vcls=ck.val==='GREEN'?'g':ck.val==='RED'?'r':'y';
+    h+='<div style="background:'+bg+';border-left:3px solid '+bor+';border-radius:4px;padding:6px 8px">';
+    h+='<div style="font-size:12px;font-weight:700" class="'+vcls+'">'+icon+' '+e(ck.tip)+'</div>';
+    h+='<div style="font-size:10px;color:#e6edf3;margin-top:1px">'+e(ck.name)+'</div>';
+    if(ck.need&&ck.need!=='--')h+='<div style="font-size:8px;color:#484f58;margin-top:1px">Need: '+e(ck.need)+'</div>';
+    h+='</div>';
   }
   h+='</div>';
+
   // Pass bar
   var total=checks.length;var passN=gC+yC;
-  var pctG=gC/total*100,pctY=yC/total*100;
-  var passCol=gC>=6?'#00c853':passN>=6?'#ffc107':'#ef5350';
-  h+='<div class="pt-pass-bar"><div class="pt-pass-fill" style="width:'+((gC+yC)/total*100).toFixed(0)+'%;background:'+passCol+'"></div></div>';
-  h+='<div style="text-align:center;font-family:\'JetBrains Mono\',monospace;font-size:12px;color:'+passCol+'">'+gC+' GREEN · '+yC+' YELLOW · '+rC+' RED — '+(passN>=6?'PASS':'FAIL')+' ('+passN+'/'+total+')</div>';
-  // Guidance engine
+  var passCol=gC>=total-1?'#00c853':passN>=total-2?'#ffc107':'#ef5350';
+  h+='<div style="margin-top:8px"><div style="height:6px;background:#161b22;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+((gC+yC)/total*100).toFixed(0)+'%;background:'+passCol+';border-radius:3px"></div></div>';
+  h+='<div style="text-align:center;font-family:\'JetBrains Mono\',monospace;font-size:11px;color:'+passCol+';margin-top:3px">'+gC+' GREEN \u00b7 '+yC+' YELLOW \u00b7 '+rC+' RED</div></div>';
+
+  // Guidance
   h+=buildGuidanceHTML(checks,setupKey,(_ptData&&_ptData.gpSizingAdj)||'');
+  h+='</div>';
   return h;
 }
 
