@@ -3142,19 +3142,93 @@ function ptNav(dir){
   _loadPTModal(_ptCandidateList[newIdx]);
 }
 
+
+// ═══ CLIENT-SIDE PRE-TRADE DATA (instant, no server round-trip) ═══
+function _buildClientPT(symbol){
+  var q=_tq[symbol]||{},op=_to[symbol]||{},d=_lastD||{};
+  var last=parseFloat(q.last)||0;
+  var vwap=parseFloat(q.vwap)||0;
+  var vwapDist=vwap>0?((last-vwap)/vwap*100):0;
+  var atr=parseFloat(q.atr)||0;
+  var setupKey=_matchSetupKey(q.setup);
+  var sector=_SEC[symbol]||'';
+  // Build openTrades from positions
+  var openTrades=[];
+  if(d.positions){for(var i=0;i<d.positions.length;i++){var p=d.positions[i];openTrades.push({symbol:p.ticker||'',sector:_SEC[p.ticker||'']||''});}}
+  // VIX from quotes
+  var vixQ=_tq['$VIX.X']||_tq['$VIX']||{};
+  var vix=parseFloat(vixQ.last)||parseFloat(d.vix)||15;
+  var vixRegime=vix<15?'Low':vix<=18?'Normal':vix<=25?'Elevated':'High';
+  // Sub-mode
+  var sm=d.gpSubMode||{};
+  var subM=(sm.subMode)?sm.subMode:'';
+  var sizAdj=(sm.sizingAdj)?sm.sizingAdj:'';
+  // Sizing
+  var sizing=d.gpSizing||null;
+  if(!sizing){
+    var SIZING_MAP={full:{baseLo:15000,baseHi:20000},standard:{baseLo:8000,baseHi:12000},reduce:{baseLo:6000,baseHi:9000},caution:{baseLo:6000,baseHi:9000},small:{baseLo:3000,baseHi:5000},bench:{baseLo:0,baseHi:0},inverse:{baseLo:8000,baseHi:12000}};
+    sizing=SIZING_MAP[sizAdj]||{baseLo:8000,baseHi:12000};
+  }
+  return {
+    symbol:symbol, last:last, chg:q.chg||'',
+    vwap:vwap, vwapDist:Math.round(vwapDist*100)/100,
+    rvol:q.rvol||'0', conf:parseFloat(q.conf)||0,
+    rsi:q.rsi||'50', atr:atr,
+    ema9:parseFloat(q.ema9)||0, ema20:parseFloat(q.ema20)||0,
+    orHigh:parseFloat(q.orHi)||0, orLow:parseFloat(q.orLo)||0,
+    ivr:op.ivr||0, iv:op.iv||0, expMove:op.expMove||'',beta:op.beta||'',
+    setup:q.setup||'', sector:sector,
+    gameplan:d.gpLetter||'C', gpSubMode:subM, gpSizingAdj:sizAdj,
+    gpSubModeDesc:'', gpSizing:sizing,
+    vix:vix, vixRegime:vixRegime,
+    openTrades:openTrades,
+    rs:q.rs||'', gap:q.gap||'',
+    _clientSide:true
+  };
+}
+
 function _loadPTModal(symbol){
   var ov=$('ptOverlay');ov.classList.add('open');
   var countTxt=_ptCandidateList.length>0?' <span class="dim" style="font-size:11px">'+(_ptCurrentIdx+1)+'/'+_ptCandidateList.length+'</span>':'';
-  $('ptTitle').innerHTML='<span style="cursor:pointer;padding:4px 8px;border-radius:4px;margin-right:6px" onclick="ptNav(-1)" title="Previous">◀</span>'+e(symbol)+countTxt+'<span style="cursor:pointer;padding:4px 8px;border-radius:4px;margin-left:6px" onclick="ptNav(1)" title="Next">▶</span>';
-  $('ptBody').innerHTML='<div class="pt-loading">Loading '+e(symbol)+'...</div>';
+  $('ptTitle').innerHTML='<span style="cursor:pointer;padding:4px 8px;border-radius:4px;margin-right:6px" onclick="ptNav(-1)" title="Previous">\u25c0</span>'+e(symbol)+countTxt+'<span style="cursor:pointer;padding:4px 8px;border-radius:4px;margin-left:6px" onclick="ptNav(1)" title="Next">\u25b6</span>';
+  // INSTANT: build from client data
+  var clientD=_buildClientPT(symbol);
+  _ptData=clientD;
+  renderPTModal(clientD);
+  // Add refresh button indicator
+  var body=$('ptBody');
+  if(body){
+    var refreshBar=document.createElement('div');
+    refreshBar.style.cssText='text-align:center;padding:4px;margin-top:-4px;margin-bottom:4px';
+    refreshBar.innerHTML='<span class="dim" style="font-size:9px">\u26a1 Instant from cache</span> <span style="font-size:10px;color:#58a6ff;cursor:pointer;border:1px solid #1f6feb;border-radius:4px;padding:2px 10px;margin-left:8px" onclick="_refreshPTFromServer(\''+symbol+'\')">\u21bb Refresh from server</span>';
+    body.insertBefore(refreshBar,body.firstChild);
+  }
+}
+
+function _refreshPTFromServer(symbol){
+  var body=$('ptBody');
+  if(body){var old=body.querySelector('[data-refresh-bar]');if(old)old.remove();}
+  // Show loading indicator
+  var loadBar=document.createElement('div');
+  loadBar.setAttribute('data-refresh-bar','1');
+  loadBar.style.cssText='text-align:center;padding:4px;background:#0d1a2e';
+  loadBar.innerHTML='<span class="dim" style="font-size:10px">Fetching live data...</span>';
+  if(body)body.insertBefore(loadBar,body.firstChild);
   fetch(EP+'?mode=pretrade&symbol='+encodeURIComponent(symbol)+'&t='+Date.now())
     .then(function(r){return r.json()})
     .then(function(d){
       _ptData=d;
       if(d.error){$('ptBody').innerHTML='<div class="pt-loading" style="color:#ef5350">'+e(d.error)+'</div>';return;}
       renderPTModal(d);
+      var body2=$('ptBody');
+      if(body2){
+        var bar=document.createElement('div');
+        bar.style.cssText='text-align:center;padding:4px;background:#0d2818';
+        bar.innerHTML='<span style="font-size:9px;color:#3fb950">\u2713 Live data loaded</span>';
+        body2.insertBefore(bar,body2.firstChild);
+      }
     })
-    .catch(function(err){$('ptBody').innerHTML='<div class="pt-loading" style="color:#ef5350">Error: '+e(err.message)+'</div>';});
+    .catch(function(err){if(loadBar)loadBar.innerHTML='<span class="r" style="font-size:10px">Error: '+e(err.message)+'</span>';});
 }
 
 function closePT(){$('ptOverlay').classList.remove('open');_ptData=null;}
