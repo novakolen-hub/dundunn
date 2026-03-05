@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V9 Chart Wall</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0b0e14;color:#c4cad4;font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px}
+  .hdr{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 8px;flex-wrap:wrap;gap:6px}
+  .hdr-title{color:#58a6ff;font-size:15px;font-weight:700}
+  .hdr-controls{display:flex;gap:6px;align-items:center}
+  .hdr-btn{padding:3px 10px;border-radius:4px;border:1px solid #30363d;background:#161b22;color:#c4cad4;cursor:pointer;font-size:10px;font-family:inherit}
+  .hdr-btn:hover{background:#1f2937;border-color:#58a6ff}
+  .hdr-btn.active{background:#0d2818;border-color:#238636;color:#3fb950}
+  .hdr-input{padding:3px 8px;border-radius:4px;border:1px solid #30363d;background:#0d1117;color:#e6edf3;font-family:inherit;font-size:11px;width:80px}
+  .wall{display:grid;gap:4px}
+  .wall.cols-2{grid-template-columns:repeat(2,1fr)}
+  .wall.cols-3{grid-template-columns:repeat(3,1fr)}
+  .wall.cols-4{grid-template-columns:repeat(4,1fr)}
+  .wall.cols-6{grid-template-columns:repeat(6,1fr)}
+  .cc{background:#0f1318;border:1px solid #1c2333;border-radius:6px;overflow:hidden}
+  .cc:hover{border-color:#30363d}
+  .cc-hdr{padding:4px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1c2333;font-size:11px}
+  .cc-tk{font-weight:700;color:#e6edf3;font-size:12px}
+  .cc-setup{font-size:9px;padding:1px 6px;border-radius:3px;font-weight:700}
+  .cc-setup-ok{background:#0d2818;color:#3fb950;border:1px solid #238636}
+  .cc-setup-warn{background:#1a1a0f;color:#e3b341;border:1px solid #9e6a03}
+  .cc-price{color:#7d8590;font-size:11px}
+  .g{color:#3fb950}.r{color:#f85149}.y{color:#e3b341}.dim{color:#7d8590}
+  .cc-chart{width:100%;background:#0d1117}
+  .cc-stats{padding:3px 8px;display:flex;gap:8px;font-size:9px;color:#7d8590;border-top:1px solid #1c2333}
+  .cc-remove{cursor:pointer;color:#484f58;font-size:10px;padding:0 4px}
+  .cc-remove:hover{color:#f85149}
+  .status{padding:4px 8px;font-size:10px;color:#484f58;text-align:center}
+  .empty{display:flex;align-items:center;justify-content:center;height:200px;color:#30363d;font-size:13px}
+</style>
+</head><body>
+
+<div class="hdr">
+  <span class="hdr-title">V9 Chart Wall</span>
+  <div class="hdr-controls">
+    <input class="hdr-input" id="addTicker" placeholder="Add ticker" onkeydown="if(event.key==='Enter')addToWall()">
+    <span class="hdr-btn" onclick="addToWall()">+ Add</span>
+    <span class="hdr-btn" onclick="loadFromScanner()">Load Trade Candidates</span>
+    <span class="hdr-btn" onclick="loadInPlay()">Load In Play</span>
+    <span class="hdr-btn" onclick="clearWall()">Clear</span>
+    <span style="color:#30363d">|</span>
+    <span class="hdr-btn" id="btn2" onclick="setCols(2)">2</span>
+    <span class="hdr-btn active" id="btn3" onclick="setCols(3)">3</span>
+    <span class="hdr-btn" id="btn4" onclick="setCols(4)">4</span>
+    <span class="hdr-btn" id="btn6" onclick="setCols(6)">6</span>
+  </div>
+</div>
+
+<div class="wall cols-3" id="wall">
+  <div class="empty" id="emptyMsg">Click "Load Trade Candidates" or add tickers to start</div>
+</div>
+<div class="status" id="status">Polling scanner...</div>
+
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+var EP='https://script.google.com/macros/s/AKfycbyA45O4vPIEOTdOW601PmdkdnOpTDSzu44qaSPq-PDBhElHlzThmyqdvD8MO7lZqmLq/exec';
+var _data={},_tq={},_spark={},_charts={},_wallTickers=[],_cols=3,_inPlay=[];
+
+var SETUP_IND={
+  'VWAP-Hold':     {emas:[9,20],vwap:true,vol:false},
+  'OR-Break':      {emas:[],vwap:true,vol:true},
+  'Pullback-EMA':  {emas:[9,20,50],vwap:false,vol:false},
+  'Momentum':      {emas:[9],vwap:true,vol:false},
+  'Failed-BD':     {emas:[],vwap:true,vol:true},
+  'BigDog':        {emas:[9,20],vwap:true,vol:true},
+  'BigDogBounce':  {emas:[],vwap:true,vol:true},
+  'GapGo':         {emas:[],vwap:true,vol:true},
+  'DailyBreakout': {emas:[20],vwap:true,vol:true},
+  'OpeningDrive':  {emas:[],vwap:true,vol:true},
+  'SecondDay':     {emas:[9],vwap:true,vol:true},
+  'ReturnPullback':{emas:[9,20],vwap:true,vol:false},
+  'Scalping':      {emas:[],vwap:true,vol:true},
+  '_default':      {emas:[],vwap:true,vol:true}
+};
+var EMA_COLORS={9:'#3fb950',20:'#58a6ff',50:'#f85149'};
+
+function matchSetup(s){
+  if(!s)return'';
+  if(s.indexOf('|')>=0)s=s.split('|')[0];
+  var u=s.toUpperCase();
+  if(u.indexOf('VWAP')>=0)return'VWAP-Hold';
+  if(u.indexOf('OR-BREAK')>=0||u.indexOf('OR BREAK')>=0)return'OR-Break';
+  if(u.indexOf('PULLBACK')>=0&&u.indexOf('RETURN')<0)return'Pullback-EMA';
+  if(u.indexOf('RETURN')>=0)return'ReturnPullback';
+  if(u.indexOf('MOMENTUM')>=0)return'Momentum';
+  if(u.indexOf('FAILED')>=0)return'Failed-BD';
+  if(u.indexOf('BOUNCE')>=0)return'BigDogBounce';
+  if(u.indexOf('BIG DOG')>=0||u.indexOf('BIGDOG')>=0)return'BigDog';
+  if(u.indexOf('GAP')>=0)return'GapGo';
+  if(u.indexOf('DAILY')>=0||u.indexOf('BREAKOUT')>=0)return'DailyBreakout';
+  if(u.indexOf('OPEN')>=0&&u.indexOf('DRIVE')>=0)return'OpeningDrive';
+  if(u.indexOf('SECOND')>=0)return'SecondDay';
+  if(u.indexOf('SCALP')>=0)return'Scalping';
+  return'';
+}
+
+function calcEMA(prices,period){
+  var k=2/(period+1),ema=[prices[0]],prev=prices[0];
+  for(var i=1;i<prices.length;i++){
+    if(prices[i]===null){ema.push(null);continue;}
+    prev=prices[i]*k+prev*(1-k);
+    ema.push(prev);
+  }
+  return ema;
+}
+
+function calcVWAP(prices){
+  // Approximate VWAP from prices (no volume — use equal-weighted)
+  var cum=0,cnt=0,vwap=[];
+  for(var i=0;i<prices.length;i++){
+    if(prices[i]!==null&&prices[i]>0){cum+=prices[i];cnt++;vwap.push(cum/cnt);}
+    else vwap.push(null);
+  }
+  return vwap;
+}
+
+function buildChart(containerId,tk){
+  var el=document.getElementById(containerId);
+  if(!el)return;
+  el.innerHTML='';
+  var sparkPts=_spark[tk];
+  if(!sparkPts||!sparkPts.length){
+    el.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#30363d;font-size:10px">No data yet</div>';
+    return;
+  }
+
+  var q=_tq[tk]||{};
+  var setup=matchSetup(q.setup||'');
+  var cfg=SETUP_IND[setup]||SETUP_IND['_default'];
+
+  // Build time series — 5min intervals starting 7:30 AM AZ today
+  var now=new Date();
+  var azOffset=-7*3600000;
+  var azMid=new Date(now.getTime()+azOffset);
+  var todayStart=new Date(azMid.getFullYear(),azMid.getMonth(),azMid.getDate()).getTime()-azOffset;
+  var startMin=7*60+30;
+
+  var validPts=[];
+  for(var i=0;i<sparkPts.length;i++){
+    if(sparkPts[i]!==null&&sparkPts[i]>0){
+      var t=Math.floor((todayStart+(startMin+i*5)*60000)/1000);
+      validPts.push({time:t,value:sparkPts[i],idx:i});
+    }
+  }
+  if(validPts.length<2){
+    el.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#30363d;font-size:10px">Insufficient data</div>';
+    return;
+  }
+
+  var chartH=el.parentElement.querySelector('.cc-hdr')?180:200;
+  var chart=LightweightCharts.createChart(el,{
+    width:el.clientWidth,height:chartH,
+    layout:{background:{type:'solid',color:'#0d1117'},textColor:'#484f58',fontSize:9},
+    grid:{vertLines:{color:'#161b22'},horzLines:{color:'#161b22'}},
+    crosshair:{mode:0},
+    rightPriceScale:{borderColor:'#1c2333',scaleMargins:{top:0.1,bottom:0.1}},
+    timeScale:{borderColor:'#1c2333',timeVisible:true,secondsVisible:false}
+  });
+
+  // Price line
+  var first=validPts[0].value,last=validPts[validPts.length-1].value;
+  var lineColor=last>=first?'#3fb950':'#f85149';
+  var priceSeries=chart.addAreaSeries({
+    topColor:lineColor+'30',bottomColor:lineColor+'05',
+    lineColor:lineColor,lineWidth:2,
+    crosshairMarkerVisible:true
+  });
+  priceSeries.setData(validPts.map(function(p){return{time:p.time,value:p.value};}));
+
+  // VWAP
+  if(cfg.vwap){
+    var vwapData=calcVWAP(sparkPts);
+    var vwapPts=[];
+    for(var i=0;i<sparkPts.length;i++){
+      if(vwapData[i]!==null&&sparkPts[i]!==null){
+        var t2=Math.floor((todayStart+(startMin+i*5)*60000)/1000);
+        vwapPts.push({time:t2,value:vwapData[i]});
+      }
+    }
+    if(vwapPts.length>1){
+      var vwapS=chart.addLineSeries({color:'#e3b341',lineWidth:2,lineStyle:0,title:'VWAP',crosshairMarkerVisible:false});
+      vwapS.setData(vwapPts);
+    }
+  }
+
+  // EMAs
+  for(var ei=0;ei<cfg.emas.length;ei++){
+    var period=cfg.emas[ei];
+    var emaData=calcEMA(sparkPts,period);
+    var emaPts=[];
+    for(var i=0;i<sparkPts.length;i++){
+      if(emaData[i]!==null&&sparkPts[i]!==null){
+        var t3=Math.floor((todayStart+(startMin+i*5)*60000)/1000);
+        emaPts.push({time:t3,value:emaData[i]});
+      }
+    }
+    if(emaPts.length>1){
+      var emaS=chart.addLineSeries({color:EMA_COLORS[period]||'#7d8590',lineWidth:1,title:'EMA'+period,crosshairMarkerVisible:false});
+      emaS.setData(emaPts);
+    }
+  }
+
+  chart.timeScale().fitContent();
+  _charts[tk]=chart;
+
+  new ResizeObserver(function(){chart.applyOptions({width:el.clientWidth});}).observe(el);
+}
+
+function renderWall(){
+  var wall=document.getElementById('wall');
+  var empty=document.getElementById('emptyMsg');
+  if(!_wallTickers.length){
+    wall.innerHTML='<div class="empty" id="emptyMsg">Click "Load Trade Candidates" or add tickers</div>';
+    return;
+  }
+  if(empty)empty.remove();
+  
+  // Remove cards for tickers no longer in the list
+  var existing=wall.querySelectorAll('.cc');
+  var existingTks=new Set();
+  existing.forEach(function(el){existingTks.add(el.dataset.tk);});
+  
+  _wallTickers.forEach(function(tk){
+    if(existingTks.has(tk))return; // already rendered
+    var q=_tq[tk]||{};
+    var setup=matchSetup(q.setup||'');
+    var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
+    var chgCls=chgN>0?'g':chgN<0?'r':'dim';
+    var setupCls=setup?'cc-setup-ok':'cc-setup-warn';
+    
+    var card=document.createElement('div');
+    card.className='cc';
+    card.dataset.tk=tk;
+    card.innerHTML='<div class="cc-hdr">'
+      +'<span><span class="cc-tk">'+tk+'</span>'
+      +(setup?' <span class="cc-setup '+setupCls+'">'+setup+'</span>':'')
+      +'</span>'
+      +'<span><span class="cc-price" id="wp_'+tk+'">'+(q.last||'--')+' <span class="'+chgCls+'">'+(q.chg||'')+'</span></span>'
+      +' <span class="cc-remove" onclick="removeFromWall(\''+tk+'\')">&times;</span></span>'
+      +'</div>'
+      +'<div class="cc-chart" id="wc_'+tk+'" style="height:180px"></div>';
+    wall.appendChild(card);
+    buildChart('wc_'+tk,tk);
+  });
+}
+
+function updatePrices(){
+  _wallTickers.forEach(function(tk){
+    var q=_tq[tk]||{};
+    var el=document.getElementById('wp_'+tk);
+    if(el){
+      var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
+      var chgCls=chgN>0?'g':chgN<0?'r':'dim';
+      el.innerHTML=(q.last||'--')+' <span class="'+chgCls+'">'+(q.chg||'')+'</span>';
+    }
+    // Rebuild chart with new data
+    if(_charts[tk]){
+      try{_charts[tk].remove();}catch(e){}
+      delete _charts[tk];
+    }
+    buildChart('wc_'+tk,tk);
+  });
+}
+
+function addToWall(){
+  var input=document.getElementById('addTicker');
+  var tk=input.value.trim().toUpperCase();
+  if(!tk)return;
+  if(_wallTickers.indexOf(tk)<0)_wallTickers.push(tk);
+  input.value='';
+  renderWall();
+  saveWall();
+}
+
+function removeFromWall(tk){
+  _wallTickers=_wallTickers.filter(function(t){return t!==tk;});
+  var card=document.querySelector('.cc[data-tk="'+tk+'"]');
+  if(card)card.remove();
+  if(_charts[tk]){try{_charts[tk].remove();}catch(e){} delete _charts[tk];}
+  if(!_wallTickers.length)document.getElementById('wall').innerHTML='<div class="empty">Click "Load Trade Candidates" or add tickers</div>';
+  saveWall();
+}
+
+function clearWall(){
+  _wallTickers=[];
+  Object.keys(_charts).forEach(function(k){try{_charts[k].remove();}catch(e){}});
+  _charts={};
+  document.getElementById('wall').innerHTML='<div class="empty">Click "Load Trade Candidates" or add tickers</div>';
+  saveWall();
+}
+
+function loadFromScanner(){
+  // Load top Trade Candidates by grade + confluence
+  var tks=Object.keys(_tq);
+  var cands=[];
+  for(var i=0;i<tks.length;i++){
+    var tk=tks[i],q=_tq[tk];
+    if(!q||!q.setup||!q.last||tk.charAt(0)==='$')continue;
+    var setup=matchSetup(q.setup);
+    if(!setup)continue;
+    cands.push({tk:tk,conf:parseFloat(q.conf)||0});
+  }
+  cands.sort(function(a,b){return b.conf-a.conf;});
+  _wallTickers=cands.slice(0,12).map(function(c){return c.tk;});
+  renderWall();
+  saveWall();
+}
+
+function loadInPlay(){
+  if(!_inPlay.length){document.getElementById('status').textContent='No In Play data yet';return;}
+  _wallTickers=_inPlay.slice(0,12).map(function(it){return it.symbol;});
+  renderWall();
+  saveWall();
+}
+
+function setCols(n){
+  _cols=n;
+  var wall=document.getElementById('wall');
+  wall.className='wall cols-'+n;
+  [2,3,4,6].forEach(function(c){
+    var btn=document.getElementById('btn'+c);
+    if(btn)btn.className='hdr-btn'+(c===n?' active':'');
+  });
+  // Resize charts
+  Object.keys(_charts).forEach(function(tk){
+    try{_charts[tk].applyOptions({width:document.getElementById('wc_'+tk).clientWidth});}catch(e){}
+  });
+  try{localStorage.setItem('v9_wall_cols',n);}catch(e){}
+}
+
+function saveWall(){try{localStorage.setItem('v9_wall_tickers',JSON.stringify(_wallTickers));}catch(e){}}
+function loadWall(){
+  try{
+    var s=localStorage.getItem('v9_wall_tickers');
+    if(s)_wallTickers=JSON.parse(s);
+    var c=localStorage.getItem('v9_wall_cols');
+    if(c)setCols(parseInt(c));
+  }catch(e){}
+}
+
+function poll(){
+  fetch(EP+'?mode=dashboard&t='+Date.now())
+    .then(function(r){return r.json()})
+    .then(function(d){
+      _data=d;
+      if(d.tickerQuotes)_tq=d.tickerQuotes;
+      if(d.sparkData)_spark=d.sparkData;
+      if(d.inPlayToday)_inPlay=d.inPlayToday;
+      document.getElementById('status').textContent='Last update: '+new Date().toLocaleTimeString()+' · '+Object.keys(_tq).length+' tickers · GP-'+(d.gpLetter||'C');
+      if(_wallTickers.length)updatePrices();
+      else renderWall();
+    })
+    .catch(function(err){
+      document.getElementById('status').textContent='Error: '+err.message;
+    });
+}
+
+// Init
+loadWall();
+poll();
+setInterval(poll,60000);
+</script>
+</body></html>
