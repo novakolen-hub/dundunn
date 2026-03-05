@@ -63,7 +63,7 @@
   .q-aplus{color:#56d364}.q-solid{color:#58a6ff}.q-playbook{color:#e3b341}.q-watch{color:#7d8590}.q-skip{color:#484f58}
 
   /* ── Quota Popup ── */
-  .qc{position:absolute;top:100%;left:0;right:0;background:#0f1318;border:1px solid #30363d;border-radius:8px;padding:12px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:none;max-width:400px}
+  .qc{position:absolute;top:100%;left:-40px;background:#0f1318;border:1px solid #30363d;border-radius:8px;padding:12px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:none;width:420px}
   .qc.open{display:block}
   .qc-title{color:#e6edf3;font-size:12px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
   .qc-close{cursor:pointer;color:#7d8590;font-size:16px;padding:2px 6px}
@@ -817,38 +817,51 @@ function renderQuotaPopup(){
   var total=d.quotaCount||0;
   var pct=Math.min(100,total/20000*100);
   var barCol=pct>80?'#f85149':pct>60?'#e3b341':'#3fb950';
-  var h='<div class="qc-title"><span>Quota: '+total.toLocaleString()+' / 20K</span>';
+  var h='<div class="qc-title"><span>Quota: '+total.toLocaleString()+' / 20,000</span>';
   h+=(_qcPinned?'<span class="qc-close" onclick="pinQuota()">&times;</span>':'');
   h+='</div>';
   h+='<div class="qc-bar-gauge"><div class="qc-bar-fill" style="width:'+pct+'%;background:'+barCol+'"></div></div>';
   if(hourly&&hourly.length){
     var maxH=1;for(var i=0;i<hourly.length;i++){if(hourly[i].total>maxH)maxH=hourly[i].total;}
-    h+='<div class="qc-chart">';
+    var chartH=120;
+    h+='<div style="display:flex;align-items:flex-end;gap:1px;height:'+chartH+'px;margin:8px 0 2px 0;padding:0 2px">';
     for(var i=0;i<hourly.length;i++){
-      var hr=hourly[i],cats=hr.cats||{};
-      h+='<div class="qc-col" title="'+e(hr.h)+': '+hr.total+' fetches">';
+      var hr=hourly[i],cats=hr.cats||{},barH=hr.total>0?Math.max(4,hr.total/maxH*chartH):2;
+      h+='<div style="flex:1;display:flex;flex-direction:column-reverse;height:'+chartH+'px;justify-content:flex-start;position:relative" title="'+e(hr.h)+'\n'+hr.total+' fetches';
       var catKeys=Object.keys(QC_CATS);
-      for(var ci=0;ci<catKeys.length;ci++){
-        var ck=catKeys[ci],cv=cats[ck]||0;
-        if(cv>0){var segH=Math.max(1,cv/maxH*55);h+='<div class="qc-seg" style="height:'+segH+'px;background:'+(QC_CATS[ck]||'#484f58')+'"></div>';}
+      for(var ci=0;ci<catKeys.length;ci++){var ck=catKeys[ci],cv=cats[ck]||0;if(cv>0)h+='\n'+ck+': '+cv;}
+      h+='">';
+      if(hr.total===0){
+        h+='<div style="height:2px;background:#1c2333;border-radius:1px"></div>';
+      } else {
+        for(var ci2=0;ci2<catKeys.length;ci2++){
+          var ck2=catKeys[ci2],cv2=cats[ck2]||0;
+          if(cv2>0){var segH=Math.max(1,cv2/maxH*chartH);h+='<div style="height:'+segH.toFixed(1)+'px;background:'+QC_CATS[ck2]+';min-width:100%;border-radius:1px 1px 0 0"></div>';}
+        }
       }
-      if(hr.total===0)h+='<div class="qc-seg" style="height:1px;background:#1c2333"></div>';
       h+='</div>';
     }
     h+='</div>';
-    h+='<div style="display:flex;justify-content:space-between;font-size:7px;color:#484f58;font-family:JetBrains Mono,monospace">';
-    if(hourly.length>0)h+='<span>'+e(hourly[0].h)+'</span><span>'+e(hourly[hourly.length-1].h)+'</span>';
+    // Hour labels — show every 3rd to avoid crowding
+    h+='<div style="display:flex;gap:1px;padding:0 2px">';
+    for(var i=0;i<hourly.length;i++){
+      var showLbl=(i%3===0)||i===hourly.length-1;
+      h+='<div style="flex:1;text-align:center;font-size:6px;color:#484f58;font-family:JetBrains Mono,monospace;overflow:hidden">'+(showLbl?e(hourly[i].h):'')+'</div>';
+    }
     h+='</div>';
+    // Legend
     h+='<div class="qc-legend">';
-    var catKeys2=Object.keys(QC_CATS);
-    for(var li=0;li<catKeys2.length;li++){
-      var ck2=catKeys2[li];
-      var catTotal=0;for(var hi=0;hi<hourly.length;hi++){catTotal+=(hourly[hi].cats||{})[ck2]||0;}
-      if(catTotal>0)h+='<span class="qc-leg"><span class="qc-dot" style="background:'+QC_CATS[ck2]+'"></span>'+ck2+' '+catTotal+'</span>';
+    var catKeys3=Object.keys(QC_CATS);
+    for(var li=0;li<catKeys3.length;li++){
+      var ck3=catKeys3[li],catTotal=0;
+      for(var hi=0;hi<hourly.length;hi++){catTotal+=(hourly[hi].cats||{})[ck3]||0;}
+      if(catTotal>0)h+='<span class="qc-leg"><span class="qc-dot" style="background:'+QC_CATS[ck3]+'"></span>'+ck3+' '+catTotal+'</span>';
     }
     h+='</div>';
   } else {
-    h+='<div class="dim" style="font-size:10px;margin-top:6px">Hourly data available after scanner deploys with v90.10.4</div>';
+    h+='<div class="dim" style="font-size:10px;margin-top:8px">Waiting for hourly category data from scanner...</div>';
+    // Show fallback with just the log
+    h+='<div class="qc-bar-gauge" style="margin-top:6px"><div class="qc-bar-fill" style="width:'+pct+'%;background:'+barCol+'"></div></div>';
   }
   if(_quotaLog){
     var ll=_quotaLog.split('|').slice(-8);
