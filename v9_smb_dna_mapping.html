@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V9 ↔ SMB DNA Mapping — Align · Adapt · Leave</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--dim:#8b949e;--accent:#58a6ff;
+--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#f0883e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;padding:20px;max-width:1100px;margin:0 auto}
+h1{color:var(--accent);font-size:1.8em;border-bottom:2px solid var(--accent);padding-bottom:10px;margin-bottom:8px}
+h2{color:var(--purple);font-size:1.35em;margin:28px 0 12px;border-left:4px solid var(--purple);padding-left:12px}
+h3{color:var(--orange);font-size:1.1em;margin:18px 0 8px}
+.subtitle{color:var(--dim);font-size:0.85em;margin-bottom:24px}
+.section{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px 20px;margin:16px 0}
+.verdict{display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.8em;font-weight:600;margin-right:6px}
+.v-align{background:rgba(63,185,80,0.15);color:var(--green);border:1px solid rgba(63,185,80,0.3)}
+.v-adapt{background:rgba(210,153,34,0.15);color:var(--yellow);border:1px solid rgba(210,153,34,0.3)}
+.v-leave{background:rgba(248,81,73,0.15);color:var(--red);border:1px solid rgba(248,81,73,0.3)}
+.v-adopt{background:rgba(188,140,255,0.15);color:var(--purple);border:1px solid rgba(188,140,255,0.3)}
+p{margin:6px 0}
+.highlight{background:rgba(88,166,255,0.08);border-left:3px solid var(--accent);padding:10px 14px;margin:10px 0;border-radius:0 6px 6px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+.col{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:6px;padding:14px}
+.col h4{font-size:0.95em;margin-bottom:6px}
+.smb{color:var(--orange)}
+.v9{color:var(--accent)}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:0.75em;margin:2px}
+.t-smb{background:rgba(240,136,62,0.15);color:var(--orange)}
+.t-v9{background:rgba(88,166,255,0.15);color:var(--accent)}
+.t-new{background:rgba(188,140,255,0.15);color:var(--purple)}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:0.88em}
+th{background:rgba(88,166,255,0.1);color:var(--accent);text-align:left;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:7px 10px;border-bottom:1px solid var(--border)}
+tr:hover{background:rgba(255,255,255,0.02)}
+.toc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:16px 0}
+.toc a{color:var(--accent);text-decoration:none;display:block;padding:3px 0}
+.toc a:hover{text-decoration:underline}
+.takeaway{background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.2);border-radius:8px;padding:14px 18px;margin:14px 0}
+.takeaway::before{content:'💡 ';font-size:1.1em}
+</style>
+</head>
+<body>
+
+<h1>V9 ↔ SMB DNA Mapping</h1>
+<p class="subtitle">Source: 38 SMB DNA transcripts (Modules 1–17) cross-referenced against V9 system spec, scanner v91, dashboard v11.17.9, and SMB Playbook Integration Session notes. Built from source material — not assumptions.</p>
+
+<div class="toc">
+<strong>Contents</strong>
+<a href="#exec">1. Executive Summary</a>
+<a href="#philosophy">2. Philosophy &amp; Mindset — Where You Already Align</a>
+<a href="#stock">3. Stock Selection &amp; Game Planning</a>
+<a href="#setups">4. Setup-by-Setup Mapping</a>
+<a href="#risk">5. Risk Management</a>
+<a href="#tape">6. Tape Reading &amp; Price Action</a>
+<a href="#exits">7. Exit System ("Reasons to Sell")</a>
+<a href="#review">8. Review &amp; Playbook Process</a>
+<a href="#market">9. Market-Level / Macro Catalyst Framework</a>
+<a href="#adopt">10. Concrete Adopt / Adapt / Leave Recommendations</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="exec">1. Executive Summary</h2>
+<div class="section">
+<p>The SMB DNA program is remarkably compatible with V9. The philosophical core — systematic rules, breadth-driven gameplan, playbook-based trading, structured review — maps almost 1:1. The gaps are tactical, not structural. Here's the high-level picture:</p>
+
+<div class="grid2">
+<div class="col">
+<h4 style="color:var(--green)">✅ Already Aligned (Keep Yours)</h4>
+<p>Breadth-driven gameplan (SMB doesn't have this — it's your edge). Confluence scoring. Systematic risk guardrails. Dashboard-first workflow. VWAP as daily demarcation line. EMA stack logic. RVOL as qualification filter. Multi-timeframe analysis. "The System Protects You" = SMB's "One Good Trade" philosophy.</p>
+</div>
+<div class="col">
+<h4 style="color:var(--yellow)">🔧 Adapt (Refine with SMB Insights)</h4>
+<p>Exit system needs "Reasons to Sell" framework. Intraday levels (S1/S2/R1/R2) methodology for game plan sheet. Second-day follow-up as formal setup type. Earnings season playbook intensification. Pre-market futures analysis for bias. Feed-the-downgrade/upgrade as a distinct pattern.</p>
+</div>
+</div>
+<div class="grid2" style="margin-top:10px">
+<div class="col">
+<h4 style="color:var(--purple)">🆕 Adopt (New from SMB)</h4>
+<p>Formal anti-playbook tracking. "Stock database" concept (how did this ticker trade last earnings?). Trend line decision framework (accelerated vs. shallow). Time clock as exit signal. Sector pattern repetition during earnings season. Scripted entries for secondary watchlist names.</p>
+</div>
+<div class="col">
+<h4 style="color:var(--red)">❌ Leave (Doesn't Fit V9)</h4>
+<p>SMB's prop desk communication model (headset all day). Playbook template as-is (your TradesViz + EOD workflow is more complete). Their "hit the bid / pay the offer" exit urgency without tape confirm (you use tape reading for better fills). Their fixed S1/S2/R1/R2 framework as primary — V9's VWAP+EMA+OR levels are more dynamic.</p>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="philosophy">2. Philosophy & Mindset</h2>
+<div class="section">
+<span class="verdict v-align">ALIGNED</span>
+<p>The DNA between V9 and SMB is deeply compatible. Here's why:</p>
+
+<h3>SMB's "One Good Trade" = V9's "The System Protects You"</h3>
+<p>SMB's seven fundamentals: <strong>Preparation, Hard Work, Patience, Detailed Trading Plan, Discipline, Communication, Replay</strong>. These map directly to your system:</p>
+
+<table>
+<tr><th>SMB Fundamental</th><th>V9 Equivalent</th><th>Status</th></tr>
+<tr><td>Proper Preparation</td><td>Pre-market UMU + game plan + Arete integration</td><td><span class="verdict v-align">ALIGNED</span></td></tr>
+<tr><td>Hard Work (watch the tape)</td><td>Tape reading module, OBS recording, Level 2 observation</td><td><span class="verdict v-adapt">ADAPT</span> — formalize screen recording</td></tr>
+<tr><td>Patience (fight for price)</td><td>Confluence scoring prevents impulsive entries</td><td><span class="verdict v-align">ALIGNED</span></td></tr>
+<tr><td>Detailed Trading Plan</td><td>Pre-trade scorecard, setup registry, planned stops/targets</td><td><span class="verdict v-align">ALIGNED</span></td></tr>
+<tr><td>Discipline</td><td>Gameplan lockout, risk guardrails, breadth-gated sizing</td><td><span class="verdict v-align">ALIGNED</span> — yours is stricter</td></tr>
+<tr><td>Communication</td><td>Arete Discord integration, daily UMU narrative</td><td><span class="verdict v-adapt">ADAPT</span> — solo trader version</td></tr>
+<tr><td>Replay</td><td>EOD workflow, TradesViz journaling, playbook trades</td><td><span class="verdict v-align">ALIGNED</span></td></tr>
+</table>
+
+<h3>Key Shared Beliefs</h3>
+<p><strong>Open-mindedness over prediction.</strong> SMB: "Active traders do not have to predict." V9: breadth tells you, you don't tell the market. Both systems say develop a thesis, then let price action confirm. "If you see it, swing the bat hard" = V9's "if confluence ≥ threshold, take the trade at full gameplan size."</p>
+<p><strong>Direction + Timing = One Good Trade.</strong> SMB hammers this in DNA 3(2): "Being right about direction is NOT sufficient. You must also get timing right." This is exactly why V9 has session-phase gating — the right trade at the wrong time is still a bad trade.</p>
+<p><strong>Process over results.</strong> "Control the inputs, just play" — directly maps to V9's system-first mentality where following the process IS the goal, not any individual trade outcome.</p>
+
+<div class="takeaway">Your V9 philosophy is essentially the SMB philosophy with a quantitative breadth overlay that SMB doesn't have. This is additive, not conflicting. Keep it.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="stock">3. Stock Selection & Game Planning</h2>
+<div class="section">
+<span class="verdict v-adapt">ADAPT</span>
+
+<h3>What SMB Does (from DNA 2(1), 5, 6, 7, 9, 16)</h3>
+<p>Spencer's daily process: Open scanner → sort by pre-market volume → identify catalysts → write S1/S2/R1/R2/Inflection on game plan sheet → rank to top 2-3 names → set price alerts → set scripts for overflow names → run morning meeting → visualize price paths → trade.</p>
+
+<p><strong>SMB's selection filters:</strong> ATR ≥ $0.80 (Spencer says $1+), avg volume 1M–10M shares, RVOL ≥ 3, short float under 20-30%, pre-market volume ≥ 10% of ADV. Gap ≥ 3% to be "in play."</p>
+
+<h3>V9 Does This Differently (And Often Better)</h3>
+<p>V9's scanner runs 424+ tickers through confluence scoring that factors VWAP distance, EMA alignment, RVOL, volume, and setup detection — far more systematic than manually sorting a scanner column by column. Your breadth-gated gameplan adds a layer SMB doesn't have: you don't just pick the best stocks, you filter them against market conditions first.</p>
+
+<h3>Where SMB Adds Value to V9</h3>
+
+<p><strong>The S1/S2/R1/R2/Inflection Framework:</strong> Spencer doesn't just identify levels — he develops heuristics off them. "If it flushes to S2, I get aggressive." "If it blows through all resistance in the first 15 min, I buy the pullback to R1 expecting a trend day." These are concrete rules V9 could wire into the pre-trade scorecard as decision trees per setup type.</p>
+
+<p><strong>Narrowing Focus to 2-3 Names:</strong> V9's watchlist has 424+ tickers. SMB says even experienced traders can only actively manage 2-3 names on the open. The rest get scripts/alerts. V9's confluence sorting does prioritize, but you could add a "Focus 3" top-bar to the dashboard showing only the highest-confluence names for active management.</p>
+
+<p><strong>The Static Watchlist Problem (already identified):</strong> SMB's entire approach is "stocks in play TODAY" based on fresh catalysts. Your existing integration session notes already flagged this as Layer 4 of the lockout problem. DNA confirms: Spencer is trading names that appeared on his radar that morning, not tickers he decided to watch last week.</p>
+
+<div class="takeaway"><strong>Action:</strong> Keep your scanner as primary. Add Spencer's inflection/S-R heuristics as decision rules in the pre-trade scorecard ("At S2 + RVOL ≥ 3 = aggressive entry" etc.). Build a "Fresh Catalyst" feed that can inject new tickers into the watchlist same-day when they meet minimum criteria.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="setups">4. Setup-by-Setup Mapping</h2>
+<div class="section">
+
+<p>This is the core: how each SMB DNA setup concept maps to V9's existing setup registry, and what DNA adds.</p>
+
+<table>
+<tr><th>SMB DNA Concept</th><th>Source</th><th>V9 Setup</th><th>Verdict</th></tr>
+<tr><td>Intraday S/R levels + bounce/break</td><td>DNA 2, 2(1)</td><td>All setups use levels</td><td><span class="verdict v-align">ALIGNED</span></td></tr>
+<tr><td>VWAP as daily demarcation</td><td>DNA 1(4), 1(5), 3(1)</td><td>VWAP-Hold</td><td><span class="verdict v-align">ALIGNED</span></td></tr>
+<tr><td>Opening Range breakout</td><td>DNA 2(1), 4(1)</td><td>OR-Break</td><td><span class="verdict v-align">ALIGNED</span></td></tr>
+<tr><td>Failed breakout / "Stuffed Trade"</td><td>DNA 1(4), 3(2)</td><td>Failed-BD</td><td><span class="verdict v-adapt">ADAPT</span> — add re-entry rules</td></tr>
+<tr><td>Pullback to trend / EMA</td><td>DNA 7(1), 1(4)</td><td>Pullback-EMA</td><td><span class="verdict v-align">ALIGNED</span></td></tr>
+<tr><td>Momentum / Opening Drive</td><td>DNA 8, 2(1)</td><td>Momentum</td><td><span class="verdict v-adapt">ADAPT</span> — split into Opening Drive vs. sustained</td></tr>
+<tr><td>Second-Day Play</td><td>DNA 13, 9, 14</td><td>Not yet in registry</td><td><span class="verdict v-adopt">ADOPT</span></td></tr>
+<tr><td>Feed the Analyst Downgrade/Upgrade</td><td>DNA 14</td><td>Not in registry</td><td><span class="verdict v-adopt">ADOPT</span> — as sub-type of bounce/reversal</td></tr>
+<tr><td>Earnings Reaction Bounce (AH)</td><td>DNA 8</td><td>Not in registry</td><td><span class="verdict v-adapt">ADAPT</span> — fits Momentum or new "Earnings Play"</td></tr>
+<tr><td>Price pattern repetition (sector)</td><td>DNA 9</td><td>Not in registry</td><td><span class="verdict v-adopt">ADOPT</span> — manual awareness, not automated</td></tr>
+<tr><td>Trend line break → defensive posture</td><td>DNA 7(1)</td><td>Exit rules, not entry</td><td><span class="verdict v-adapt">ADAPT</span> — add to exit framework</td></tr>
+<tr><td>Futures pre-market analysis</td><td>DNA 6(1)</td><td>Partially in UMU</td><td><span class="verdict v-adapt">ADAPT</span> — formalize London open + 8AM levels</td></tr>
+<tr><td>Market itself "in play"</td><td>DNA 15, 2(1)</td><td>Market-Play (planned)</td><td><span class="verdict v-adopt">ADOPT</span></td></tr>
+</table>
+
+<h3>Deep Dive: Second-Day Play (DNA 13, 14)</h3>
+<p>This is the biggest gap in V9's current setup registry. SMB DNA 13 lays out a clean framework:</p>
+<div class="highlight">
+<p><strong>Classic pattern:</strong> Strong trend on Day 1 → Day 2 open, look for continuation. Use afternoon support/resistance from Day 1 as your levels. Range typically narrows ~50% on Day 2. Risk ~15% of ATR.</p>
+<p><strong>Follow-up pattern (DNA 9):</strong> Earnings Day 1 might not trend. Set alerts at key levels for Day 2/3. Institutions buy/sell over 3+ days. AMAT example: inflection at 53 on Day 1, long above 53 on Day 2 → 10:1 R:R by Day 3.</p>
+</div>
+<p><strong>V9 action:</strong> Add "SecondDay" to SETUP_REGISTRY with validGP ['A','B','C-Recovery'], nature 'structure', sessions ['OPEN','CORE']. Entry trigger: Day 1 afternoon S/R levels revisited on Day 2 open. Scanner flags needed: track whether a ticker was "in play" yesterday.</p>
+
+<h3>Deep Dive: Feed the Downgrade (DNA 14)</h3>
+<div class="highlight">
+<p><strong>Context-dependent:</strong> Only fade analyst downgrades when (a) stock already sold off significantly (15-20% from highs), (b) no fresh negative catalyst preceded the downgrade, (c) higher timeframe trend is still intact. Strong stocks + stale downgrade = buy S2 aggressively.</p>
+<p><strong>Spencer's heuristic:</strong> If it flushes to S2 on the open → aggressive bid. Once back above S1 → add. Trail to R1/R2. Day 2: buy the accumulation zone from Day 1 afternoon.</p>
+</div>
+<p><strong>V9 action:</strong> This is a sub-type of Bounce-Reversal (already planned in your integration spec). Wire it as a variant with additional news-catalyst filter: "downgrade/upgrade WITHOUT preceding fundamental catalyst = fade candidate."</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="risk">5. Risk Management</h2>
+<div class="section">
+<span class="verdict v-align">STRONGLY ALIGNED</span>
+
+<p>SMB's risk teachings in DNA 1(2), 5(1) map almost perfectly to V9. Both systems identify the same core risk categories:</p>
+
+<div class="grid2">
+<div class="col">
+<h4 class="smb">SMB Internal Risk</h4>
+<p>Too much size. Flipping (long→short→long). Overtrading. No trading plan. Not hitting out at stop. Poor energy/hydration. Doubling down. Imperfect information arrogance.</p>
+</div>
+<div class="col">
+<h4 class="v9">V9 Guardrails for Same</h4>
+<p>Breadth-gated position sizing caps. System doesn't support flipping (setup-type locked). Confluence threshold prevents overtrading. Pre-trade scorecard requires plan. "The System Protects You" = stop discipline. EOD wellness check in journal.</p>
+</div>
+</div>
+
+<h3>Where SMB Adds Nuance</h3>
+<p><strong>The "3 bad trades in a stock" rule (DNA 11):</strong> Spencer's Uber mistake — he kept buying pullbacks despite new negative news (hiring freeze). His fix: "If you make 3 bad trades in a row in a particular stock, stop trading it." This is a concrete rule V9 could implement: if a ticker hits stop 3x in a session, it gets flagged/locked.</p>
+
+<p><strong>Internal vs. External risk framework (DNA 5(1)):</strong> Spencer categorizes every risk source as either something you control (internal) or market-driven (external). V9's system handles external risk well (breadth, VIX regime, halt awareness). The internal side — energy check-in, open-mindedness reminders, preparation quality — could be a pre-market checklist item in the EOD workflow.</p>
+
+<p><strong>Assume you're wrong (DNA 5(1)):</strong> "As you build up 4-5 positions, assume every one gets stopped out. What's your total risk?" V9's trade management spec already includes this (dollar risk per trade, risk % of account), but making it a visible dashboard stat — "Portfolio max loss if all stops hit: $X" — would be powerful.</p>
+
+<div class="takeaway"><strong>Action:</strong> Add "3-strike ticker lockout" rule to dashboard. Add portfolio heat calculation to show max simultaneous loss. Consider a simple pre-market readiness checklist (sleep, hydration, preparation quality 1-5).</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="tape">6. Tape Reading & Price Action</h2>
+<div class="section">
+<span class="verdict v-adapt">ADAPT</span>
+
+<p>DNA 1(5) is the deep tape-reading session (MYL trade review). The core teachings align with how you already think about markets, but SMB offers some specific patterns worth codifying:</p>
+
+<h3>Tape Patterns from DNA (Codifiable for V9)</h3>
+
+<p><strong>"Fights" on the tape:</strong> When you see buying/selling at the same price repeatedly (88, 87, 88, 87) and the stock resolves through that level → that's a signal to add risk in the direction of the break. V9 could track this as "volume cluster at price" in the scanner.</p>
+
+<p><strong>Inability to push through a level:</strong> If green prints (offer lifts) keep stopping at the same price (e.g., can't get above 21.40), that resistance is real. Use it as the risk-off level. V9's OR High / VWAP levels already serve this function — the tape reading adds confidence to the level.</p>
+
+<p><strong>"Change in character" = exit signal:</strong> DNA 1(5): "150K share volume bar — haven't seen one that big since the open. That's a change in character + pushed above 20. When it pulls back, that's my cover." This maps to your "Reasons to Sell" framework — unusual volume reversal = defensive posture.</p>
+
+<p><strong>Staircase pattern = institutional order:</strong> Clean, grinding moves without retesting VWAP = big seller/buyer in the system. "Add risk, add risk, add risk" because this staircase will continue. V9 could detect this as "monotonic price trend + steady volume = trend quality score."</p>
+
+<h3>Price Action from DNA 1(4), 4, 5(2)</h3>
+<p>The technical analysis teachings (candlesticks, support/resistance, trends, breakouts, volume confirmation) are foundational material you already know. The one nuance worth noting: SMB explicitly teaches that <strong>price in the middle of a range is the worst place to initiate</strong>. V9's VWAP-distance scoring partially addresses this, but a "range position" indicator (is price near S/R or in no-man's-land?) could filter out low-edge entries.</p>
+
+<div class="takeaway"><strong>Action:</strong> No major system changes needed. Tape reading is a skill, not an algorithm. The screen recording + replay habit (DNA 1(5) SME challenge) is worth formalizing in your EOD workflow: record screens → review key inflection points → note tape patterns in TradesViz.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="exits">7. Exit System — "Reasons to Sell"</h2>
+<div class="section">
+<span class="verdict v-adopt">ADOPT</span>
+
+<p>This is the biggest single improvement DNA offers V9. Bellafuri's "Reasons to Sell" framework (DNA 2(3)) gives you something V9 currently lacks: a systematic, enumerable set of exit signals.</p>
+
+<h3>SMB's Exit Signals → V9 Implementation</h3>
+<table>
+<tr><th>SMB Reason to Sell</th><th>V9 Implementation</th><th>Priority</th></tr>
+<tr><td>Stock hits price target</td><td>Already in pre-trade scorecard (planned target)</td><td>✅ Done</td></tr>
+<tr><td>Intraday uptrend breaks</td><td>Add: EMA9 break on 5-min or trend line violation → defensive</td><td>High</td></tr>
+<tr><td>Breaking news in stock</td><td>Add: news alert integration → auto-flag positions</td><td>Medium</td></tr>
+<tr><td>Market at resistance</td><td>Add: when SPY/QQQ hits daily S/R AND your stock hits S/R simultaneously → exit signal</td><td>High</td></tr>
+<tr><td>Breaking news in market</td><td>Fed/economic calendar → known risk windows</td><td>Medium</td></tr>
+<tr><td>Unusual seller on tape</td><td>Manual tape reading skill — not automatable</td><td>Skill</td></tr>
+<tr><td>Buying pattern dissipates</td><td>Manual — watch for volume cluster exhaustion</td><td>Skill</td></tr>
+<tr><td><strong>Time clock</strong></td><td><strong>NEW: If trade doesn't work within X minutes of expected timeframe → reduce/exit</strong></td><td><strong>High</strong></td></tr>
+<tr><td>Stock move too steep</td><td>Add: "Up &gt;1.5 ATR intraday with no catalyst" → take partial</td><td>Medium</td></tr>
+<tr><td>Pullback too deep</td><td>Add: pullback exceeds 50% of move → thesis weakening</td><td>Medium</td></tr>
+<tr><td>Trading day ends</td><td>Already handled (session phase logic)</td><td>✅ Done</td></tr>
+</table>
+
+<h3>Move-to-Move vs. Trade-to-Hold</h3>
+<p>This distinction is critical and currently missing from V9. SMB says: before judging whether you exited well, you must know which type of trade you were in. V9's setup registry could tag each setup with a <strong>hold type</strong>:</p>
+<div class="highlight">
+<p><strong>Move-to-Move:</strong> Scalps, momentum captures, OR-Break initial push. Target: 1R. Don't regret it going further.</p>
+<p><strong>Trade-to-Hold:</strong> VWAP-Hold trend rides, Second-Day continuation, BigDog breakout. Target: trail with EMA9/trend line. Hold until "Reason to Sell" fires.</p>
+</div>
+
+<div class="takeaway"><strong>Action:</strong> Build a "Reasons to Sell" checklist into the trade management module. Tag each setup type as Move-to-Move or Trade-to-Hold. Add a time-clock field to the pre-trade form: "I expect this to work within ___ minutes." If it doesn't, that's a reason to reduce.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="review">8. Review & Playbook Process</h2>
+<div class="section">
+<span class="verdict v-adapt">ADAPT</span>
+
+<p>SMB's playbook template has 10 sections: Title, Big Picture, Intraday Fundamentals, Technical Analysis (long + short term), Trade Strategy, Trade Management, Risk Management, Reading the Tape, Technology, Trade Review. Your TradesViz Day Plan (24 fields) + Trade Plan (15 fields) already covers most of this in a more structured way.</p>
+
+<h3>What DNA Adds to Your Review Process</h3>
+
+<p><strong>The Anti-Playbook (DNA 3(3)):</strong> Track the trades you should NOT have made. Where did you deviate from system? What patterns keep showing up in your losing trades? V9 doesn't have this explicitly. Add an "Anti-Playbook" tag in TradesViz for trades that violated system rules.</p>
+
+<p><strong>"Where could you have been BIGGER?" (DNA 1(3)):</strong> SMB reviews don't just ask what went wrong — they ask where you left money on the table by not sizing up. In your EOD journal, add: "For each A+ trade today, could I have been bigger? Where specifically would I have added? What was my stop for that add?"</p>
+
+<p><strong>Stock Database (DNA 7):</strong> The scanner has a feature to save notes per ticker — "how does this stock trade off earnings?" "Is it a clean intraday trader or erratic?" V9's localStorage notes on dashboard cards are a start, but a persistent database of ticker behavior across sessions would be valuable for second-day and earnings season plays.</p>
+
+<p><strong>Re-entry Rules (DNA 3(2)):</strong> "Don't just stop at stopped out. Develop re-entry rules." The Stuffed Trade is an example: fake breakout on heavy volume → stock closes inside breakout area → that IS the signal for a great re-entry. V9's Failed-BD setup partially captures this, but formalize it: every setup type should have a "re-entry after stop-out" protocol.</p>
+
+<div class="takeaway"><strong>Action:</strong> Add anti-playbook tagging. Add "where could I have been bigger?" to EOD review. Build per-ticker behavior notes that persist across sessions (dashboard localStorage already supports this — extend it). Add re-entry rules to each setup type definition.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="market">9. Market-Level / Macro Catalyst Framework</h2>
+<div class="section">
+<span class="verdict v-adapt">ADAPT</span>
+
+<p>DNA 6(1) (pre-market futures) and DNA 15 (China tariffs / macro catalysts) cover territory V9 already handles through UMU breadth analysis and Arete integration, but SMB offers some concrete heuristics worth adopting:</p>
+
+<h3>Spencer's Pre-Market Futures Heuristics</h3>
+<p><strong>Key times:</strong> London Open (4:15 AM ET), 8:00 AM ET (institutional orders begin), 9:30 AM (open). Each can establish an overnight high/low that becomes a tradeable level. V9's UMU already notes pre-market levels, but explicitly tracking London Open and 8AM prices as dashboard reference levels would add precision.</p>
+
+<p><strong>When to care about futures:</strong> In low-vol uptrending environments — mostly ignore futures, focus on stocks in play. In volatile environments — futures pre-market levels become the most important levels of the day. V9's VIX regime logic could trigger "futures focus mode" when VIX &gt; 20.</p>
+
+<h3>Spencer's Macro Catalyst Framework (DNA 15)</h3>
+<div class="highlight">
+<p><strong>The timing of the catalyst matters more than the quality.</strong> Negative catalyst after a big run-up → gives people an excuse to sell → follow through to downside. Positive catalyst after a multi-day selloff → gives people an excuse to buy → follow through to upside. "The China tariff thing could be viewed very negatively. Initially we rallied back up... Eventually over the next 4-5 days came down to 280. Then a minor positive catalyst → right back to 289."</p>
+<p><strong>V9 translation:</strong> Your breadth trajectory already captures this. When breadth has been falling for 3-5 days and a positive catalyst hits → that's C-Recovery territory. When breadth has been rising and a negative catalyst hits → that's A→B fade risk. The UMU narrative should explicitly call out whether a catalyst is hitting into exhausted or extended positioning.</p>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2 id="adopt">10. Concrete Recommendations</h2>
+<div class="section">
+
+<h3 style="color:var(--green)">KEEP AS-IS (V9 is equal or better)</h3>
+<p>Breadth-driven gameplan system — SMB doesn't have this. Confluence scoring — more systematic than SMB's manual scanner sort. VWAP/EMA/OR level framework — already aligned. Risk guardrails (per-trade, per-day, per-week) — already in place. Dashboard-first workflow — more advanced than SMB's morning meeting + scanner. Arete integration for institutional research — equivalent to SMB's in-house research pipeline.</p>
+
+<h3 style="color:var(--yellow)">ADAPT (Refine V9 with SMB insights)</h3>
+<p>1. <strong>Exit framework:</strong> Wire "Reasons to Sell" into trade management. Every open position should have active exit triggers beyond just "stop" and "target."</p>
+<p>2. <strong>Trade classification:</strong> Tag every trade as Move-to-Move or Trade-to-Hold. Different exit rules for each.</p>
+<p>3. <strong>Time clock:</strong> Add expected-timeframe field to pre-trade form. Alert if trade hasn't worked in expected window.</p>
+<p>4. <strong>3-strike rule:</strong> If a ticker stops you out 3x in a session, lock it.</p>
+<p>5. <strong>S1/S2 heuristics:</strong> At S2 + RVOL ≥ 3 = aggressive entry. Through all R-levels in first 15 min = potential trend day, buy pullback to R1.</p>
+<p>6. <strong>Pre-market futures levels:</strong> Track London Open + 8AM high/low as dashboard reference on VIX &gt; 20 days.</p>
+<p>7. <strong>"Where could I have been bigger?":</strong> Add to EOD review template.</p>
+
+<h3 style="color:var(--purple)">ADOPT (New additions from SMB DNA)</h3>
+<p>1. <strong>SecondDay setup type:</strong> Add to scanner/dashboard. Use Day 1 afternoon S/R levels, expect 50% range narrowing, risk 15% ATR.</p>
+<p>2. <strong>Feed-the-Downgrade pattern:</strong> Context-dependent fade of analyst actions. Already-sold-off + no fresh catalyst + higher TF intact = fade into S2.</p>
+<p>3. <strong>Anti-playbook tracking:</strong> Tag system-violation trades in TradesViz. Review monthly for patterns.</p>
+<p>4. <strong>Sector pattern repetition:</strong> During earnings season, when WMT sells on good numbers → watch TGT for same pattern. Manual awareness, but worth noting in UMU.</p>
+<p>5. <strong>Earnings season intensification:</strong> Formally ramp up focus 4x/year. Pre-market trading in large-cap tech. Day 2-3 follow-up alerts. Price behavior patterns across similar companies.</p>
+<p>6. <strong>Ticker behavior database:</strong> Extend dashboard card notes to persist and surface during earnings/catalyst events. "Last time NFLX reported: sold Day 1, bounced Day 2 from $X."</p>
+<p>7. <strong>Re-entry rules per setup type:</strong> Every setup in the registry gets a "what to do after stopped out" protocol.</p>
+
+<h3 style="color:var(--red)">LEAVE (Doesn't fit V9)</h3>
+<p>1. <strong>SMB's playbook template format:</strong> Your TradesViz + EOD workflow is more complete and structured. Don't replace it.</p>
+<p>2. <strong>Communication-heavy workflow:</strong> SMB's "Max on a headset all day" model is for a team desk. You're a solo trader with Arete + Claude. Different communication model.</p>
+<p>3. <strong>Fixed S1/S2/R1/R2 as primary framework:</strong> V9's dynamic VWAP + EMA + OR levels are more adaptive. Use S/R heuristics as supplementary rules, not primary structure.</p>
+<p>4. <strong>"Just hit the bid" exit urgency:</strong> You use tape reading for better exit pricing (DNA 1(5) actually supports this — the MYL trader waited for a pullback to cover, didn't just market-order out). Keep your approach.</p>
+<p>5. <strong>Voluntary playbook exercise:</strong> V9 already mandates EOD journaling. No need to add another layer.</p>
+<p>6. <strong>SMB's prop desk scaling model:</strong> Their "100 shares → 200 → 500 → 1000" progression doesn't apply. V9's breadth-gated position sizing ($15-20K A-mode, $8-12K B-mode) is more sophisticated.</p>
+</div>
+
+<div class="section" style="border-color:var(--accent)">
+<h3 style="color:var(--accent);margin-top:0">Bottom Line</h3>
+<p>V9 and SMB DNA share the same philosophical core. Your system already implements most of SMB's principles — often in a more systematic, quantitative way than SMB itself does. The biggest gaps are tactical: exit framework (Reasons to Sell), trade classification (Move-to-Move vs. Hold), Second-Day as a formal setup type, and the anti-playbook concept. These are all additive — they extend V9 without requiring any structural changes to your existing system architecture.</p>
+<p>The single highest-ROI adoption from this entire body of material: <strong>build a formal "Reasons to Sell" exit checklist for every open position.</strong> That's the thing V9 doesn't have that SMB hammers hardest and that would most directly improve your P&L.</p>
+</div>
+
+<p style="color:var(--dim);font-size:0.8em;margin-top:30px;text-align:center">V9 ↔ SMB DNA Mapping · Generated from 38 source transcripts · March 2026</p>
+
+</body>
+</html>
