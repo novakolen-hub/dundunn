@@ -957,7 +957,15 @@ function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.t
   buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rActiveSetups(d);rTradeCandidates(d);rBrief(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rAreteEmails(d);rInPlay(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
   // Restore textarea focus
   if(_noteId){var _el=document.getElementById(_noteId);if(_el){_el.focus();_el.selectionStart=_el.selectionEnd=_noteCur;}}
+  // Cross-page: open modal from URL param (Chart Wall → Dashboard)
+  if(!_urlPTHandled){
+    _urlPTHandled=true;
+    var _urlP=new URLSearchParams(window.location.search);
+    var _ptTk=_urlP.get('openPT');
+    if(_ptTk&&_tq[_ptTk]){setTimeout(function(){openPT(_ptTk);},300);}
+  }
 }
+var _urlPTHandled=false;
 function buildTkNews(d){
   _tkNews={};var news=d.news||[];var now=Date.now()/1000;
   for(var i=0;i<news.length;i++){var n=news[i];if(n.time&&(now-n.time)>604800)continue;var nt=nTags(n.headline||'',n.related||'');
