@@ -244,6 +244,10 @@
   .sm-small{background:rgba(227,179,65,0.15);color:#e3b341}
   .sm-bench{background:rgba(248,81,73,0.15);color:#f85149}
   .sm-inv{background:rgba(188,140,255,0.15);color:#bc8cff}
+  
+  .arete-check{display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9px;color:#484f58;padding:2px 6px;border-radius:3px;border:1px solid #21262d;background:#0d1117;user-select:none;transition:all 0.15s}
+  .arete-check:hover{border-color:#30363d;color:#7d8590}
+  .arete-check.done{background:rgba(63,185,80,0.1);border-color:rgba(63,185,80,0.3);color:#3fb950}
   </style>
 </head>
 <body>
@@ -1730,6 +1734,9 @@ function rAreteEmails(d){
         h+='<div class="ae-hdr" onclick="var b=document.getElementById(\''+uid+'\');if(b){b.style.display=b.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.ae-arrow\').textContent=b.style.display===\'none\'?\'\u25b6\':\'\u25bc\'}">';
         h+='<span class="ae-day-label">'+(isToday?'\ud83d\udccc TODAY':'')+(isToday?' \u00b7 ':'')+e(dayLabel)+' '+e(em.time||'')+'</span>';
         h+='<span class="ae-subj">'+e(em.subject||'')+'</span>';
+        var emailChkId='ae_read_'+dk+'_'+ei;
+        var emailIsRead=_isAreteChecked(emailChkId);
+        h+='<span class="arete-check'+(emailIsRead?' done':'')+'" onclick="event.stopPropagation();toggleAreteCheck(''+emailChkId+'',this)">'+(emailIsRead?'\u2611 read':'\u2610 mark read')+'</span>';
         h+='<span class="ae-arrow">'+(dayOpen?'\u25bc':'\u25b6')+'</span>';
         h+='</div>';
         h+='<div class="ae-body" id="'+uid+'" style="'+(dayOpen?'':'display:none')+'">';
@@ -4044,6 +4051,23 @@ document.addEventListener('mousedown',function(ev){
   if(qp&&qp.style.display==='block'&&!qp.contains(ev.target)&&!ev.target.closest('#tmrBar .ti'))hideQuotaChart();
   if(ap&&ap.style.display==='block'&&!ap.contains(ev.target)&&!ev.target.closest('#tmrBar .ti'))hideApiChart();
 });
+
+// ── Arete read/watched checkmarks (localStorage) ──
+function _areteChecks(){try{return JSON.parse(localStorage.getItem('v9_arete_checks')||'{}');}catch(e){return {};}}
+function _areteSetCheck(id,val){try{var c=_areteChecks();if(val)c[id]=Date.now();else delete c[id];localStorage.setItem('v9_arete_checks',JSON.stringify(c));}catch(e){}}
+function toggleAreteCheck(id,el){
+  var checks=_areteChecks();
+  var isDone=!!checks[id];
+  if(isDone){_areteSetCheck(id,false);el.classList.remove('done');el.innerHTML='\u2610 mark read';}
+  else{_areteSetCheck(id,true);el.classList.add('done');el.innerHTML='\u2611 read';}
+}
+function toggleAreteWatch(id,el){
+  var checks=_areteChecks();
+  var isDone=!!checks[id];
+  if(isDone){_areteSetCheck(id,false);el.classList.remove('done');el.innerHTML='\u25b6 unwatched';}
+  else{_areteSetCheck(id,true);el.classList.add('done');el.innerHTML='\u2705 watched';}
+}
+function _isAreteChecked(id){return !!_areteChecks()[id];}
 </script>
 </body>
 </html>
