@@ -1,6 +1,6 @@
 // ============================================================
-// V9 CONFLUENCE SCANNER v91.4 — Google Apps Script
-// v91.4: + BREADTH ALERT ENGINE (immediate +/-1.5, sustained +/-2.5, auto-attribution)
+// V9 CONFLUENCE SCANNER v91.5 — Google Apps Script
+// v91.5: + INTERNALS HISTORY CACHE (sparklines for TICK/ADD/ADQD/VOLD/VOLQD)
 //   - Setup detection: independent scoring replaces if/else waterfall.
 //     Each of 13 setups scored: base(10) + RVOL(0-5) + conf(0-5) + signal(0-10).
 //     Best score = primary, second = secondary. Pipe-delimited in setup column.
@@ -3616,6 +3616,23 @@ function updateSheet() {
     histProps.setProperty('GP_SUB_MODE', JSON.stringify(subModeResult));
     Logger.log('GP Sub-Mode: ' + subModeResult.subMode + ' (' + trajResult.trajectory + ', delta=' + trajResult.delta + ')');
     
+    // ── Cache internals history for dashboard sparklines (every cycle) ──
+    try {
+      var _ihRaw = histProps.getProperty('INTERNALS_HIST') || '[]';
+      var _ih = JSON.parse(_ihRaw);
+      if (_ih.length > 0 && _ih[0].d !== azDateStr) _ih = [];
+      _ih.push({
+        d: azDateStr, t: Date.now(),
+        tick: parseFloat(breadth.tick) || 0,
+        add: parseFloat(breadth.add) || 0,
+        adqd: parseFloat(breadth.adqd) || 0,
+        vold: parseFloat(breadth.vold) || 0,
+        volqd: parseFloat(breadth.volqd) || 0
+      });
+      if (_ih.length > 200) _ih = _ih.slice(_ih.length - 200);
+      histProps.setProperty('INTERNALS_HIST', JSON.stringify(_ih));
+    } catch(ihErr) { Logger.log('IntHist: ' + ihErr.message); }
+    
     // ── BREADTH ALERT ENGINE ──
     try {
       _checkBreadthAlerts(hist, totalBreadth, breadth, sectors, sectorQuotes, breadthQuotes);
@@ -6024,7 +6041,8 @@ function getTimerState() {
   } catch(ache) {}
 
   var breadthAlertsRaw = props.getProperty('BREADTH_ALERTS') || '[]'; var breadthAlerts = []; try { breadthAlerts = JSON.parse(breadthAlertsRaw); } catch(e) {}
-  var base = { enabled: enabled, fullEnabled: fullEnabled, marketEnabled: isMarketRefreshEnabled(), quotaCount: quotaCount, quotaHourly: quotaHourly, quotaByCat: quotaByCat, quotaLog: quotaLog, apiCostHourly: apiCostHourly, apiCostTotal: apiCostTotal, phase: phase, fullScanIn: fullScanIn, breadthAlerts: breadthAlerts };
+  var internalsHistRaw = props.getProperty('INTERNALS_HIST') || '[]'; var internalsHist = []; try { internalsHist = JSON.parse(internalsHistRaw); } catch(e) {}
+  var base = { enabled: enabled, fullEnabled: fullEnabled, marketEnabled: isMarketRefreshEnabled(), quotaCount: quotaCount, quotaHourly: quotaHourly, quotaByCat: quotaByCat, quotaLog: quotaLog, apiCostHourly: apiCostHourly, apiCostTotal: apiCostTotal, phase: phase, fullScanIn: fullScanIn, breadthAlerts: breadthAlerts, internalsHist: internalsHist };
   
   if (!ws) { base.updated = Date.now().toString(); base.gp = ''; base.gpLetter = 'C'; return base; }
   
