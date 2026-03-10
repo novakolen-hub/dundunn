@@ -1768,7 +1768,7 @@ function rAreteEmails(d){
         h+='<span class="ae-subj">'+e(em.subject||'')+'</span>';
         var emailChkId='ae_read_'+dk+'_'+ei;
         var emailIsRead=_isAreteChecked(emailChkId);
-        h+='<span class="arete-check'+(emailIsRead?' done':'')+'" onclick="event.stopPropagation();toggleAreteCheck(''+emailChkId+'',this)">'+(emailIsRead?'\u2611 read':'\u2610 mark read')+'</span>';
+        h+='<span class="arete-check'+(emailIsRead?' done':'')+'" onclick="event.stopPropagation();toggleAreteCheck(\''+emailChkId+'\',this)">'+(emailIsRead?'\u2611 read':'\u2610 mark read')+'</span>';
         h+='<span class="ae-arrow">'+(dayOpen?'\u25bc':'\u25b6')+'</span>';
         h+='</div>';
         h+='<div class="ae-body" id="'+uid+'" style="'+(dayOpen?'':'display:none')+'">';
