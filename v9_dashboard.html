@@ -1018,24 +1018,47 @@ function _renderQuotaChart(){
     el.style.display='block';return;
   }
 
-  var data=_quotaHourly,n=data.length;
+  var allData=_quotaHourly;
+  // Zoom state — stored on the element
+  if(!el._qzoom){el._qzoom={start:0,end:allData.length};}
+  var z=el._qzoom;
+  // Clamp
+  if(z.start<0)z.start=0;
+  if(z.end>allData.length)z.end=allData.length;
+  if(z.end-z.start<4){z.end=Math.min(z.start+4,allData.length);z.start=z.end-4;}
+  var data=allData.slice(z.start,z.end);
+  var n=data.length;
+
   var max=0;for(var i=0;i<n;i++){if(data[i].v>max)max=data[i].v;}
   if(max===0)max=1;
   var yMax=max<=100?Math.ceil(max/10)*10:max<=500?Math.ceil(max/50)*50:max<=2000?Math.ceil(max/200)*200:Math.ceil(max/500)*500;
   if(yMax<max)yMax=max;
 
-  var cW=320,cH=150,padL=32,padR=4,padT=8,padB=22;
+  var cW=340,cH=150,padL=32,padR=4,padT=8,padB=22;
   var plotW=cW-padL-padR,plotH=cH-padT-padB;
-  var barW=Math.max(1,Math.floor(plotW/n)-1);
+  var barW=Math.max(2,Math.floor(plotW/n)-1);
   var gap=Math.max(0,Math.floor((plotW-barW*n)/(n+1)));
 
   var h='<div class="qc">';
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="qc-title">UrlFetch \u00b7 '+n+'h History</div><span style="cursor:pointer;color:#6e7590;font-size:14px" onclick="event.stopPropagation();hideQuotaChart()">\u2715</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="qc-title">UrlFetch \u00b7 '+allData.length+'h total</div><span style="cursor:pointer;color:#6e7590;font-size:14px" onclick="event.stopPropagation();hideQuotaChart()">\u2715</span></div>';
 
-  h+='<svg width="'+cW+'" height="'+cH+'" style="display:block;background:#0a0e14;border-radius:4px" id="qcSvg">';
+  // Zoom controls
+  h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:9px;font-family:JetBrains Mono,monospace">';
+  h+='<span style="color:#484f58">Showing '+n+'h</span>';
+  h+='<span style="cursor:pointer;color:#58a6ff;padding:1px 6px;border:1px solid #21262d;border-radius:3px" onclick="var z=$(\'quotaPopup\')._qzoom;z.start=0;z.end='+allData.length+';_renderQuotaChart()">All</span>';
+  h+='<span style="cursor:pointer;color:#58a6ff;padding:1px 6px;border:1px solid #21262d;border-radius:3px" onclick="var z=$(\'quotaPopup\')._qzoom,n='+allData.length+';z.start=Math.max(0,n-24);z.end=n;_renderQuotaChart()">24h</span>';
+  h+='<span style="cursor:pointer;color:#58a6ff;padding:1px 6px;border:1px solid #21262d;border-radius:3px" onclick="var z=$(\'quotaPopup\')._qzoom,n='+allData.length+';z.start=Math.max(0,n-8);z.end=n;_renderQuotaChart()">8h</span>';
+  h+='<span style="color:#30363d">|</span>';
+  h+='<span style="cursor:pointer;color:#7d8590;padding:1px 4px" onclick="var z=$(\'quotaPopup\')._qzoom;var w=z.end-z.start;var s=Math.round(w*0.25);z.start=Math.max(0,z.start-s);z.end=Math.min('+allData.length+',z.end+s);_renderQuotaChart()">\u2212</span>';
+  h+='<span style="cursor:pointer;color:#7d8590;padding:1px 4px" onclick="var z=$(\'quotaPopup\')._qzoom;var w=z.end-z.start;if(w>4){var s=Math.round(w*0.2);z.start+=s;z.end-=s;}_renderQuotaChart()">+</span>';
+  h+='<span style="cursor:pointer;color:#7d8590;padding:1px 4px" onclick="var z=$(\'quotaPopup\')._qzoom,w=z.end-z.start;if(z.start>0){var s=Math.min(z.start,Math.max(1,Math.round(w*0.3)));z.start-=s;z.end-=s;}_renderQuotaChart()">\u25c0</span>';
+  h+='<span style="cursor:pointer;color:#7d8590;padding:1px 4px" onclick="var z=$(\'quotaPopup\')._qzoom,w=z.end-z.start;if(z.end<'+allData.length+'){var s=Math.min('+allData.length+'-z.end,Math.max(1,Math.round(w*0.3)));z.start+=s;z.end+=s;}_renderQuotaChart()">\u25b6</span>';
+  h+='</div>';
+
+  // SVG chart
+  h+='<svg width="'+cW+'" height="'+cH+'" style="display:block;background:#0a0e14;border-radius:4px;cursor:default" id="qcSvg">';
   for(var g=0;g<=4;g++){
-    var gy=padT+plotH-plotH*(g/4);
-    var gv=Math.round(yMax*g/4);
+    var gy=padT+plotH-plotH*(g/4);var gv=Math.round(yMax*g/4);
     h+='<line x1="'+padL+'" y1="'+gy+'" x2="'+(cW-padR)+'" y2="'+gy+'" stroke="#1c2333" stroke-width="1"/>';
     h+='<text x="'+(padL-3)+'" y="'+(gy+3)+'" fill="#484f58" font-size="8" font-family="JetBrains Mono,monospace" text-anchor="end">'+gv+'</text>';
   }
@@ -1064,24 +1087,32 @@ function _renderQuotaChart(){
         h+='<rect x="'+x+'" y="'+bY+'" width="'+barW+'" height="'+bH+'" fill="'+bc+'" rx="0.5"/>';
       }
     }
+    // Count label when bars are wide enough
+    if(barW>=8&&d.v>0){
+      var ty=padT+plotH-(d.v/yMax*plotH)-3;
+      if(ty<padT+8)ty=padT+plotH-(d.v/yMax*plotH)+10;
+      h+='<text x="'+(x+barW/2)+'" y="'+ty+'" fill="#7d8590" font-size="7" font-family="JetBrains Mono,monospace" text-anchor="middle">'+d.v+'</text>';
+    }
     h+='<rect class="qc-hover" x="'+x+'" y="'+padT+'" width="'+Math.max(barW,4)+'" height="'+plotH+'" fill="transparent" data-idx="'+i+'"/>';
-    var lblI=n>80?24:n>40?12:n>20?6:3;
+    var lblI=n>60?12:n>30?6:n>16?4:n>8?2:1;
     if(i%lblI===0||i===n-1){
-      var lbl=d.h||'';if(lbl.length>6)lbl=lbl.replace(/ /g,'');
-      h+='<text x="'+(x+barW/2)+'" y="'+(cH-3)+'" fill="#484f58" font-size="7" font-family="JetBrains Mono,monospace" text-anchor="middle">'+e(lbl)+'</text>';
+      var lbl=d.h||'';if(lbl.length>8)lbl=lbl.replace(/ /g,'');
+      h+='<text x="'+(x+barW/2)+'" y="'+(cH-3)+'" fill="#484f58" font-size="'+(barW>=6?'8':'7')+'" font-family="JetBrains Mono,monospace" text-anchor="middle">'+e(lbl)+'</text>';
     }
   }
   h+='</svg>';
 
+  // Legend
   var byCat=_lastD&&_lastD.quotaByCat?_lastD.quotaByCat:null;
   h+='<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;font-size:9px;font-family:JetBrains Mono,monospace;color:#7d8590">';
   for(var li=0;li<CO.length;li++){
-    var ck=CO[li];var catTotal=byCat?byCat[ck]||0:0;
-    if(!catTotal){for(var hi=0;hi<n;hi++){catTotal+=((data[hi].c||{})[ck])||0;}}
+    var ck=CO[li];var catTotal=0;
+    for(var hi=0;hi<n;hi++){catTotal+=((data[hi].c||{})[ck])||0;}
     if(catTotal>0)h+='<span>\u25a0 <span style="color:'+CC[ck]+'">'+CL[ck]+'</span> '+catTotal.toLocaleString()+'</span>';
   }
   h+='</div>';
 
+  // Total gauge
   var pctTotal=_quotaTotal/20000*100;
   var tCol=pctTotal>80?'#ef5350':pctTotal>60?'#ffc107':'#00c853';
   h+='<div style="margin-top:6px;font-size:12px;font-family:JetBrains Mono,monospace"><span style="color:'+tCol+'">'+_quotaTotal.toLocaleString()+'</span> <span style="color:#7d8590">/ 20,000 ('+pctTotal.toFixed(0)+'%)</span></div>';
@@ -1098,10 +1129,28 @@ function _renderQuotaChart(){
   el.innerHTML=h;
   el.style.display='block';
 
-  var tip=document.getElementById('qcTooltip');
-  if(!tip){tip=document.createElement('div');tip.id='qcTooltip';document.body.appendChild(tip);}
+  // Mouse wheel zoom on SVG
   var svg=document.getElementById('qcSvg');
   if(svg){
+    svg.addEventListener('wheel',function(ev){
+      ev.preventDefault();
+      var z=$('quotaPopup')._qzoom;
+      var w=z.end-z.start;
+      if(ev.deltaY<0){
+        // Zoom in
+        if(w>4){var s=Math.max(1,Math.round(w*0.15));z.start+=s;z.end-=s;}
+      } else {
+        // Zoom out
+        var s=Math.max(1,Math.round(w*0.2));
+        z.start=Math.max(0,z.start-s);
+        z.end=Math.min(allData.length,z.end+s);
+      }
+      _renderQuotaChart();
+    },{passive:false});
+
+    // Hover tooltip
+    var tip=document.getElementById('qcTooltip');
+    if(!tip){tip=document.createElement('div');tip.id='qcTooltip';document.body.appendChild(tip);}
     var hovers=svg.querySelectorAll('.qc-hover');
     for(var ri=0;ri<hovers.length;ri++){
       (function(rect){
@@ -1109,7 +1158,7 @@ function _renderQuotaChart(){
           var idx=parseInt(this.getAttribute('data-idx'));
           var d=data[idx];if(!d)return;
           var th='<div style="color:#e6edf3;font-weight:700;font-size:11px;margin-bottom:3px">'+e(d.h)+'</div>';
-          th+='<div style="font-size:13px;font-weight:700;color:#e6edf3;margin-bottom:4px">'+d.v+' fetches</div>';
+          th+='<div style="font-size:14px;font-weight:700;color:#e6edf3;margin-bottom:4px">'+d.v+' fetches</div>';
           var hc=d.c&&Object.keys(d.c).some(function(k){return d.c[k]>0;});
           if(hc){for(var ci=0;ci<CO.length;ci++){var cv=d.c[CO[ci]]||0;if(cv>0)th+='<div style="display:flex;justify-content:space-between;gap:16px"><span>\u25a0 <span style="color:'+CC[CO[ci]]+'">'+CL[CO[ci]]+'</span></span><span style="color:#e6edf3;font-weight:600">'+cv+'</span></div>';}}
           tip.innerHTML=th;
