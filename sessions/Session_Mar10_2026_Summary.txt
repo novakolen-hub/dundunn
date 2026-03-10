@@ -1,193 +1,40 @@
-═══════════════════════════════════════════════════════════════
-SESSION SUMMARY — March 10, 2026
-Theme: System Inventory, % Sizing, Trade Management Specs
-═══════════════════════════════════════════════════════════════
+SESSION: March 10, 2026
+Duration: ~8 hours
 
-TRIGGER: Google Workspace billing — $338 annual renewal April 1.
-Decision: migrate to new free Gmail account. Built full system
-inventory to map everything tied to the Google account, which
-evolved into a comprehensive system review and major spec session.
+SCANNER VERSIONS DEPLOYED: v91.1 through v91.9
+- v91.1: % equity position sizing
+- v91.2: Dynamic EDT/EST timing
+- v91.3: News quota fix + 5-day chart data
+- v91.4: Breadth Alert Engine
+- v91.5: Internals history cache
+- v91.6: Arete email fix (forwarding + search)
+- v91.7: Menu reorganization (4 submenus)
+- v91.8: Arete full pipeline (cleanup/analysis/alignment/retro)
+- v91.9: YouTube RSS feed
 
-═══════════════════════════════════════════════════════════════
-WHAT WAS BUILT / DECIDED
-═══════════════════════════════════════════════════════════════
+DASHBOARD CHANGES:
+- Quota chart: SVG rebuild, zoom/pan, sticky, Y-axis, scroll-pan
+- Compact GP header: ruler + needle + distances + sub-mode tag
+- Alert banner: breadth alerts with cause pills + headline
+- Indicator sparklines: Option C hybrid in Primary Drivers
+- Section reorder: 6 collapsible groups (Market/Sectors/Stocks/Intel/Positions/Reference)
+- Arete Intel: analysis card + alignment + retro scoreboard + merged Book + YouTube
+- Read/watched checkmarks on emails + videos
 
-1. V9 SYSTEM REFERENCE PAGE (v9_system.html)
-   - Complete system inventory as a GitHub Pages site
-   - Dark-mode, matches dashboard aesthetic
-   - 12 sections: Philosophy, Gameplan, Setups, Components,
-     Integrations, Data Model, Sizing, Guardrails, Trade Mgmt,
-     Migration, Roadmap, Versions
-   - Sticky nav with scroll tracking
-   - LIVE: https://novakolen-hub.github.io/dundunn/v9_system.html
-   - Claude can read AND update via GitHub API (unlike Google Docs)
+SPECS WRITTEN:
+- Phase 2B: Deployment guardrails (swing caps, intraday risk budget, Check 9)
+- Phase 3: Trade Management (scale-in/out, stop lifecycle, theme clustering, unplanned tagging, DT→SW)
+- Phase 4: Broker stop polling
+- Full build spec updated with current state
 
-2. % OF EQUITY POSITION SIZING (Phase 1)
-   - All sizing converted from fixed dollars to % of current live equity
-   - SUBMODE_SIZING_PCT replaces SUBMODE_SIZING
-   - Tiers: full(20-25%), standard(12-18%), reduce(8-12%),
-     small(4-7%), bench(0%), inverse(12-18%)
-   - Risk also %-based: full(0.75-1.0%), standard(0.5-0.75%), etc.
-   - Equity reference: current_equity from Accounts tab (live intraday)
-   - Risk cap: auto-reduces shares if dollar risk exceeds max %
-   - Auto-scales: account grows → size grows, drawdown → size shrinks
-   - Scanner code changes: 3 edits ready to apply
-   - Dashboard code changes: 1 edit ready to apply
+OTHER:
+- V9 System Reference page created (v9_system.html)
+- GitHub repo reorganized (specs/, sessions/, bridge/, scanner/)
+- Google Workspace migration planning
+- Confirmed Phase 0, 1, 2A fully complete
 
-3. CAPITAL DEPLOYMENT GUARDRAILS (Phase 2 spec)
-   - Swing exposure cap: market value / equity per GP
-     A=40%, B=30%, C-R=15%, D=20%
-   - Breakeven stop discount: positions with stop ≥ entry count at 50%
-   - Intraday risk budget: sum of DT dollar risk / equity
-     A=2.5%, B=1.5%, C-R=0.5%, D=1.5%
-   - Max concurrent DTs: A=4, B=3, C-R=1, D=2
-   - Scorecard Check 9: Portfolio Heat
-   - Existing positions grandfathered on GP transitions
-
-4. TRADE MANAGEMENT SPECS (Phase 3 — 5 items)
-   3.1 Scale-In/Out Tracking (Priority #1)
-     - Grouping logic: same symbol + account + OPEN status
-     - Weighted avg entry on scale-in
-     - Partial exit P&L with R-level auto-annotation
-     - running_qty lifecycle (0 = start new trade)
-   
-   3.2 Stop Management Lifecycle (Priority #2)
-     - current_stop field (new)
-     - 4 states: INITIAL → BREAKEVEN → TRAILING → WIDENED
-     - Manual update via modal (v1), broker API (v2), auto-inference nag
-     - Feeds deployment BE discount + EOD exit quality grading
-   
-   3.3 Theme Clustering & Portfolio Diversification (Priority #3)
-     - 12 theme clusters (AI_INFRA, SEMIS, MEGA_TECH, etc.)
-     - HEDGE_PAIRS for inverse ETF detection
-     - Unified concentration scoring replaces basic sector checks
-     - Portfolio section redesign: Theme Exposure Map as default view
-       Shows cluster exposure bars, net direction, hedge offsets
-     - Under-diversification detection ("all positions are tech longs")
-   
-   3.4 Unplanned Trade Tagging (Priority #4)
-     - Toast notification on was_planned=false
-     - Lightweight tag form: setup + stop + reason
-     - Plan adherence metric in DailyLog
-   
-   3.5 DT → Swing Transition (Priority #5)
-     - Manual "Convert to Swing" with overnight stop validation
-     - Full carryover: original entry, DT stop, scorecard, snapshot
-     - Conversion context snapshot (new)
-     - was_converted flag for analytics
-     - EOD auto-detect held overnight
-     - Deployment guardrail recalculation on conversion
-
-5. NICE-TO-HAVES
-   - Daily loss limit: advisory not hard block, per-account
-   - TOD sizing: 1.0x Open/Core, 0.85x Power, 0.65x Close
-
-6. GITHUB REPO REORGANIZATION
-   Moved all project knowledge to organized GitHub folders:
-   - /specs/ — build specs, data model, SMB integration notes
-   - /bridge/ — Python bridge source
-   - /scanner/ — scanner source (reference copy)
-   - /sessions/ — session summaries
-   - Root — live pages (dashboard, chartwall, system, reference pages)
-
-═══════════════════════════════════════════════════════════════
-GITHUB REPO STRUCTURE (after today)
-═══════════════════════════════════════════════════════════════
-
-novakolen-hub/dundunn/
-├── .github/workflows/pages.yml    # GitHub Actions deploy
-├── .nojekyll
-├── v9_dashboard.html              # LIVE dashboard (v11.17.9)
-├── v9_chartwall.html              # LIVE chart wall (v2)
-├── v9_system.html                 # NEW — system reference
-├── v9_phase3_scope.html           # Phase 3 scope doc
-├── v9_submode_rewire.html         # Sub-mode rewire reference
-├── v9_smb_dna_mapping.html        # SMB DNA mapping
-├── v9_urlfetch_audit.html         # Quota audit
-├── ic_slugs.json                  # Investing.com ticker slugs
-├── index.html                     # Old/unused
-├── v9_dashboard_9.html            # Archive
-├── specs/
-│   ├── V9_Trade_Management_Build_Spec.txt
-│   ├── V9_Data_Model_v1.md
-│   ├── V9_Dynamic_Watchlist_Spec.txt
-│   ├── V9_Percent_Sizing_Code_Changes.txt
-│   ├── SMB_Playbook_Integration_Session.txt
-│   └── SMB_Playbook_Integration_Session_2.txt
-├── bridge/
-│   └── v9_pulse_bridge_v4.py
-├── scanner/
-│   └── V9_Confluence_Scanner_v91.txt
-└── sessions/
-    ├── Session_Feb27_2026_Summary.txt
-    ├── Session_Mar4_2026_Summary.txt
-    ├── Session_Mar5_2026_Final_Summary.txt
-    └── Session_Mar10_2026_Summary.txt
-
-═══════════════════════════════════════════════════════════════
-KEY DECISIONS
-═══════════════════════════════════════════════════════════════
-
-1. SIZING: % of equity, not fixed dollars. Current live equity reference.
-2. DEPLOYED CAPITAL: Hybrid — size per total equity, cap total deployment.
-   Swings at market value, DTs at dollar risk.
-3. BE DISCOUNT: Yes — swings with stops at breakeven count at 50%.
-4. LOSS LIMITS: Advisory, not hard block.
-5. SYSTEM DOCS: Live on GitHub Pages, not Google Docs.
-   Claude can read + update via API. Single source of truth.
-6. GP TRANSITIONS: Grandfather existing positions, only block new entries.
-7. PAPER TRADES: Exempt from deployment caps.
-8. UNPLANNED TRADES: Tag via toast, track adherence, no hard block.
-9. DT→SW: Formal conversion with full carryover + new snapshot.
-10. PORTFOLIO VIEW: Theme-based clusters as default, not just SW/Cash split.
-
-═══════════════════════════════════════════════════════════════
-MASTER BUILD ORDER (27 steps)
-═══════════════════════════════════════════════════════════════
-
-Phase 1 — % Sizing (with v91 paste):
-  1. Replace SUBMODE_SIZING + GP_SIZING with PCT versions
-  2. Update _getEffectiveSizing() → resolves % × equity
-  3. Add risk cap in computePositionSize()
-  4. Dashboard: update client-side sizing fallback
-
-Phase 2 — Deployment Guardrails:
-  5. INTRADAY_CAPS + SWING_CAPS constants
-  6. _calcSwingExposure() + _calcIntradayRisk()
-  7. Scorecard Check 9 (Portfolio Heat)
-  8. Dashboard: Portfolio Heat bars
-
-Phase 3 — Trade Management:
-  9-11. Scale-in/out grouping + weighted avg + partial P&L
-  12-14. Stop lifecycle: current_stop, manual update, auto-nag
-  15-16. Theme clusters + unified concentration check
-  17-20. Unplanned trade tagging + adherence metric
-  21-22. DT→Swing conversion + EOD auto-detect
-  23. Daily loss limit per-account
-  24. TOD sizing multiplier
-
-Phase 4 — Broker Stop Polling:
-  25-27. Bridge polls stops → auto-update current_stop
-
-═══════════════════════════════════════════════════════════════
-NEXT SESSION PRIORITIES
-═══════════════════════════════════════════════════════════════
-
-1. PASTE V91 SCANNER + apply Phase 1 % sizing edits
-2. Google account migration (Robinhood card for old account)
-3. Verify Chart Wall with live market data
-4. Begin Phase 2 deployment guardrails build
-
-═══════════════════════════════════════════════════════════════
-WHAT'S NOW ON GITHUB (accessible to Claude via web_fetch)
-═══════════════════════════════════════════════════════════════
-
-System Reference:  https://novakolen-hub.github.io/dundunn/v9_system.html
-Dashboard:         https://novakolen-hub.github.io/dundunn/v9_dashboard.html
-Chart Wall:        https://novakolen-hub.github.io/dundunn/v9_chartwall.html
-Sub-Mode Rewire:   https://novakolen-hub.github.io/dundunn/v9_submode_rewire.html
-Phase 3 Scope:     https://novakolen-hub.github.io/dundunn/v9_phase3_scope.html
-Quota Audit:       https://novakolen-hub.github.io/dundunn/v9_urlfetch_audit.html
-
-All specs, bridge source, scanner source, and session summaries
-accessible via GitHub API raw file access.
+PENDING (Mar 11):
+- Section-level toggles (Breadth, Story, Session Stats, Inst Pulse sub-sections)
+- Collapse All / Expand All with exceptions
+- Earnings date sort fix
+- Live market verification of all new features
