@@ -278,3 +278,40 @@ KEY DECISIONS (Mar 10 session)
 11. ARETE: Reference only — alignment check, not system override
 12. DASHBOARD: Top-down flow (Market → Sectors → Stocks → Intel → Positions)
 13. YOUTUBE: Inline desktop, app on mobile
+
+====================================================
+PENDING DASHBOARD WORK (from Mar 10 session)
+====================================================
+
+TOGGLE SYSTEM:
+  Section-level toggles needed:
+  - Breadth (within THE MARKET group)
+  - Story (within THE MARKET group)
+  - Session Stats (within THE SECTORS group)
+  - Institutional Pulse sub-sections (keep key data in header):
+    * Vol Regime
+    * IV 5-Day Change
+    * VIX Term Structure
+    * SPY Expected Move
+    * Sentiment & Positions
+
+COLLAPSE ALL / EXPAND ALL:
+  - Collapse All: everything collapses (groups + inner sections)
+  - Expand All: expands most, but KEEPS COLLAPSED:
+    * Coach/Learn blocks
+    * Intermarket Ratios
+    * Econ Calendar previous days
+    * Earnings "this week" (only show today)
+
+EARNINGS FIX:
+  - Sort order: Tuesday showing before Monday — fix to ascending date
+
+VERIFICATION NEEDED (Mar 11 with live market):
+  - GP compact header renders correctly
+  - Indicator sparklines populate after 15-20 min
+  - Breadth alert fires on ±1.5 move
+  - Arete emails render with analysis card + alignment
+  - YouTube videos in Arete Intel section
+  - Group toggle headers visible and functional
+  - Section reorder matches top-down flow
+
