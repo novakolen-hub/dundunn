@@ -201,20 +201,14 @@
   .hot-pill{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;background:rgba(239,83,80,0.1);color:#ef5350;border:1px solid rgba(239,83,80,0.2);animation:hotPulse 2s ease infinite}
   @keyframes hotPulse{0%,100%{opacity:1}50%{opacity:0.7}}
   /* ── Quota chart popup ── */
-  .qc{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 12px;width:320px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
-  .qc-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6e7590;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px}
-  .qc-bars{display:flex;align-items:flex-end;gap:3px;height:160px}
-  .qc-bar{flex:1;border-radius:2px 2px 0 0;min-width:4px;position:relative;transition:opacity .15s}
-  .qc-bar:hover{opacity:0.8}
-  .qc-bar:hover .qc-tip{display:block}
-  .qc-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#161b22;border:1px solid #30363d;border-radius:4px;padding:2px 6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#e6edf3;white-space:nowrap;margin-bottom:2px;z-index:10}
-  .qc-axis{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:8px;color:#484f58;margin-top:2px}
-  .qc-total{font-family:'JetBrains Mono',monospace;font-size:11px;margin-top:6px;text-align:center}
-  .qc-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px 10px;font-size:10px;font-family:'JetBrains Mono',monospace;color:#c4cad4;white-space:nowrap;z-index:10;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.5);line-height:1.6}
-  .qc-tip .qc-tip-h{color:#e6edf3;font-weight:700;font-size:11px;margin-bottom:3px}
-  .qc-col:hover .qc-tip{display:block}
-  .qc-col:hover{background:rgba(255,255,255,0.05);border-radius:2px}
-  .qc-log{font-family:'JetBrains Mono',monospace;font-size:9px;color:#6e7590;margin-top:6px;max-height:160px;overflow-y:auto;border-top:1px solid #21262d;padding-top:4px;line-height:1.5}
+  .qc{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px 14px;width:360px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
+  .qc-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6e7590;text-transform:uppercase;letter-spacing:0.3px}
+  .qc-total{font-family:'JetBrains Mono',monospace;font-size:11px;margin-top:6px}
+  .qc-log{font-family:'JetBrains Mono',monospace;font-size:9px;color:#6e7590;margin-top:6px;max-height:140px;overflow-y:auto;border-top:1px solid #21262d;padding-top:4px;line-height:1.5}
+  #qcTooltip{display:none;position:fixed;z-index:10000;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:8px 10px;font-size:10px;font-family:'JetBrains Mono',monospace;color:#c4cad4;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.5);line-height:1.6;pointer-events:none}
+  #qcTooltip .qc-tip-h{color:#e6edf3;font-weight:700;font-size:11px;margin-bottom:3px}
+  #qcTooltip .qc-tip-row{display:flex;justify-content:space-between;gap:16px}
+  #qcTooltip .qc-tip-v{color:#e6edf3;font-weight:600}
   .ratio-row{padding:6px 0;border-bottom:1px solid #161b22}
   @media(max-width:480px){body{padding:8px;font-size:13px}.heatmap{grid-template-columns:repeat(3,1fr)}table{font-size:12px}.inst-grid{grid-template-columns:1fr !important}}
   .inst-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px}
@@ -1012,142 +1006,149 @@ function _renderQuotaChart(){
 
   if(!_quotaHourly||!_quotaHourly.length){
     var pf=_quotaTotal/20000*100;var fc=pf>80?'#ef5350':pf>60?'#ffc107':'#00c853';
-    el.innerHTML='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center"><div class="qc-title" style="margin:0">UrlFetch Quota</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideQuotaChart()">\u2715</span></div><div class="qc-total" style="margin-top:8px"><span style="color:'+fc+'">'+_quotaTotal.toLocaleString()+'</span> / 20,000</div><div class="dim" style="font-size:10px;margin-top:6px">Waiting for hourly data from scanner...</div></div>';
+    el.innerHTML='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center"><div class="qc-title"function _renderQuotaChart(){
+  var el=$('quotaPopup');if(!el)return;
+  var CC={bars:'#ef5350',quotes:'#00c853',market:'#42a5f5',claude:'#ab47bc',bridge:'#26c6da',news:'#ffc107',positions:'#ff9800',other:'#6e7590'};
+  var CO=['bars','quotes','market','claude','bridge','news','positions','other'];
+  var CL={bars:'Bars',quotes:'Quotes',market:'Market',claude:'Claude',bridge:'Bridge',news:'News',positions:'Positions',other:'Other'};
+
+  if(!_quotaHourly||!_quotaHourly.length){
+    var pf=_quotaTotal/20000*100;var fc=pf>80?'#ef5350':pf>60?'#ffc107':'#00c853';
+    el.innerHTML='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center"><div class="qc-title">UrlFetch Quota</div><span style="cursor:pointer;color:#6e7590;font-size:14px" onclick="event.stopPropagation();hideQuotaChart()">\u2715</span></div><div class="qc-total" style="margin-top:8px"><span style="color:'+fc+'">'+_quotaTotal.toLocaleString()+'</span> / 20,000</div><div class="dim" style="font-size:10px;margin-top:6px">Waiting for data...</div></div>';
     el.style.display='block';return;
   }
 
-  var max=0;for(var i=0;i<_quotaHourly.length;i++){if(_quotaHourly[i].v>max)max=_quotaHourly[i].v;}
+  var data=_quotaHourly;
+  var n=data.length;
+  var max=0;for(var i=0;i<n;i++){if(data[i].v>max)max=data[i].v;}
   if(max===0)max=1;
-  // Round max up for clean Y-axis
   var yMax=max<=100?Math.ceil(max/10)*10:max<=500?Math.ceil(max/50)*50:max<=2000?Math.ceil(max/200)*200:Math.ceil(max/500)*500;
   if(yMax<max)yMax=max;
 
-  var numBars=_quotaHourly.length;
-  var barW=Math.max(6,Math.min(14,Math.floor(560/numBars)));
-  var chartW=numBars*(barW+2)+40; // +40 for Y-axis
+  // Canvas dimensions
+  var cW=320,cH=140,padL=32,padR=4,padT=8,padB=20;
+  var plotW=cW-padL-padR,plotH=cH-padT-padB;
+  var barW=Math.max(1,Math.floor(plotW/n)-1);
+  var gap=Math.max(0,Math.floor((plotW-barW*n)/(n+1)));
 
   var h='<div class="qc">';
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="qc-title" style="margin:0">UrlFetch \u00b7 Hourly Breakdown ('+numBars+'h)</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideQuotaChart()">\u2715</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="qc-title">UrlFetch \u00b7 '+n+'h History</div><span style="cursor:pointer;color:#6e7590;font-size:14px" onclick="event.stopPropagation();hideQuotaChart()">\u2715</span></div>';
 
-  // Chart area with Y-axis
-  h+='<div style="overflow-x:auto;overflow-y:hidden;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 4px 10px 0">';
-  h+='<div style="display:flex;min-width:'+chartW+'px;height:180px">';
+  // SVG chart — no scroll, everything fits
+  h+='<svg width="'+cW+'" height="'+cH+'" style="display:block;background:#0a0e14;border-radius:4px" id="qcSvg">';
 
-  // Y-axis labels (left side)
-  h+='<div style="width:36px;flex-shrink:0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding-right:4px;font-size:8px;font-family:JetBrains Mono,monospace;color:#484f58">';
-  h+='<span>'+yMax+'</span>';
-  h+='<span>'+Math.round(yMax*0.75)+'</span>';
-  h+='<span>'+Math.round(yMax*0.5)+'</span>';
-  h+='<span>'+Math.round(yMax*0.25)+'</span>';
-  h+='<span>0</span>';
-  h+='</div>';
-
-  // Bars
-  h+='<div style="flex:1;display:flex;align-items:flex-end;gap:1px;height:100%;position:relative;border-left:1px solid #21262d">';
-
-  // Horizontal grid lines
-  h+='<div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none">';
-  for(var gi=1;gi<=4;gi++){
-    h+='<div style="position:absolute;top:'+(gi*25-25)+'%;left:0;right:0;border-bottom:1px solid #161b22"></div>';
+  // Grid lines + Y-axis labels
+  for(var g=0;g<=4;g++){
+    var gy=padT+plotH-plotH*(g/4);
+    var gv=Math.round(yMax*g/4);
+    h+='<line x1="'+padL+'" y1="'+gy+'" x2="'+(cW-padR)+'" y2="'+gy+'" stroke="#1c2333" stroke-width="1"/>';
+    h+='<text x="'+(padL-3)+'" y="'+(gy+3)+'" fill="#484f58" font-size="8" font-family="JetBrains Mono,monospace" text-anchor="end">'+gv+'</text>';
   }
-  h+='</div>';
 
-  for(var i=0;i<_quotaHourly.length;i++){
-    var d=_quotaHourly[i];
+  // Bars — stacked by category
+  var _prevDay='';
+  for(var i=0;i<n;i++){
+    var d=data[i];
+    var x=padL+gap+i*(barW+gap);
     var hasCats=d.c&&Object.keys(d.c).some(function(k){return d.c[k]>0;});
 
-    h+='<div class="qc-col" style="width:'+barW+'px;flex-shrink:0;height:100%;display:flex;flex-direction:column-reverse;position:relative">';
+    // Day boundary marker
+    var dayPart=(d.h||'').split(' ')[0]||'';
+    if(dayPart!==_prevDay&&_prevDay!==''){
+      h+='<line x1="'+x+'" y1="'+padT+'" x2="'+x+'" y2="'+(padT+plotH)+'" stroke="#30363d" stroke-width="1" stroke-dasharray="3,2"/>';
+    }
+    _prevDay=dayPart;
 
-    // Styled hover tooltip
-    var tipHtml='<div class="qc-tip"><div class="qc-tip-h">'+e(d.h)+'</div>';
-    tipHtml+='<div style="font-size:12px;font-weight:700;color:#e6edf3;margin-bottom:3px">'+d.v+' fetches</div>';
-    if(hasCats){for(var ci3=0;ci3<catOrder.length;ci3++){var cv3=d.c[catOrder[ci3]]||0;if(cv3>0)tipHtml+='<div style="display:flex;justify-content:space-between;gap:12px"><span><span style="color:'+catColors[catOrder[ci3]]+'">\u25a0</span> '+catLabels[catOrder[ci3]]+'</span><span style="color:#e6edf3;font-weight:600">'+cv3+'</span></div>';}}
-    tipHtml+='</div>';
-    h+=tipHtml;
-
-    if(d.v===0){
-      h+='<div style="flex:1"></div>';
-    } else if(hasCats){
-      for(var ci2=0;ci2<catOrder.length;ci2++){
-        var ck=catOrder[ci2],cv2=d.c[ck]||0;
-        if(cv2>0){
-          var segPct=cv2/yMax*100;
-          h+='<div style="height:'+Math.max(segPct,0.5)+'%;background:'+catColors[ck]+';min-height:1px"></div>';
+    if(d.v>0){
+      if(hasCats){
+        var stackY=padT+plotH;
+        for(var ci=0;ci<CO.length;ci++){
+          var cv=d.c[CO[ci]]||0;
+          if(cv>0){
+            var segH=Math.max(cv/yMax*plotH,1);
+            stackY-=segH;
+            h+='<rect x="'+x+'" y="'+stackY+'" width="'+barW+'" height="'+segH+'" fill="'+CC[CO[ci]]+'" rx="0.5"/>';
+          }
         }
+      } else {
+        var bH=Math.max(d.v/yMax*plotH,2);
+        var bY=padT+plotH-bH;
+        var bc=d.v>1500?'#ef5350':d.v>800?'#ffc107':'#00c853';
+        h+='<rect x="'+x+'" y="'+bY+'" width="'+barW+'" height="'+bH+'" fill="'+bc+'" rx="0.5"/>';
       }
-    } else {
-      var pct=d.v/yMax*100;
-      var col=d.v>1500?'#ef5350':d.v>800?'#ffc107':'#00c853';
-      h+='<div style="height:'+Math.max(pct,2)+'%;background:'+col+';border-radius:1px 1px 0 0"></div>';
     }
 
-    // Count label on top of bar (for bars > 5% of max)
-    if(d.v>yMax*0.05){
-      h+='<div style="position:absolute;top:-1px;left:50%;transform:translateX(-50%) translateY(-100%);font-size:7px;color:#7d8590;font-family:JetBrains Mono,monospace;white-space:nowrap">'+d.v+'</div>';
+    // Invisible hover rect covering full height for tooltip
+    h+='<rect class="qc-hover" x="'+x+'" y="'+padT+'" width="'+Math.max(barW,3)+'" height="'+plotH+'" fill="transparent" data-idx="'+i+'"/>';
+
+    // X-axis label (sparse)
+    var lblInterval=n>80?24:n>40?12:n>20?6:3;
+    if(i%lblInterval===0||i===n-1){
+      var lbl=d.h||'';
+      // Shorten label
+      if(lbl.length>6)lbl=lbl.replace(/\s/g,'');
+      h+='<text x="'+(x+barW/2)+'" y="'+(cH-2)+'" fill="#484f58" font-size="7" font-family="JetBrains Mono,monospace" text-anchor="middle">'+e(lbl)+'</text>';
     }
-
-    h+='</div>';
   }
-  h+='</div></div></div>';
-
-  // Hour labels
-  h+='<div style="overflow-x:auto;padding:3px 4px 0 36px"><div style="display:flex;gap:1px;min-width:'+(chartW-40)+'px">';
-  var _prevDay2='';
-  for(var i=0;i<_quotaHourly.length;i++){
-    var hr=_quotaHourly[i].h||'';
-    // Show label every N bars depending on count
-    var labelInterval=numBars>80?12:numBars>40?6:numBars>20?4:2;
-    var showLbl=(i%labelInterval===0)||i===_quotaHourly.length-1;
-    // Day boundary detection (date changes in label like "3/10 1PM" vs "3/9 11PM")
-    var dayPart=hr.split(' ')[0]||'';
-    var isNewDay=dayPart!==_prevDay2&&_prevDay2!=='';
-    _prevDay2=dayPart;
-    var dayBorder=isNewDay?';border-left:2px solid #30363d;padding-left:1px':'';
-    h+='<div style="width:'+barW+'px;flex-shrink:0;text-align:center;font-size:7px;color:'+(showLbl||isNewDay?'#7d8590':'transparent')+';font-family:JetBrains Mono,monospace'+dayBorder+';overflow:hidden;text-overflow:clip">'+e(showLbl||isNewDay?hr:'.')+'</div>';
-  }
-  h+='</div></div>';
+  h+='</svg>';
 
   // Legend
   var byCat=_lastD&&_lastD.quotaByCat?_lastD.quotaByCat:null;
-  h+='<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;font-size:10px;font-family:JetBrains Mono,monospace;color:#7d8590">';
-  for(var li=0;li<catOrder.length;li++){
-    var ck3=catOrder[li];
-    var catTotal=byCat?byCat[ck3]||0:0;
-    if(!catTotal){for(var hi=0;hi<_quotaHourly.length;hi++){catTotal+=((_quotaHourly[hi].c||{})[ck3])||0;}}
-    if(catTotal>0)h+='<span><span style="color:'+catColors[ck3]+'">\u25a0</span> '+catLabels[ck3]+': '+catTotal.toLocaleString()+'</span>';
+  h+='<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;font-size:9px;font-family:JetBrains Mono,monospace;color:#7d8590">';
+  for(var li=0;li<CO.length;li++){
+    var ck=CO[li];
+    var catTotal=byCat?byCat[ck]||0:0;
+    if(!catTotal){for(var hi=0;hi<n;hi++){catTotal+=((data[hi].c||{})[ck])||0;}}
+    if(catTotal>0)h+='<span>\u25a0 <span style="color:'+CC[ck]+'">'+CL[ck]+'</span> '+catTotal.toLocaleString()+'</span>';
   }
   h+='</div>';
 
   // Total gauge
   var pctTotal=_quotaTotal/20000*100;
   var tCol=pctTotal>80?'#ef5350':pctTotal>60?'#ffc107':'#00c853';
-  h+='<div style="margin-top:8px;font-size:12px;font-family:JetBrains Mono,monospace"><span style="color:'+tCol+'">'+_quotaTotal.toLocaleString()+'</span> <span style="color:#7d8590">/ 20,000 ('+pctTotal.toFixed(0)+'%)</span></div>';
-  h+='<div style="height:5px;background:#21262d;border-radius:3px;margin-top:4px"><div style="height:100%;width:'+Math.min(pctTotal,100)+'%;background:'+tCol+';border-radius:3px"></div></div>';
+  h+='<div style="margin-top:6px;font-size:12px;font-family:JetBrains Mono,monospace"><span style="color:'+tCol+'">'+_quotaTotal.toLocaleString()+'</span> <span style="color:#7d8590">/ 20,000 ('+pctTotal.toFixed(0)+'%)</span></div>';
+  h+='<div style="height:4px;background:#21262d;border-radius:3px;margin-top:3px"><div style="height:100%;width:'+Math.min(pctTotal,100)+'%;background:'+tCol+';border-radius:3px"></div></div>';
 
-  // Log
+  // Log (collapsed by default)
   if(_quotaLog){
-    var lines=_quotaLog.split('|').slice(-15);
-    h+='<div class="qc-log">';
+    var lines=_quotaLog.split('|').slice(-12);
+    h+='<div style="margin-top:6px"><span style="cursor:pointer;font-size:9px;color:#484f58" onclick="var lg=this.nextElementSibling;lg.style.display=lg.style.display===\'none\'?\'block\':\'none\'">▸ Log</span>';
+    h+='<div class="qc-log" style="display:none">';
     for(var li2=lines.length-1;li2>=0;li2--)h+=e(lines[li2])+'<br>';
-    h+='</div>';
+    h+='</div></div>';
   }
 
   h+='</div>';
   el.innerHTML=h;
   el.style.display='block';
-}
 
-// ═══ API COST CHART ═══
-var _apiCostHourly=[],_apiCostTotal=0,_apiChartPinned=false;
-function showApiChart(){_renderApiChart();}
-function hideApiChart(){_apiChartPinned=false;$('apiPopup').style.display='none';}
-function toggleApiChart(){_apiChartPinned=!_apiChartPinned;if(_apiChartPinned)_renderApiChart();else $('apiPopup').style.display='none';}
-
-function _renderApiChart(){
-  var el=$('apiPopup');if(!el)return;
-  var hourly=_apiCostHourly;
-  if(!hourly||!hourly.length){
-    el.innerHTML='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center"><div class="qc-title" style="margin:0">Claude API Cost</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideApiChart()">✕</span></div><div class="qc-total" style="margin-top:8px"><span style="color:#ab47bc">$'+_apiCostTotal.toFixed(2)+'</span> session total</div><div class="dim" style="font-size:10px;margin-top:4px">Hourly data populates as Claude API runs</div></div>';
+  // Wire up SVG hover → fixed tooltip
+  var tip=document.getElementById('qcTooltip');
+  if(!tip){tip=document.createElement('div');tip.id='qcTooltip';document.body.appendChild(tip);}
+  var svg=document.getElementById('qcSvg');
+  if(svg){
+    var hovers=svg.querySelectorAll('.qc-hover');
+    hovers.forEach(function(rect){
+      rect.addEventListener('mouseenter',function(ev){
+        var idx=parseInt(this.getAttribute('data-idx'));
+        var d=data[idx];if(!d)return;
+        var th='<div class="qc-tip-h">'+e(d.h)+'</div>';
+        th+='<div style="font-size:13px;font-weight:700;color:#e6edf3;margin-bottom:4px">'+d.v+' fetches</div>';
+        var hasCats=d.c&&Object.keys(d.c).some(function(k){return d.c[k]>0;});
+        if(hasCats){for(var ci=0;ci<CO.length;ci++){var cv=d.c[CO[ci]]||0;if(cv>0)th+='<div class="qc-tip-row"><span>\u25a0 <span style="color:'+CC[CO[ci]]+'">'+CL[CO[ci]]+'</span></span><span class="qc-tip-v">'+cv+'</span></div>';}}
+        tip.innerHTML=th;
+        tip.style.display='block';
+      });
+      rect.addEventListener('mousemove',function(ev){
+        tip.style.left=(ev.clientX+12)+'px';
+        tip.style.top=(ev.clientY-10)+'px';
+      });
+      rect.addEventListener('mouseleave',function(){
+        tip.style.display='none';
+      });
+    });
+  }
+} onclick="event.stopPropagation();hideApiChart()">✕</span></div><div class="qc-total" style="margin-top:8px"><span style="color:#ab47bc">$'+_apiCostTotal.toFixed(2)+'</span> session total</div><div class="dim" style="font-size:10px;margin-top:4px">Hourly data populates as Claude API runs</div></div>';
     el.style.display='block';return;
   }
   var max=0.001;for(var i=0;i<hourly.length;i++){if(hourly[i].cost>max)max=hourly[i].cost;}
