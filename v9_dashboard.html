@@ -3882,9 +3882,10 @@ function qcPan(dir){
 }
 function qcWheel(deltaY){
   var el=$('quotaPopup');if(!el||!el._qzoom)return;
-  var z=el._qzoom,w=z.end-z.start;
-  if(deltaY<0){if(w>4){var s=Math.max(1,Math.round(w*0.15));z.start+=s;z.end-=s;}}
-  else{var s=Math.max(1,Math.round(w*0.2));z.start=Math.max(0,z.start-s);z.end=Math.min(_quotaHourly.length,z.end+s);}
+  var z=el._qzoom,w=z.end-z.start,total=_quotaHourly.length;
+  var s=Math.max(1,Math.round(w*0.2));
+  if(deltaY>0){if(z.start>0){s=Math.min(s,z.start);z.start-=s;z.end-=s;}}
+  else{if(z.end<total){s=Math.min(s,total-z.end);z.start+=s;z.end+=s;}}
   _renderQuotaChart();
 }
 
