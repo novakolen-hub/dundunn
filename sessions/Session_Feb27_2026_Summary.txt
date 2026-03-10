@@ -1,0 +1,188 @@
+V9 SYSTEM SESSION SUMMARY — February 27, 2026
+================================================
+
+SESSION: Dashboard v11.10.4 → v11.13.1 + Scanner v90.3.1 updates
+DURATION: Extended build session
+FILES MODIFIED: Dashboard (GitHub live), Scanner (ready for deploy)
+
+================================================
+DASHBOARD CHANGES (v11.10.4 → v11.13.1)
+================================================
+Live at: novakolen-hub.github.io/dundunn/v9_dashboard.html
+File: v9_dashboard_11_13_1.html (2051 lines)
+
+v11.10.4: Readable Flag Labels
+  - Replaced single-letter flags (VRSV) with readable labels
+  - Now shows: VWAP · RS · RSI · RVol (joined by dots)
+
+v11.10.5-v11.10.6: Inverse ETF Rich Cards
+  - Scanner pulse bleed fix (INSTITUTIONAL PULSE in section headers)
+  - Dashboard: full rich cards replacing old table
+  - INV_INFO metadata: tracks, underlying, use case, when-to-use
+  - GP-D context box with breadth score and sizing rules
+  - Each card: price/change, underlying status, enriched data, signal, news
+  - LearnBox covering daily reset, decay, V9 connection, key rules
+  - Collapsible with localStorage
+
+v11.10.7: Hidden Sections Status Bar
+  - Compact pill row below GP banner showing hidden sections
+  - Shows reason (e.g., "GP-B (shows on GP-D)", "Bridge offline")
+  - Auto-hides when nothing hidden
+
+v11.10.9: My Watching Enrichment Parity
+  - Full enriched cards matching Arete watching quality
+  - RVOL/gap/52w/EMA50/flags, setup/quality, options (IVR/IV/expMove/beta)
+  - Opus analysis (bias/levels/thesis) merged from narrative
+  - Bias signal summary with verdict
+
+v11.11-v11.11.5: Card Focus System
+  - Click any card for highlight mode (now warm parchment newspaper theme)
+  - Persistent across refreshes via localStorage Set
+  - data-tk attribute on ticker links for matching
+
+v11.11.4: News Improvements
+  - 7-day window (was 24hrs), max 5 articles per ticker
+  - Investing.com fallback link for every ticker (using slug map)
+
+v11.12: Focused Cards Section
+  - Aggregates all focused tickers into one section above Watching
+  - Source tags (POSITION, ARETE, WATCHING, ARETE WATCH)
+  - Full enrichment + unfocus buttons + clear all
+
+v11.12.1-v11.12.2: Card Separation
+  - pos-block cards: #151b23 background, #2a313a border, 6px radius
+  - Distinct from body background (#0b0e14)
+
+v11.12.3: Card Sort + Position Heat Strip
+  - Sort toggle: Default / Movers / Bias / Confluence
+  - Heat strip: colored proportional blocks showing P/L per position
+
+v11.12.4-v11.12.5: Sort Pill Everywhere
+  - Sort pill on all sections and sub-headers
+
+v11.12.6: Focused Card Notes
+  - localStorage textarea per ticker, cursor-safe on re-render
+
+v11.12.7: Key Levels on Cards
+  - levelsHtml() helper: VWAP + distance%, 9e, 20e, Opening Range
+  - Added to all 6 card types (needs scanner deploy for data)
+
+v11.12.8: Sparkline SVGs
+  - sparkSvg() renders 80x22px inline SVG polylines
+  - Green for up day, red for down day
+  - On all card types (needs scanner _Spark tab for data)
+
+v11.13: Per-Section Sort + Notes Everywhere + Focus Fix
+  - Sort pills are now tag-style (see all options, pick one)
+  - Each section has independent sort stored in localStorage
+  - sortPills('sectionName') replaces old global cycleSort()
+  - Notes textarea on ALL card types (posCard, areteCard, watching, arete watching, focused)
+  - Same note persists per ticker across all sections
+  - Textarea focus/cursor preserved across data refresh cycles
+
+v11.13.1: Newspaper Card Focus Theme
+  - Warm parchment background (#f5f0e8) instead of harsh white
+  - Sepia brown border (#8b7355) with warm glow
+  - Dark brown text (#2c1810), print-friendly greens/reds/blues
+  - All inner divs, spans, links, textareas properly themed
+  - div[style*="background"] catches all dark inner boxes
+
+================================================
+SCANNER CHANGES (v90.3.1)
+================================================
+File: V9_Confluence_Scanner_v90_3_1.txt (7667 lines)
+Status: READY FOR DEPLOY (paste into Apps Script + new version)
+
+From v90.3 baseline:
+  - INSTITUTIONAL PULSE added to section header list (pulse bleed fix)
+  - Story retrospective persistence
+  - Institutional pulse change-from-yesterday deltas
+  - Arete position enrichment + timestamps
+
+New in v90.3.1:
+  - Extra tickerQuotes fields sent to dashboard:
+    * vwap (session VWAP price)
+    * ema9, ema20 (moving averages)
+    * vol, avgVol (volume data)
+    * conf, setup (confluence score, setup name)
+    * orHi, orLo (Opening Range levels)
+  
+  - _Spark Tab (Intraday Sparkline Cache):
+    * Auto-creates hidden _Spark sheet tab
+    * Stores price snapshots every 5 minutes (7:30am-2:00pm AZ)
+    * All 424+ tickers tracked
+    * Row per time slot, column per ticker
+    * Clears automatically at market open each day
+    * Reads into getDashboardData as sparkData object
+    * ~79 slots × 424 tickers = ~33K cells
+    * Called from updateMarketTab on each cycle
+
+================================================
+BRIDGE STATUS (v4.0 — unchanged)
+================================================
+File: v9_pulse_bridge_v4.py
+No changes this session. Next session: expand to v5 with trade sync.
+
+================================================
+DEPLOYMENT CHECKLIST
+================================================
+
+Dashboard v11.13.1: ✅ LIVE (auto-deployed via GitHub Pages)
+
+Scanner v90.3.1: ⏳ NEEDS DEPLOY
+  1. Open Google Apps Script editor
+  2. Select all code (Ctrl+A)
+  3. Paste contents of V9_Confluence_Scanner_v90_3_1.txt
+  4. Save (Ctrl+S)
+  5. Deploy → Manage Deployments → New Version
+  6. Copy new deployment URL if changed
+  7. Update dashboard EP variable if URL changed
+  
+After deploy:
+  - _Spark tab auto-creates on first market-hours cycle
+  - Sparklines start appearing after ~10-15 min of data
+  - Key levels (VWAP/EMA/OR) populate immediately on first poll
+  - Pulse bleed fix takes effect immediately
+
+================================================
+NEXT WEEK PRIORITIES
+================================================
+
+1. IMMEDIATE: Deploy scanner v90.3.1 before Monday open
+
+2. TRADE MANAGEMENT SYSTEM (main build):
+   Phase 0 — Foundation:
+     - Bridge v5: /accounts/equity endpoint (TS + Alpaca balances)
+     - Scanner: Accounts config tab (daily loss limit, risk caps, equity cache)
+   
+   Phase 1 — Trade Capture:
+     - Bridge v5: /trades/tradestation (poll filled orders)
+     - Bridge v5: /trades/alpaca (poll filled orders)
+     - Scanner: Executions tab + syncTrades() on 1-min trigger
+     - Scanner: Trades tab + grouping logic (scale-in/out → parent)
+     - Scanner: Market context snapshot at fill time
+   
+   Phase 2 — Pre-Trade Form (if time):
+     - Dashboard: Trade entry modal with auto-sizing
+     - Traffic light scorecard (8 checks)
+     - PLANNED row matching to broker fill
+
+3. DASHBOARD POLISH:
+   - Verify sparklines + key levels after scanner deploy
+   - Any contrast/spacing tweaks from live usage
+
+4. BACKLOG:
+   - Ticker-specific news from scanner
+   - UMU v6.2 template buildout
+   - TradesViz Day Plan / Trade Plan integration
+
+================================================
+KEY FILES FOR PROJECT
+================================================
+
+v9_dashboard_11_13_1.html — Dashboard (2051 lines, live on GitHub)
+V9_Confluence_Scanner_v90_3_1.txt — Scanner (7667 lines, deploy pending)
+v9_pulse_bridge_v4.py — Bridge (unchanged, in project already)
+V9_Trade_Management_Build_Spec.txt — Trade mgmt spec (in project already)
+Trading_System_V9_4.txt — Master system doc (in project already)
+Session_Feb27_2026_Summary.txt — This file
