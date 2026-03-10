@@ -1,6 +1,6 @@
 // ============================================================
-// V9 CONFLUENCE SCANNER v91.0 — Google Apps Script
-// v91.0: SETUP SCORING ENGINE + ARETE FIX + CATEGORY QUOTA TRACKING
+// V9 CONFLUENCE SCANNER v91.1 — Google Apps Script
+// v91.1: SETUP SCORING ENGINE + ARETE FIX + CATEGORY QUOTA TRACKING + % EQUITY SIZING
 //   - Setup detection: independent scoring replaces if/else waterfall.
 //     Each of 13 setups scored: base(10) + RVOL(0-5) + conf(0-5) + signal(0-10).
 //     Best score = primary, second = secondary. Pipe-delimited in setup column.
@@ -10933,25 +10933,29 @@ var SETUP_REGISTRY = {
   'Scalping':        { label:'Scalping',                 sessions:['OPEN','CORE'],         scalePlan:'100% at target',                minConf:14, side:'ANY',   validGP:['A','B','D'],                        minRVOL:1,   nature:'any' }
 };
 
-// ── Gameplan position sizing base amounts (legacy fallback) ──
-var GP_SIZING = {
-  'A': { baseLo: 15000, baseHi: 20000, riskLo: 150, riskHi: 200 },
-  'B': { baseLo:  8000, baseHi: 12000, riskLo: 100, riskHi: 150 },
-  'C': { baseLo:     0, baseHi:     0, riskLo:   0, riskHi:   0 },
-  'D': { baseLo:  8000, baseHi: 12000, riskLo: 100, riskHi: 150 }
+// ── Gameplan position sizing — PERCENT OF CURRENT LIVE EQUITY ──
+// All sizing is now % based. Dollar amounts computed at runtime by
+// multiplying % × current equity from Accounts tab.
+// Equity reference: current_equity (live, updates intraday).
+var GP_SIZING_PCT = {
+  'A': { posLo: 0.20, posHi: 0.25, riskLo: 0.0075, riskHi: 0.010 },
+  'B': { posLo: 0.12, posHi: 0.18, riskLo: 0.0050, riskHi: 0.0075 },
+  'C': { posLo: 0,    posHi: 0,    riskLo: 0,       riskHi: 0 },
+  'D': { posLo: 0.12, posHi: 0.18, riskLo: 0.0050, riskHi: 0.0075 }
 };
 
-// ── Sub-mode sizing overrides (sizingAdj → dollar ranges) ──
-// Maps the sizingAdj field from getGPSubMode() to actual dollar ranges.
-// This is the authoritative sizing source; GP_SIZING is legacy fallback.
-var SUBMODE_SIZING = {
-  'full':     { baseLo: 15000, baseHi: 20000, riskLo: 150, riskHi: 200 },   // A-Surge, A-Steady
-  'standard': { baseLo:  8000, baseHi: 12000, riskLo: 100, riskHi: 150 },   // B-Building, B-Steady, D-Persistent
-  'reduce':   { baseLo:  6000, baseHi:  9000, riskLo:  75, riskHi: 120 },   // A-Cooling, A-Choppy, B-Weakening, B-Choppy, D-Bottoming
-  'caution':  { baseLo:  6000, baseHi:  9000, riskLo:  75, riskHi: 120 },   // alias for reduce (same dollars, different label)
-  'small':    { baseLo:  3000, baseHi:  5000, riskLo:  40, riskHi:  70 },   // C-Recovery — Tier 1-3 max
-  'bench':    { baseLo:     0, baseHi:     0, riskLo:   0, riskHi:   0 },   // C-Flat, C-Choppy, C-Deteriorating
-  'inverse':  { baseLo:  8000, baseHi: 12000, riskLo: 100, riskHi: 150 }    // D-Persistent, D-Capitulation, D-Choppy
+// ── Sub-mode sizing overrides (sizingAdj → % of equity) ──
+// Authoritative sizing source. GP_SIZING_PCT is legacy fallback.
+// posLo/posHi = position size as fraction of equity (0.20 = 20%)
+// riskLo/riskHi = max risk per trade as fraction of equity (0.01 = 1%)
+var SUBMODE_SIZING_PCT = {
+  'full':     { posLo: 0.20, posHi: 0.25, riskLo: 0.0075, riskHi: 0.010 },   // A-Surge, A-Steady
+  'standard': { posLo: 0.12, posHi: 0.18, riskLo: 0.0050, riskHi: 0.0075 },  // B-Building, B-Steady, D-Persistent
+  'reduce':   { posLo: 0.08, posHi: 0.12, riskLo: 0.0035, riskHi: 0.005 },   // A-Cooling, A-Choppy, B-Weakening, B-Choppy, D-Bottoming
+  'caution':  { posLo: 0.08, posHi: 0.12, riskLo: 0.0035, riskHi: 0.005 },   // alias for reduce
+  'small':    { posLo: 0.04, posHi: 0.07, riskLo: 0.0020, riskHi: 0.0035 },  // C-Recovery — Tier 1-3 max
+  'bench':    { posLo: 0,    posHi: 0,    riskLo: 0,       riskHi: 0 },       // C-Flat, C-Choppy, C-Deteriorating
+  'inverse':  { posLo: 0.12, posHi: 0.18, riskLo: 0.0050, riskHi: 0.0075 }   // D-Persistent, D-Capitulation, D-Choppy
 };
 
 // ── Helper: read current sub-mode from ScriptProperties ──
@@ -10995,12 +10999,56 @@ function _checkSetupGP(setupType, subModeLabel, gpLetter) {
   return { allowed: false, caution: false, reason: subModeLabel + ' does not support ' + setupType };
 }
 
-// ── Helper: get effective sizing for current sub-mode ──
-function _getEffectiveSizing(subMode, gpLetter) {
-  if (subMode && subMode.sizingAdj && SUBMODE_SIZING[subMode.sizingAdj]) {
-    return SUBMODE_SIZING[subMode.sizingAdj];
+// ── Helper: get effective sizing percentages for current sub-mode ──
+// Returns { posLo, posHi, riskLo, riskHi } as fractions (0.20 = 20%)
+function _getEffectiveSizingPct(subMode, gpLetter) {
+  if (subMode && subMode.sizingAdj && SUBMODE_SIZING_PCT[subMode.sizingAdj]) {
+    return SUBMODE_SIZING_PCT[subMode.sizingAdj];
   }
-  return GP_SIZING[gpLetter] || GP_SIZING['C'];
+  return GP_SIZING_PCT[gpLetter] || GP_SIZING_PCT['C'];
+}
+
+// ── Helper: resolve current live equity from Accounts tab ──
+function _getCurrentEquity(accountId) {
+  try {
+    var accounts = getAccountsMap();
+    if (accountId && accounts[accountId]) {
+      return parseFloat(accounts[accountId].current_equity) || 0;
+    }
+    var total = 0;
+    for (var id in accounts) {
+      total += parseFloat(accounts[id].current_equity) || 0;
+    }
+    return total;
+  } catch(e) {
+    return 0;
+  }
+}
+
+// ── Helper: convert sizing percentages to dollar amounts given equity ──
+// Returns baseLo/baseHi/riskLo/riskHi in dollars PLUS pct fields + equity ref.
+// Same return shape as old _getEffectiveSizing so all callers work unchanged.
+function _getEffectiveSizing(subMode, gpLetter, accountId) {
+  var pct = _getEffectiveSizingPct(subMode, gpLetter);
+  var equity = _getCurrentEquity(accountId);
+  if (equity <= 0) {
+    return { baseLo: 0, baseHi: 0, riskLo: 0, riskHi: 0,
+             posLoPct: pct.posLo, posHiPct: pct.posHi,
+             riskLoPct: pct.riskLo, riskHiPct: pct.riskHi,
+             equity: 0, pctBased: true };
+  }
+  return {
+    baseLo: Math.round(equity * pct.posLo),
+    baseHi: Math.round(equity * pct.posHi),
+    riskLo: Math.round(equity * pct.riskLo),
+    riskHi: Math.round(equity * pct.riskHi),
+    posLoPct: pct.posLo,
+    posHiPct: pct.posHi,
+    riskLoPct: pct.riskLo,
+    riskHiPct: pct.riskHi,
+    equity: equity,
+    pctBased: true
+  };
 }
 
 /**
@@ -11141,7 +11189,7 @@ function getPreTradeData(symbol) {
   var subModeLabel = (subMode && subMode.subMode) ? subMode.subMode : '';
   var sizingAdj = (subMode && subMode.sizingAdj) ? subMode.sizingAdj : '';
   var subModeDesc = (subMode && subMode.desc) ? subMode.desc : '';
-  var effectiveSizing = _getEffectiveSizing(subMode, gameplan);
+  var effectiveSizing = _getEffectiveSizing(subMode, gameplan, '');
 
   return {
     symbol: symbol,
@@ -11207,7 +11255,7 @@ function computePositionSize(params) {
   var subMode = _getCurrentSubMode();
   var subModeLabel = (subMode && subMode.subMode) ? subMode.subMode : '';
   var sizingAdj = (subMode && subMode.sizingAdj) ? subMode.sizingAdj : '';
-  var effectiveSizing = _getEffectiveSizing(subMode, gp);
+  var effectiveSizing = _getEffectiveSizing(subMode, gp, accountId);
 
   // ── GP + sub-mode gate: check if setup is allowed ──
   var gpCheck = _checkSetupGP(setupType, subModeLabel, gp);
@@ -11252,14 +11300,27 @@ function computePositionSize(params) {
   var stopDist = Math.abs(price - stop);
   var dollarRisk = Math.round(shares * stopDist * 100) / 100;
 
+  // ── Risk cap: if dollarRisk exceeds max risk %, reduce shares ──
+  var maxRiskDollars = effectiveSizing.riskHi || 0;
+  if (maxRiskDollars > 0 && dollarRisk > maxRiskDollars && stopDist > 0) {
+    shares = Math.floor(maxRiskDollars / stopDist);
+    if (shares < 1) shares = 1;
+    finalDollars = Math.round(shares * price);
+    dollarRisk = Math.round(shares * stopDist * 100) / 100;
+  }
+
   // Account risk %
   var riskPctAccount = 0;
-  if (accountId) {
+  var equity = effectiveSizing.equity || 0;
+  if (equity > 0) {
+    riskPctAccount = Math.round(dollarRisk / equity * 10000) / 100;
+  } else if (accountId) {
     try {
       var accounts = getAccountsMap();
       var acct = accounts[accountId];
       if (acct && acct.current_equity > 0) {
-        riskPctAccount = Math.round(dollarRisk / parseFloat(acct.current_equity) * 10000) / 100;
+        equity = parseFloat(acct.current_equity);
+        riskPctAccount = Math.round(dollarRisk / equity * 10000) / 100;
       }
     } catch(e) {}
   }
