@@ -1,0 +1,280 @@
+====================================================
+V9 TRADE MANAGEMENT & SYSTEM BUILD SPEC
+Updated: March 10, 2026
+====================================================
+
+CURRENT STATE SUMMARY
+=====================
+
+Scanner: v91.9 (deployed)
+Dashboard: v11.18+ (deployed, GitHub Pages)
+Bridge: v4 (Desktop Python, ngrok)
+System Reference: https://novakolen-hub.github.io/dundunn/v9_system.html
+
+====================================================
+PHASE STATUS
+====================================================
+
+PHASE 0: FOUNDATION — ✅ COMPLETE
+  ✅ Bridge v4: Account balance endpoints (TS + Alpaca equity)
+  ✅ Scanner: Accounts tab, equity cache, auto-BOD detection
+  ✅ % of equity position sizing (replaces fixed $)
+  ✅ SUBMODE_SIZING_PCT: full(20-25%/0.75-1%), standard(12-18%/0.5-0.75%),
+     reduce(8-12%/0.35-0.5%), small(4-7%/0.2-0.35%), bench(0%), inverse(12-18%)
+  ✅ Risk cap: auto-reduces shares if dollar risk exceeds max %
+  ✅ Dynamic EDT/EST timing (auto-detects, never hardcoded)
+
+PHASE 1: TRADE CAPTURE — ✅ COMPLETE
+  ✅ 5 tabs: Accounts (14 col), Executions (12 col), Trades (65 col),
+     DailyLog (31 col), Snapshots (25 col)
+  ✅ TradeStation order sync (direct API from scanner, not via bridge)
+  ✅ Alpaca order sync (direct API)
+  ✅ syncTrades() runs every scanner tick (1-min during market)
+  ✅ logExecution() dedupes by exec_id, writes to Executions tab
+  ✅ groupToTrade() creates/updates parent Trades (handles scale-in/out, running_qty)
+  ✅ snapshotContext() captures market state at fill time
+  ✅ Seed accounts from TS
+  ✅ Reconcile positions function
+  ✅ EOD: syncTrades, snapshot, daily log generation
+
+PHASE 2A: PRE-TRADE FORM — ✅ COMPLETE
+  ✅ Pre-trade modal on dashboard (Level 2 popup)
+  ✅ Traffic light scorecard (8 checks)
+  ✅ Auto-sizing based on GP + sub-mode + % equity
+  ✅ R-multiple targets displayed
+  ✅ Plan Trade dialog in scanner menu
+  ✅ logPlannedTrade() + matching to broker fills
+
+PHASE 2B: DEPLOYMENT GUARDRAILS — ⬜ SPECCED, NOT BUILT
+  Spec from Mar 10 session:
+  1. Swing exposure cap: A=40%, B=30%, C-R=15%, D=20% of equity
+  2. Breakeven stop discount: positions with stop ≥ entry count at 50%
+  3. Intraday risk budget: sum of DT dollar risk / equity
+     (A=2.5%, B=1.5%, C-R=0.5%, D=1.5%)
+  4. Max concurrent DTs: A=4, B=3, C-R=1, D=2
+  5. Scorecard Check 9: Portfolio Heat
+  6. GP transitions: grandfather existing, only block new entries
+  7. Paper trades: exempt from deployment caps
+  
+  Build steps:
+  - INTRADAY_CAPS + SWING_CAPS config objects
+  - _calcSwingExposure() function
+  - Check 9 in pre-trade scorecard
+  - Portfolio Heat bars in dashboard Book section
+
+PHASE 3: TRADE MANAGEMENT — ⬜ SPECCED, NOT BUILT
+  3.1 Scale-In/Out (7 steps):
+    - Grouping logic for weighted avg entry
+    - Partial exit P&L with R-level annotation (e.g. "150@142.50(1.5R)")
+    - running_qty lifecycle
+    - Entry legs / exit legs tracking
+    
+  3.2 Stop Lifecycle (5 steps):
+    - current_stop field on Trades tab
+    - 4 states: INITIAL / BE / TRAILING / WIDENED
+    - Manual update via modal
+    - Auto-inference nag at 1R+
+    - History log
+    
+  3.3 Theme Clustering (4 steps):
+    - 12 clusters: AI_INFRA, SEMIS, MEGA_TECH, FINTECH, BIOTECH,
+      ENERGY, DEFENSE, RETAIL, INDUSTRIAL, CRYPTO, CHINA, BROAD_MKT
+    - HEDGE_PAIRS for inverse detection
+    - Portfolio view as Theme Exposure Map (default)
+    - Replaces basic sector checks
+    
+  3.4 Unplanned Trade Tagging (3 steps):
+    - Toast on was_planned=false
+    - Lightweight tag form
+    - Plan adherence metric
+    
+  3.5 DT→Swing Transition (4 steps):
+    - Convert button with overnight stop validation
+    - Full carryover (original entry/stop/scorecard/snapshot)
+    - was_converted flag
+    - EOD auto-detect (open DT at close → prompt convert)
+    
+  3.6 Loss Limits (2 steps):
+    - Advisory not hard block
+    - Daily/weekly tracking in DailyLog
+    
+  3.7 TOD Sizing Adjustment (2 steps):
+    - Time-of-day multiplier on position size
+    - Wider stops in AM, tighter in PM
+
+PHASE 4: BROKER STOP POLLING — ⬜ SPECCED, NOT BUILT
+  4.1 Bridge polls TS stop orders
+  4.2 Scanner reads stop prices from bridge
+  4.3 Auto-update current_stop on Trades tab
+
+====================================================
+ADDITIONAL SYSTEMS BUILT (Mar 10 session)
+====================================================
+
+BREADTH ALERT ENGINE (v91.4+):
+  - Immediate trigger: ±1.5 in one 5-min cycle
+  - Sustained trigger: ±2.5 over 15 min (3 cycles)
+  - Attribution: sector flips, VIX spike, internals movement,
+    growth/defensive shift, top movers
+  - Optional: 1 news fetch (FinnHub) for headline confirmation
+  - 15-min cooldown between alerts
+  - Dashboard: alert banner below GP header with cause pills + headline
+  - Data: breadthAlerts[] in dashboard JSON
+
+INTERNALS HISTORY CACHE (v91.5+):
+  - Caches TICK/ADD/ADQD/VOLD/VOLQD every 5-min cycle
+  - INTERNALS_HIST ScriptProperty, clears daily
+  - Dashboard: Option C hybrid sparklines in Primary Drivers table
+    (sparkline inside range-shaded zone, zero line, current dot)
+  - Data: internalsHist[] in dashboard JSON
+
+ARETE INTELLIGENCE PIPELINE (v91.6-91.9):
+  Email:
+  - Forward from personal Gmail → Workspace (filter: arete@aretetrading.ccsend.com)
+  - Scanner search: "aretetrading.ccsend.com newer_than:7d"
+  - _cleanAreteBody(): strips tracking URLs, footers, forwarding headers
+  - Read checkmarks (localStorage)
+  
+  Claude Analysis (once/day):
+  - _analyzeAreteEmail(): Sonnet extracts tickers, calls (bias/level),
+    sector themes, market bias, summary → ARETE_ANALYSIS_TODAY
+  
+  Alignment Check:
+  - _checkAreteAlignment(): compares each call against scanner data
+  - Per-call status: ALIGNED / PARTIAL / DIVERGENT / NOT_TRACKED
+  - GP alignment check (Arete bias vs current GP letter)
+  
+  EOD Retrospective:
+  - _areteRetrospective(): compares morning calls to EOD results
+  - Accuracy tracking: correct/wrong/neutral per day
+  - 30-day rolling history → ARETE_RETRO_HIST
+  - Shows in EOD alert and dashboard scoreboard
+  
+  YouTube:
+  - RSS feed: channel UCTeFsS-bP0XEt3NBMjfW2cA (@AreteTrading)
+  - 4-hour cache, up to 8 videos
+  - Inline embed (desktop), YouTube app (mobile)
+  - Watched checkmarks (localStorage)
+  
+  Arete Book (merged into Arete Intel section):
+  - Positions + watching from Discord
+  - Collapsible sub-section within Arete Intel
+
+DASHBOARD ARCHITECTURE (v11.18+):
+  Compact GP Header:
+  - Big letter + action + sub-mode with sizing tag
+  - Score + trajectory
+  - Ruler with needle, zone highlighting, threshold labels
+  - Distance badges (↑ next GP up, ↓ next GP down)
+  - SPY/VIX quick glance
+  - Replaces old GP banner + session bar + text block
+  
+  Section Groups (6 collapsible groups):
+  - THE MARKET: Breadth → Institutional Pulse → Story
+  - THE SECTORS: Sectors → Session → Ratios
+  - THE STOCKS: Trade Candidates → In Play → Active Setups → Watching → Setups
+  - INTELLIGENCE: Arete Intel → Econ → Earnings → News
+  - MY POSITIONS: Book → Inverse ETFs
+  - REFERENCE: Coaching → Focused
+  - State persists in localStorage
+  
+  Quota Chart:
+  - SVG rebuild with Y-axis gridlines, stacked category bars
+  - Zoom: All/24h/8h presets, +/- buttons, arrow pan, scroll-to-pan
+  - Sticky popup (X to close, click-outside to close)
+  - Mouse-follow tooltip
+  - 5-day (120h) history from scanner
+
+SCANNER MENU (v91.7+):
+  4 submenus:
+  - ▶ Controls (start/stop scanner, market, dashboard, pulse, triggers)
+  - 📈 Trading (positions, equity, sync, setups, plan trade, EOD)
+  - 🔧 Tools (quota, sidebar, cache refresh, IC slugs)
+  - ⚙ Setup (credentials, accounts, Finnhub, diagnostics)
+
+NEWS QUOTA OPTIMIZATION (v91.3+):
+  - RSS cache: 30 min (was 10)
+  - FinnHub cache: 30 min (was 3)
+  - Per-ticker Yahoo feeds: REMOVED
+  - Fixed 3 RSS feeds (Investing.com, CNBC, Yahoo general)
+  - Savings: ~572 news fetches/day
+
+====================================================
+PRIORITY BUILD ORDER (next steps)
+====================================================
+
+1. VERIFY MAR 10 DEPLOYS (Mar 11 morning)
+   - GP compact header rendering
+   - Indicator sparklines populate after 15-20 min
+   - Breadth alert fires on ±1.5 move
+   - Arete emails show in dashboard
+   - Section groups toggle correctly
+   - YouTube videos load
+
+2. PHASE 2B: DEPLOYMENT GUARDRAILS
+   - INTRADAY_CAPS + SWING_CAPS config
+   - _calcSwingExposure()
+   - Scorecard Check 9 (Portfolio Heat)
+   - Portfolio Heat bars in Book section
+
+3. PHASE 3.1: SCALE-IN/OUT
+   - Weighted avg entry calculation
+   - Partial exit P&L with R annotation
+   - Entry/exit legs tracking
+   - running_qty lifecycle
+
+4. PHASE 3.2: STOP LIFECYCLE
+   - current_stop field
+   - 4 states (INITIAL/BE/TRAILING/WIDENED)
+   - Manual update via modal
+   - Auto-nag at 1R+
+
+5. PHASE 3.3: THEME CLUSTERING
+   - 12 cluster definitions
+   - Portfolio view as Theme Exposure Map
+
+6. PHASE 3.4-3.7: REMAINING TRADE MGMT
+   - Unplanned tagging
+   - DT→SW transition
+   - Loss limits
+   - TOD sizing
+
+7. PHASE 4: BROKER STOP POLLING
+
+====================================================
+GITHUB REPO STRUCTURE
+====================================================
+
+novakolen-hub/dundunn/
+├── v9_dashboard.html         ← LIVE dashboard
+├── v9_chartwall.html         ← LIVE chart wall
+├── v9_system.html            ← LIVE system reference
+├── specs/
+│   ├── V9_Build_Spec_Updated.txt        ← THIS FILE
+│   ├── V9_Percent_Sizing_Code_Changes.txt
+│   ├── V9_Trade_Management_Build_Spec.txt (original)
+│   ├── V9_Data_Model_v1.md
+│   ├── V9_Dynamic_Watchlist_Spec.txt
+│   ├── SMB_Playbook_Integration_Session.txt
+│   └── SMB_Playbook_Integration_Session_2.txt
+├── bridge/v9_pulse_bridge_v4.py
+├── scanner/V9_Confluence_Scanner_v91.txt  ← v91.9 source
+└── sessions/
+
+====================================================
+KEY DECISIONS (Mar 10 session)
+====================================================
+
+1. SIZING: % of equity, not fixed dollars
+2. DEPLOYED CAPITAL: Hybrid — size per total equity, cap total deployment
+3. BE DISCOUNT: Swings at breakeven count at 50% against cap
+4. LOSS LIMITS: Advisory not hard block
+5. GP TRANSITIONS: Grandfather existing, only block new entries
+6. PAPER TRADES: Exempt from deployment caps
+7. PORTFOLIO VIEW: Theme-based clusters as default
+8. DT→SW: Formal conversion with full carryover
+9. NEWS: 30-min cache, 3 feeds only, no per-ticker feeds
+10. TIMING: Dynamic DST detection, never hardcode AZ hours
+11. ARETE: Reference only — alignment check, not system override
+12. DASHBOARD: Top-down flow (Market → Sectors → Stocks → Intel → Positions)
+13. YOUTUBE: Inline desktop, app on mobile
