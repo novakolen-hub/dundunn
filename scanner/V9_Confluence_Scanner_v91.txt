@@ -7690,10 +7690,16 @@ function getAreteFromGmail_() {
   
   try {
     // Pull up to 7 emails from this week — Arete sends from ccsend.com, shows as Alpha Chasers
-    var threads = GmailApp.search('from:arete@aretetrading.ccsend.com newer_than:7d', 0, 7);
+    // Search for Arete emails — direct OR forwarded
+    // Direct: from:arete (if subscribed on this account)
+    // Forwarded: subject contains Arete markers (premarket, weekend, alpha chasers)
+    var threads = GmailApp.search('from:arete newer_than:7d', 0, 7);
     if (threads.length === 0) {
-      // Fallback: try broader search in case sender changes
-      threads = GmailApp.search('from:arete newer_than:7d', 0, 7);
+      threads = GmailApp.search('{subject:arete subject:"alpha chasers" subject:"premarket"} newer_than:7d', 0, 7);
+    }
+    if (threads.length === 0) {
+      // Last resort: any email mentioning arete in body
+      threads = GmailApp.search('arete trading newer_than:7d', 0, 7);
     }
     if (threads.length === 0) return null;
     
@@ -9777,21 +9783,22 @@ function testAreteEmails() {
     Logger.log('Testing Arete email search...');
     
     // Test 1: Direct search
-    var threads1 = GmailApp.search('from:arete@aretetrading.ccsend.com newer_than:7d', 0, 7);
-    Logger.log('Search 1 (ccsend.com): ' + threads1.length + ' threads');
+    var threads1 = GmailApp.search('from:arete newer_than:7d', 0, 7);
+    Logger.log('Search 1 (from:arete): ' + threads1.length + ' threads');
     
-    // Test 2: Broader search
-    var threads2 = GmailApp.search('from:arete newer_than:7d', 0, 7);
-    Logger.log('Search 2 (broader): ' + threads2.length + ' threads');
+    var threads2 = GmailApp.search('{subject:arete subject:"alpha chasers" subject:"premarket"} newer_than:7d', 0, 7);
+    Logger.log('Search 2 (subject match): ' + threads2.length + ' threads');
     
-    // Test 3: Even broader
-    var threads3 = GmailApp.search('arete newer_than:7d', 0, 7);
-    Logger.log('Search 3 (any mention): ' + threads3.length + ' threads');
+    var threads3 = GmailApp.search('arete trading newer_than:7d', 0, 7);
+    Logger.log('Search 3 (body mention): ' + threads3.length + ' threads');
     
-    // Test 4: Check what we actually have
-    if (threads2.length > 0) {
-      var msg = threads2[0].getMessages()[0];
-      Logger.log('Latest: from=' + msg.getFrom() + ' subject=' + msg.getSubject() + ' date=' + msg.getDate());
+    // Show what each found
+    var allThreads = [threads1, threads2, threads3];
+    for (var ti = 0; ti < allThreads.length; ti++) {
+      if (allThreads[ti].length > 0) {
+        var msg = allThreads[ti][0].getMessages()[0];
+        Logger.log('Search ' + (ti+1) + ' latest: from=' + msg.getFrom() + ' subject=' + msg.getSubject().substring(0,60) + ' date=' + msg.getDate());
+      }
     }
     
     // Test 5: Check stored data
