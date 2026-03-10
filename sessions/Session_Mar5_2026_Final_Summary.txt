@@ -1,0 +1,247 @@
+═══════════════════════════════════════════════════════════════
+SESSION SUMMARY — March 5, 2026 (FINAL)
+Scanner: v90.10.3 → v91.0
+Dashboard: v11.17.2 → v11.17.9 (Universal Card)
+NEW: Chart Wall (v9_chartwall.html)
+═══════════════════════════════════════════════════════════════
+
+CRITICAL CONTEXT FOR NEXT SESSION:
+═══════════════════════════════════
+
+1. SCANNER v91 NEEDS TO BE PASTED INTO GAS.
+   File: V9_Confluence_Scanner_v91.txt
+   Currently deployed: v90.10.3 from the other chat this morning.
+   v91 adds: setup scoring engine, Arete email fix, API cost hourly
+   tracking, 5-day quota retention. WITHOUT v91 pasted, the dashboard
+   won't show setup scores, grades will be wrong, and API cost chart
+   will be empty.
+
+2. GITHUB PAGES NOW USES GITHUB ACTIONS (not legacy Jekyll).
+   File .github/workflows/pages.yml is in the repo.
+   Pages source set to "GitHub Actions" in Settings.
+   Never rapid-fire push — the old Jekyll queue jam took an hour to fix.
+
+3. GITHUB PAT is in memory. Never search for it.
+
+4. START FROM DEPLOYED CODE, not project files.
+   Pull live from GitHub API before making changes.
+   Other chats may have pushed updates.
+
+═══════════════════════════════════════════════════════════════
+WHAT WAS BUILT TODAY
+═══════════════════════════════════════════════════════════════
+
+A. SETUP SCORING ENGINE (Scanner v91)
+   - Replaced if/else waterfall with independent scoring for all 13 setups
+   - _setupScore(): base(10) + RVOL bonus(0-5) + confluence bonus(0-5) + signal quality(0-10)
+   - Highest score = primary setup, second = secondary
+   - Pipe-delimited in setup column: "VWAP-Hold|18.5|Momentum|12.3"
+   - Dashboard _parseSetup() reads pipe format
+   - _matchSetupKey() strips pipe data before matching
+
+B. UNIVERSAL CARD SYSTEM (Dashboard v11.17.9)
+   - Single uCard(tk, mode, opts) function replaces ALL card types
+   - ALL sections use compact mode: Trade Candidates, In Play, Watching,
+     Focused, Book, Arete Book
+   - posCard() and areteCard() are thin wrappers around uCard
+   - Compact row shows: ticker link · price · change · setup+score ·
+     grade · RVOL · confluence · badges · sparkline
+   - Fallback stats when data missing: quality tag, RS, gap
+   - Price shows "--" when missing (never blank)
+   - Click any card → opens instant pre-trade modal
+
+C. INSTANT PRE-TRADE MODAL (Level 2 Trade Card)
+   - _buildClientPT(symbol) assembles data from client-side cache
+   - Opens instantly — no server round-trip
+   - "↻ Refresh from server" button for full precision data
+   - "➜ Wall" button sends ticker to Chart Wall via localStorage
+   - Layout:
+     * Header: ticker · $change · %change · setup tag
+     * TradingView 5-min chart (280px iframe embed)
+     * Unified Scorecard (setup-specific criteria + market context)
+     * Catalyst badges from In Play data
+     * Opus analysis (bias/levels/thesis)
+     * API cost display
+     * Guidance bar with contextual advice + sizing directive
+     * Position awareness if held
+     * Stops/targets/sizing
+     * Playbook reference
+
+D. SETUP-SPECIFIC UNIFIED SCORECARD
+   - SETUP_CHECKS map: each setup has its own criteria
+   - Boxes show: ✅/⚠️/❌ + current value + requirement + color bg
+   - Market context checks: GP×Setup, Session, VIX, Sector exposure
+   - Pass bar: green/yellow/red count
+   - Guidance engine: contextual advice + sizing directive
+   - Replaces BOTH old generic stats AND old 8-check scorecard
+
+E. QUOTA CHART (Fetches hover)
+   - Hover/click "Fetches" in header → popup
+   - 24 vertical stacked bars, color-coded by category
+   - Categories: bars(red), quotes(green), market(blue), claude(purple),
+     bridge(cyan), news(yellow), positions(orange), other(gray)
+   - Styled hover tooltip per bar
+   - Scanner stores per-category hourly data (QUOTA_key_cat format)
+   - Expanded to 5-day (120 hour) scrollable history
+   - Day boundary markers in scroll view
+
+F. API COST CHART
+   - Same hover/click pattern on "API $" header
+   - APICOST_ hourly buckets + APITOK_ token tracking per hour
+   - Purple theme, shows cost + calls + tokens per hour
+   - Also expanded to 5-day history
+
+G. ARETE EMAIL FIX (Scanner v91)
+   - getDashboardData() refreshes Arete emails independently
+   - 2-hour cache check, calls getAreteFromGmail_() if stale
+
+H. CHART WALL (v9_chartwall.html — NEW PAGE)
+   - Live at: https://novakolen-hub.github.io/dundunn/v9_chartwall.html
+   - Lightweight Charts library (open source, full control)
+   - Proof of concept CONFIRMED: VWAP, EMAs, Volume all render correctly
+   - Polls same scanner endpoint every 60 seconds
+   - Buttons: Load Trade Candidates, Load In Play, Add ticker, Clear
+   - Grid layout: toggle 2/3/4/6 columns
+   - Setup-specific indicators: SETUP_IND map per setup type
+   - Fallback to TradingView iframe when spark data insufficient
+   - Persists wall tickers in localStorage
+   - "➜ Wall" button in dashboard modal sends tickers here
+   - EMA colors: green=9, blue=20, red=50; VWAP=yellow
+
+I. GITHUB PAGES FIX
+   - Rapid-fire pushes jammed legacy Jekyll build queue
+   - Added .nojekyll file
+   - Created .github/workflows/pages.yml (user created manually)
+   - Switched Pages source to "GitHub Actions"
+   - Deployment now works reliably
+
+J. TRADE CANDIDATES FIXES
+   - Section holds placeholder when empty (never disappears)
+   - Falls back to inPlayToday data when _tq setup data is sparse
+   - Populates _tq from inPlayToday and watchlistTop when quotes sparse
+
+═══════════════════════════════════════════════════════════════
+CURRENT DEPLOY STATUS
+═══════════════════════════════════════════════════════════════
+
+GAS (Apps Script):
+  - DEPLOYED: v90.10.3 (from other chat this morning)
+  - NEEDS PASTE: V9_Confluence_Scanner_v91.txt
+  - v91 adds: setup scoring, Arete fix, API cost tracking, 5-day retention
+
+GitHub Pages:
+  - LIVE: v9_dashboard.html (v11.17.9 — Universal Card)
+  - LIVE: v9_chartwall.html (Chart Wall)
+  - Deploy method: GitHub Actions workflow
+  - Repo: novakolen-hub/dundunn
+
+Files in repo:
+  - v9_dashboard.html (live dashboard)
+  - v9_chartwall.html (chart wall)
+  - .github/workflows/pages.yml (deploy workflow)
+  - .nojekyll (bypass Jekyll)
+  - index.html (old, unused)
+  - v9_dashboard_9.html (archive)
+
+═══════════════════════════════════════════════════════════════
+KNOWN ISSUES / INCOMPLETE
+═══════════════════════════════════════════════════════════════
+
+1. SETUP SCORES NOT SHOWING — v91 scanner not pasted yet.
+   Once pasted, setup scoring engine populates pipe-delimited
+   setup field. Dashboard already reads it.
+
+2. TRADINGVIEW CHART INDICATORS — the free iframe embed doesn't
+   support custom studies. The TradingView.widget() constructor
+   had CORS issues on GitHub Pages. Charts show candles + volume
+   but NOT VWAP/EMA overlays. The Chart Wall solves this with
+   Lightweight Charts which HAS working indicators.
+
+3. CHART WALL SPARK DATA — only 1 valid point per ticker because
+   scanner only ran once today. Falls back to TradingView iframe.
+   Tomorrow with full market session, spark data populates 78 bars
+   and Lightweight Charts with VWAP/EMAs take over.
+
+4. QUOTA CHART 5-DAY — data will build up over 5 days after v91
+   scanner is pasted. Currently only has ~16 hours of data.
+
+5. CARD DATA SPARSE AFTER HOURS — tickerQuotes only has 28 tickers.
+   inPlayToday has 25. Cards use fallback data but some still thin.
+   Tomorrow with scanner running full session, all data populates.
+
+═══════════════════════════════════════════════════════════════
+WHAT'S NEXT (PRIORITY ORDER)
+═══════════════════════════════════════════════════════════════
+
+1. PASTE V91 SCANNER — immediate, enables setup scoring
+
+2. CHART WALL LIVE DATA — tomorrow morning, verify spark data
+   populates and Lightweight Charts render with VWAP/EMAs on
+   real intraday data
+
+3. CHART WALL ENHANCEMENTS:
+   - Setup-specific indicator overlays (VWAP, EMAs, RSI per setup)
+   - Click chart → opens dashboard modal for that ticker
+   - Auto-populate from Trade Candidates on market open
+   - Live updating price badges on each chart card
+   - Multi-monitor layout optimization
+
+4. TRADINGVIEW CHART IN MODAL — currently basic iframe.
+   Options: keep as-is (functional), use Lightweight Charts
+   instead (same lib as chart wall, supports indicators),
+   or just rely on chart wall for visual analysis
+
+5. UNIVERSAL CARD POLISH:
+   - Verify all sections render identically after v91 paste
+   - Setup score display on compact cards
+   - Secondary setup pill
+   - Sector warning badges
+
+6. TM BOOK INTEGRATION (Component E):
+   - Daily limit bar, sync status
+   - Trade logging button in modal → writes to Trades tab
+
+7. PAPER TRADING WORKFLOW TEST
+
+8. OTHER:
+   - RVOL-TOD calibration (after 5 days of profile data)
+   - Dynamic watchlist tuning
+   - Flutter mobile app (deferred)
+
+═══════════════════════════════════════════════════════════════
+KEY FILES FOR DOWNLOAD
+═══════════════════════════════════════════════════════════════
+
+1. V9_Confluence_Scanner_v91.txt — PASTE THIS INTO GAS
+2. v9_dashboard_v11_17_9.html — current live dashboard (reference)
+3. v9_chartwall.html — chart wall page (reference)
+4. Session_Mar5_2026_Final_Summary.txt — this file
+
+═══════════════════════════════════════════════════════════════
+KEY ARCHITECTURE DECISIONS
+═══════════════════════════════════════════════════════════════
+
+- Dashboard = RESEARCH CENTER (scan, filter, identify)
+- Chart Wall = ACTION CENTER (watch, wait for entry)
+- Modal = CONFIRM (scorecard, criteria, execute decision)
+- TradeStation = EXECUTE (pull trigger)
+
+- Universal Card: one uCard() function, all sections call it
+- All sections compact mode, click opens modal
+- Setup scoring: independent evaluation, no waterfall bias
+- Instant modal: client-side data, server refresh on demand
+- Chart Wall: Lightweight Charts (open source, full indicator control)
+- Quota/API charts: 5-day scrollable history
+
+═══════════════════════════════════════════════════════════════
+LESSONS LEARNED
+═══════════════════════════════════════════════════════════════
+
+1. NEVER rapid-fire push to GitHub. Build locally, verify, push ONCE.
+2. START from deployed code, not project files.
+3. When multiple chats work on same codebase, ALWAYS check what's live.
+4. Map ALL touch points before editing. grep/read first, code second.
+5. GitHub Pages now uses Actions workflow — .github/workflows/pages.yml
+6. TradingView free embed does NOT support custom studies.
+7. Lightweight Charts library = full indicator control, works everywhere.
+8. After hours: sparse data. Always have fallbacks so cards aren't blank.
