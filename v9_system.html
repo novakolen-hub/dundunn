@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>V9 System Reference</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg:        #0b0e14;
+  --bg2:       #0f1318;
+  --bg3:       #161b22;
+  --border:    #1c2333;
+  --border2:   #30363d;
+  --text:      #c4cad4;
+  --text2:     #7d8590;
+  --white:     #e6edf3;
+  --blue:      #58a6ff;
+  --green:     #3fb950;
+  --red:       #f85149;
+  --yellow:    #e3b341;
+  --purple:    #bc8cff;
+  --cyan:      #56d4dd;
+  --gp-a:      #3fb950;
+  --gp-b:      #58a6ff;
+  --gp-c:      #e3b341;
+  --gp-d:      #f85149;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(11,14,20,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex; align-items: center; gap: 16px;
+}
+.nav-brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 15px; color: var(--blue);
+  white-space: nowrap;
+}
+.nav-links {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  overflow-x: auto; scrollbar-width: none;
+}
+.nav-links::-webkit-scrollbar { display: none; }
+.nav-link {
+  font-size: 11px; color: var(--text2); padding: 3px 8px;
+  border-radius: 4px; cursor: pointer; white-space: nowrap;
+  text-decoration: none; transition: all 0.15s;
+}
+.nav-link:hover, .nav-link.active { color: var(--white); background: var(--bg3); }
+.nav-ts {
+  margin-left: auto; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--text2); white-space: nowrap;
+}
+
+/* ── LAYOUT ── */
+.container { max-width: 960px; margin: 0 auto; padding: 72px 20px 60px; }
+
+/* ── SECTIONS ── */
+.section {
+  margin-bottom: 48px;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+h1 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 700; color: var(--blue);
+  margin-bottom: 16px; padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+  letter-spacing: -0.3px;
+}
+h1 .num { color: var(--text2); font-size: 14px; margin-right: 8px; }
+
+h2 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px; font-weight: 700; color: var(--white);
+  margin: 28px 0 12px;
+}
+
+h3 {
+  font-size: 13px; font-weight: 600; color: var(--cyan);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin: 20px 0 8px;
+}
+
+p { margin-bottom: 10px; color: var(--text); }
+p.dim { color: var(--text2); font-size: 13px; }
+p.quote {
+  border-left: 3px solid var(--blue);
+  padding-left: 14px; font-style: italic; color: var(--white);
+  margin: 16px 0;
+}
+
+/* ── FIELD PAIRS ── */
+.field { display: flex; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+.field-k { color: var(--text2); min-width: 160px; flex-shrink: 0; font-weight: 500; }
+.field-v { color: var(--white); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+/* ── TABLES ── */
+table {
+  width: 100%; border-collapse: collapse; margin: 12px 0 16px;
+  font-size: 13px;
+}
+th {
+  text-align: left; padding: 8px 10px;
+  background: var(--bg3); color: var(--white);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.3px;
+  border-bottom: 2px solid var(--border2);
+}
+td {
+  padding: 7px 10px; border-bottom: 1px solid var(--border);
+  color: var(--text); vertical-align: top;
+}
+tr:hover td { background: rgba(88,166,255,0.03); }
+
+/* ── CARDS / BOXES ── */
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; margin: 12px 0;
+}
+.card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.card-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 700; color: var(--white);
+}
+
+/* ── GP BADGES ── */
+.gp { display: inline-block; padding: 2px 10px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; }
+.gp-a { background: rgba(63,185,80,0.15); color: var(--gp-a); border: 1px solid rgba(63,185,80,0.3); }
+.gp-b { background: rgba(88,166,255,0.15); color: var(--gp-b); border: 1px solid rgba(88,166,255,0.3); }
+.gp-c { background: rgba(227,179,65,0.15); color: var(--gp-c); border: 1px solid rgba(227,179,65,0.3); }
+.gp-d { background: rgba(248,81,73,0.15); color: var(--gp-d); border: 1px solid rgba(248,81,73,0.3); }
+
+/* ── TAGS ── */
+.tag { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.tag-green { background: rgba(63,185,80,0.15); color: var(--green); }
+.tag-yellow { background: rgba(227,179,65,0.15); color: var(--yellow); }
+.tag-red { background: rgba(248,81,73,0.15); color: var(--red); }
+.tag-blue { background: rgba(88,166,255,0.15); color: var(--blue); }
+.tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+
+/* ── CODE ── */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; background: var(--bg3);
+  padding: 2px 6px; border-radius: 3px; color: var(--cyan);
+}
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .field-k { min-width: 120px; }
+  .nav-links { display: none; }
+}
+
+/* ── PROGRESS BARS (for guardrail mockups) ── */
+.bar-track { height: 6px; background: var(--bg3); border-radius: 3px; margin: 4px 0 8px; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+/* ── COLLAPSIBLE ── */
+.collapse-hdr {
+  cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 8px;
+}
+.collapse-hdr .arrow {
+  display: inline-block; transition: transform 0.2s;
+  color: var(--text2); font-size: 12px;
+}
+.collapse-hdr.open .arrow { transform: rotate(90deg); }
+.collapse-body { display: none; padding-top: 8px; }
+.collapse-body.open { display: block; }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center; padding: 32px 0; border-top: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2);
+  letter-spacing: 1px;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<div class="nav">
+  <span class="nav-brand">V9 SYSTEM</span>
+  <div class="nav-links">
+    <a class="nav-link" href="#philosophy">Philosophy</a>
+    <a class="nav-link" href="#gameplan">Gameplan</a>
+    <a class="nav-link" href="#setups">Setups</a>
+    <a class="nav-link" href="#components">Components</a>
+    <a class="nav-link" href="#integrations">Integrations</a>
+    <a class="nav-link" href="#data-model">Data Model</a>
+    <a class="nav-link" href="#sizing">Sizing</a>
+    <a class="nav-link" href="#guardrails">Guardrails</a>
+    <a class="nav-link" href="#trade-mgmt">Trade Mgmt</a>
+    <a class="nav-link" href="#migration">Migration</a>
+    <a class="nav-link" href="#roadmap">Roadmap</a>
+  </div>
+  <span class="nav-ts" id="lastUpdated"></span>
+</div>
+
+<div class="container">
+
+<!-- ═══ 1. PHILOSOPHY ═══ -->
+<div class="section" id="philosophy">
+  <h1><span class="num">01</span> System Philosophy</h1>
+  <p class="quote">"The System Protects You. Follow It."</p>
+  <p>Systematic rules override discretionary decisions. Breadth scoring determines gameplan and position sizing; no trading occurs without system confirmation.</p>
+  <div class="field"><span class="field-k">Trading Style</span><span class="field-v">Breadth-confirmed tactical scalping — intraday day trading with supporting swing management</span></div>
+  <div class="field"><span class="field-k">Market Hours</span><span class="field-v">7:30am – 2:00pm Arizona (UTC-7, no DST)</span></div>
+  <div class="field"><span class="field-k">Core Principle</span><span class="field-v">Breadth score drives everything — gameplan, position size, valid setups</span></div>
+  <div class="field"><span class="field-k">Architecture</span><span class="field-v">Dashboard = Research · Chart Wall = Action · Modal = Confirm · TradeStation = Execute</span></div>
+</div>
+
+<!-- ═══ 2. GAMEPLAN ═══ -->
+<div class="section" id="gameplan">
+  <h1><span class="num">02</span> Gameplan Framework</h1>
+  <p>The gameplan is determined by the breadth score, which aggregates primary drivers (index internals, A/D line, leadership), regime modifiers (VIX, HYG/TLT, BTC, futures), and sector participation (Growth 8 + Defensive 5).</p>
+
+  <table>
+    <tr><th>Gameplan</th><th>Breadth</th><th>Action</th></tr>
+    <tr><td><span class="gp gp-a">A — Hunt</span></td><td>≥ +9.5</td><td>20–25% of equity, risk 0.75–1.0%</td></tr>
+    <tr><td><span class="gp gp-b">B — Sniper</span></td><td>+3 to +9.5</td><td>12–18% of equity, risk 0.5–0.75%</td></tr>
+    <tr><td><span class="gp gp-c">C — Bench</span></td><td>−3 to +3</td><td>No live trades (sub-modes may allow reduced)</td></tr>
+    <tr><td><span class="gp gp-d">D — Inverse</span></td><td>≤ −3</td><td>Inverse ETFs 12–18% or sit out</td></tr>
+  </table>
+
+  <h2>Sub-Mode System (16 States)</h2>
+  <p>Each base gameplan has 4 sub-modes based on trajectory. All sizing is % of current live equity (updates intraday).</p>
+
+  <table>
+    <tr><th>Sizing Adj</th><th>Position % / Risk %</th><th>Sub-Modes</th></tr>
+    <tr><td><span class="tag tag-green">full</span></td><td>20–25% / 0.75–1.0%</td><td>A-Surge, A-Steady</td></tr>
+    <tr><td><span class="tag tag-blue">standard</span></td><td>12–18% / 0.5–0.75%</td><td>B-Building, B-Steady, D-Persistent</td></tr>
+    <tr><td><span class="tag tag-yellow">reduce</span></td><td>8–12% / 0.35–0.5%</td><td>A-Cooling, A-Choppy, B-Weakening, B-Choppy, D-Bottoming, D-Choppy</td></tr>
+    <tr><td><span class="tag tag-yellow">small</span></td><td>4–7% / 0.2–0.35%</td><td>C-Recovery (structure setups only)</td></tr>
+    <tr><td><span class="tag tag-red">bench</span></td><td>0% / 0%</td><td>C-Flat, C-Choppy, C-Deteriorating</td></tr>
+    <tr><td><span class="tag tag-purple">inverse</span></td><td>12–18% / 0.5–0.75%</td><td>D-Persistent, D-Capitulation</td></tr>
+  </table>
+  <p class="dim">RS Override: 6 criteria met allows trading outside normal gameplan restrictions.</p>
+</div>
+
+<!-- ═══ 3. SETUPS ═══ -->
+<div class="section" id="setups">
+  <h1><span class="num">03</span> Setup Registry (13 Types)</h1>
+  <p>Each setup is scored independently: base(10) + RVOL(0-5) + confluence(0-5) + signal(0-10). Best score = primary, second = secondary.</p>
+
+  <table>
+    <tr><th>Setup</th><th>Valid GP</th><th>Min RVOL</th><th>Nature</th></tr>
+    <tr><td>VWAP-Hold</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span> <span class="gp gp-c">C-R</span></td><td>1.0x</td><td>structure</td></tr>
+    <tr><td>OR-Break</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span></td><td>1.5x</td><td>breakout</td></tr>
+    <tr><td>Pullback-EMA</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span> <span class="gp gp-c">C-R</span></td><td>1.0x</td><td>structure</td></tr>
+    <tr><td>Momentum</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span></td><td>2.0x</td><td>momentum</td></tr>
+    <tr><td>Failed-BD</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span> <span class="gp gp-c">C-R</span> <span class="gp gp-c">C</span> <span class="gp gp-d">D</span></td><td>2.0x</td><td>structure</td></tr>
+    <tr><td>RS-Override</td><td>All</td><td>—</td><td>any</td></tr>
+    <tr><td>BigDog</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span></td><td>3.0x</td><td>momentum</td></tr>
+    <tr><td>BigDogBounce</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span> <span class="gp gp-c">C-R</span></td><td>2.0x</td><td>structure</td></tr>
+    <tr><td>GapGo</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span></td><td>2.0x</td><td>momentum</td></tr>
+    <tr><td>DailyBreakout</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span></td><td>3.0x</td><td>breakout</td></tr>
+    <tr><td>OpeningDrive</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span></td><td>1.5x</td><td>momentum</td></tr>
+    <tr><td>MarketPlay</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span> <span class="gp gp-c">C-R</span> <span class="gp gp-d">D</span></td><td>1.5x</td><td>any</td></tr>
+    <tr><td>ReturnPullback</td><td><span class="gp gp-a">A</span> <span class="gp gp-b">B</span> <span class="gp gp-c">C-R</span></td><td>1.0x</td><td>structure</td></tr>
+  </table>
+</div>
+
+<!-- ═══ 4. COMPONENTS ═══ -->
+<div class="section" id="components">
+  <h1><span class="num">04</span> System Components</h1>
+
+  <h2>Scanner — V9_Confluence_Scanner</h2>
+  <div class="grid-2">
+    <div>
+      <div class="field"><span class="field-k">Version</span><span class="field-v">v91.0 (v90.10.3 deployed)</span></div>
+      <div class="field"><span class="field-k">Script ID</span><span class="field-v" style="font-size:10px">1Eiemlv1ppvotW4S4Vxn...</span></div>
+      <div class="field"><span class="field-k">Code</span><span class="field-v">~11,700 lines / 226 functions</span></div>
+    </div>
+    <div>
+      <div class="field"><span class="field-k">Tickers</span><span class="field-v">424+ across Config sections</span></div>
+      <div class="field"><span class="field-k">Refresh</span><span class="field-v">5-min partial / 30-min full</span></div>
+      <div class="field"><span class="field-k">Quota</span><span class="field-v">20K UrlFetch/day (trial WS)</span></div>
+    </div>
+  </div>
+
+  <h3>Scanner Tabs</h3>
+  <table>
+    <tr><th>Tab</th><th>Purpose</th></tr>
+    <tr><td>Config</td><td>Watchlist ticker sections (column pairs A/B, C/D, etc.)</td></tr>
+    <tr><td>Market</td><td>Breadth scoring, sectors, ratios, institutional pulse</td></tr>
+    <tr><td>Watchlist</td><td>All tickers with confluence scores, setup flags, key levels</td></tr>
+    <tr><td>My Positions</td><td>Live positions from TradeStation + Alpaca (multi-account)</td></tr>
+    <tr><td>Dashboard</td><td>Cached JSON for doGet endpoint</td></tr>
+    <tr><td>_Spark</td><td>Hidden — 5-min intraday price cache for sparklines (~33K cells)</td></tr>
+    <tr><td>_VolToday / _VolProfile</td><td>Intraday volume snapshots + 5-day rolling profile for RVOL-TOD</td></tr>
+    <tr><td>Dynamic</td><td>Auto-surfacing: gap scanners, earnings, momentum</td></tr>
+    <tr><td>Weekend</td><td>25-ticker lightweight overnight pulse scanner</td></tr>
+    <tr><td>Accounts</td><td>TM: account equity, daily limits, risk config</td></tr>
+    <tr><td>Executions</td><td>TM: raw broker fills (append-only)</td></tr>
+    <tr><td>Trades</td><td>TM: parent trade records (65 columns)</td></tr>
+    <tr><td>DailyLog</td><td>TM: one row per trading day (31 columns)</td></tr>
+    <tr><td>Snapshots</td><td>TM: market context at key moments (25 columns)</td></tr>
+  </table>
+
+  <h3>ScriptProperties (Secrets)</h3>
+  <table>
+    <tr><th>Property</th><th>Purpose</th></tr>
+    <tr><td><code>CLIENT_ID / CLIENT_SECRET / REFRESH_TOKEN</code></td><td>TradeStation OAuth2</td></tr>
+    <tr><td><code>ALPACA_KEY_ID / ALPACA_SECRET_KEY</code></td><td>Alpaca paper trading</td></tr>
+    <tr><td><code>ANTHROPIC_KEY</code></td><td>Claude API for narrative gen</td></tr>
+    <tr><td><code>BRIDGE_URL</code></td><td>Python bridge ngrok domain</td></tr>
+    <tr><td><code>GP_SUB_MODE</code></td><td>Current gameplan sub-mode (JSON)</td></tr>
+  </table>
+
+  <h2>Python Bridge — v4.0</h2>
+  <div class="field"><span class="field-k">File</span><span class="field-v">v9_pulse_bridge_v4.py (Flask, local desktop)</span></div>
+  <div class="field"><span class="field-k">Static Domain</span><span class="field-v">ecclesiastically-ratio-lauran.ngrok-free.dev</span></div>
+  <div class="field"><span class="field-k">Cache TTL</span><span class="field-v">5 minutes with background refresh</span></div>
+  <div class="field"><span class="field-k">Endpoints</span><span class="field-v">/pulse · /pulse/refresh · /health</span></div>
+  <p class="dim" style="margin-top:8px">v5 planned: + /trades/tradestation + /trades/alpaca + /accounts/equity</p>
+
+  <h2>Dashboard — v11.17.9</h2>
+  <div class="field"><span class="field-k">URL</span><span class="field-v"><a href="https://novakolen-hub.github.io/dundunn/v9_dashboard.html" style="color:var(--blue)">novakolen-hub.github.io/dundunn/v9_dashboard.html</a></span></div>
+  <div class="field"><span class="field-k">Theme</span><span class="field-v">Dark mode, mobile-optimized, newspaper card focus</span></div>
+  <div class="field"><span class="field-k">Polls</span><span class="field-v">Scanner JSON every 60s</span></div>
+  <p style="margin-top:8px">Sections: GP banner, breadth breakdown, session phase, sectors, The Story, inverse ETFs, econ calendar, earnings, Institutional Pulse (vol regime, IV, VIX term structure, sentiment), news, V9 Book, Arete Book, Watching, Setups, Portfolio Risk, Ratios, Coaching.</p>
+  <p>Features: Universal Card (uCard), per-section sort pills, persistent notes, sparklines, key levels, dual-link format, pre-trade modal with setup-specific scorecard, Chart Wall integration, keyboard nav, quota/API cost charts.</p>
+
+  <h2>Chart Wall — v2</h2>
+  <div class="field"><span class="field-k">URL</span><span class="field-v"><a href="https://novakolen-hub.github.io/dundunn/v9_chartwall.html" style="color:var(--blue)">novakolen-hub.github.io/dundunn/v9_chartwall.html</a></span></div>
+  <div class="field"><span class="field-k">Library</span><span class="field-v">Lightweight Charts v4.1.0 (open source)</span></div>
+  <p style="margin-top:8px">Setup-specific indicators (VWAP yellow, EMA9 green, EMA20 blue, EMA50 red). Grid 2/3/4/6 columns. Load from Trade Candidates, In Play, or manual. Cross-page comms with dashboard. Stats bar, key level lines, keyboard shortcuts.</p>
+
+  <h2>GitHub Repository</h2>
+  <div class="field"><span class="field-k">Repo</span><span class="field-v">novakolen-hub/dundunn</span></div>
+  <div class="field"><span class="field-k">Deploy</span><span class="field-v">GitHub Actions (.github/workflows/pages.yml)</span></div>
+  <div class="field"><span class="field-k">Files</span><span class="field-v">v9_dashboard.html · v9_chartwall.html · v9_system.html · ic_slugs.json</span></div>
+</div>
+
+<!-- ═══ 5. INTEGRATIONS ═══ -->
+<div class="section" id="integrations">
+  <h1><span class="num">05</span> Broker & Data Integrations</h1>
+  <table>
+    <tr><th>Service</th><th>Auth</th><th>Used For</th></tr>
+    <tr><td>TradeStation</td><td>OAuth2 (auto-refresh)</td><td>Execution, positions, order sync</td></tr>
+    <tr><td>TastyTrade</td><td>OAuth2 (bridge)</td><td>IVR, IV%, IV curves</td></tr>
+    <tr><td>Alpaca</td><td>API key + secret</td><td>Paper trading</td></tr>
+    <tr><td>TradingView</td><td>Free embed</td><td>Charting (no custom studies on free)</td></tr>
+    <tr><td>Arete Trading</td><td>Gmail search</td><td>Daily premarket intel + Discord swings</td></tr>
+    <tr><td>TradesViz</td><td>Manual</td><td>Journaling (being replaced by TM)</td></tr>
+    <tr><td>Claude API</td><td>API key</td><td>Narrative gen (Opus primary, Sonnet fallback)</td></tr>
+    <tr><td>alternative.me</td><td>Public API</td><td>Fear & Greed Index</td></tr>
+    <tr><td>naaim.org</td><td>Scrape</td><td>NAAIM Exposure</td></tr>
+    <tr><td>Yahoo Finance</td><td>yfinance</td><td>VIX term structure, SPY put/call</td></tr>
+    <tr><td>ngrok</td><td>Static domain</td><td>Bridge tunnel</td></tr>
+  </table>
+</div>
+
+<!-- ═══ 6. DATA MODEL ═══ -->
+<div class="section" id="data-model">
+  <h1><span class="num">06</span> Trade Management Data Model</h1>
+  <p>Five interconnected tables for full trade lifecycle — pre-trade through EOD review. Zero data loss on all 24 Day Plan + 15 Trade Plan TradesViz fields.</p>
+  <table>
+    <tr><th>Table</th><th>Cols</th><th>Purpose</th><th>Archive</th></tr>
+    <tr><td>Accounts</td><td>14</td><td>Equity, daily limits, risk config</td><td>Never</td></tr>
+    <tr><td>Executions</td><td>12</td><td>Raw broker fills (append-only)</td><td>Quarterly (>90 days)</td></tr>
+    <tr><td>Trades</td><td>65</td><td>Parent trade records — full lifecycle</td><td>Never</td></tr>
+    <tr><td>DailyLog</td><td>31</td><td>One row per day — equity curve dataset</td><td>Never</td></tr>
+    <tr><td>Snapshots</td><td>25</td><td>Frozen market state at key moments</td><td>Annually</td></tr>
+  </table>
+</div>
+
+<!-- ═══ 7. SIZING ═══ -->
+<div class="section" id="sizing">
+  <h1><span class="num">07</span> Position Sizing (% of Equity)</h1>
+  <p>All sizing is percentage-based against current live equity. Dollar amounts computed at runtime. Equity reference: <code>current_equity</code> from Accounts tab, refreshed each scanner cycle.</p>
+
+  <h3>How it scales</h3>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title" style="color:var(--green)">$100K Account</div>
+      <p class="dim" style="margin-top:6px">full: $20-25K<br>standard: $12-18K<br>small: $4-7K</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--yellow)">$75K Account</div>
+      <p class="dim" style="margin-top:6px">full: $15-18.75K<br>standard: $9-13.5K<br>small: $3-5.25K</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--red)">$50K Drawdown</div>
+      <p class="dim" style="margin-top:6px">full: $10-12.5K<br>standard: $6-9K<br>small: $2-3.5K</p>
+    </div>
+  </div>
+  <p class="dim">Risk cap: if dollar risk exceeds max risk %, shares auto-reduce. IVR and beta adjustments stack on top.</p>
+</div>
+
+<!-- ═══ 8. GUARDRAILS ═══ -->
+<div class="section" id="guardrails">
+  <h1><span class="num">08</span> Capital Deployment Guardrails</h1>
+  <p>Position sizing = how big each trade. Guardrails = whether you can take another trade given what's already in play.</p>
+
+  <h2>Swing Exposure Cap</h2>
+  <p>Measured by market value / equity. Positions with stops at breakeven count at 50%.</p>
+  <table>
+    <tr><th>GP</th><th>Max Swing</th><th>BE Discount</th></tr>
+    <tr><td><span class="gp gp-a">A</span></td><td>40%</td><td>50% if stop ≥ entry</td></tr>
+    <tr><td><span class="gp gp-b">B</span></td><td>30%</td><td>50% if stop ≥ entry</td></tr>
+    <tr><td><span class="gp gp-c">C-R</span></td><td>15%</td><td>50% if stop ≥ entry</td></tr>
+    <tr><td><span class="gp gp-d">D</span></td><td>20%</td><td>50% if stop ≥ entry</td></tr>
+  </table>
+
+  <h2>Intraday Risk Budget</h2>
+  <p>Day trades measured by dollar risk (stop × shares), not position size.</p>
+  <table>
+    <tr><th>GP</th><th>Max Risk</th><th>Max DTs</th></tr>
+    <tr><td><span class="gp gp-a">A</span></td><td>2.5%</td><td>4</td></tr>
+    <tr><td><span class="gp gp-b">B</span></td><td>1.5%</td><td>3</td></tr>
+    <tr><td><span class="gp gp-c">C-R</span></td><td>0.5%</td><td>1</td></tr>
+    <tr><td><span class="gp gp-d">D</span></td><td>1.5%</td><td>2</td></tr>
+  </table>
+  <p class="dim">Integrates as Scorecard Check 9 (Portfolio Heat). Existing positions grandfathered on GP transitions. Paper trades exempt.</p>
+</div>
+
+<!-- ═══ 9. TRADE MANAGEMENT ═══ -->
+<div class="section" id="trade-mgmt">
+  <h1><span class="num">09</span> Trade Management Specs</h1>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">3.1 Scale-In / Scale-Out Tracking</span><span class="tag tag-green">Priority #1</span></div>
+    <p>Grouping logic in syncTrades(): match fills to OPEN/PLANNED trades by symbol + account. Scale-in = weighted avg entry update. Scale-out = partial P&L with R-level auto-annotation (e.g., "150@142.50(1.5R)"). Running quantity lifecycle. Pre-trade card shows "ADDING TO EXISTING" when ticker already held.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">3.2 Stop Management Lifecycle</span><span class="tag tag-green">Priority #2</span></div>
+    <p>New <code>current_stop</code> field. Four states: INITIAL → BREAKEVEN → TRAILING → (WIDENED = bad). Manual update via modal (v1), broker API polling (v2), auto-inference nag at 1R+ ("move to BE?"). Feeds deployment guardrail BE discount. Enables EOD exit quality grading.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">3.3 Theme Clustering & Portfolio Diversification</span><span class="tag tag-blue">Priority #3</span></div>
+    <p>Replaces basic sector ETF concentration checks with intelligent theme-aware portfolio construction. Drives both the pre-trade scorecard AND the portfolio section layout.</p>
+    
+    <h3>Theme Cluster Map</h3>
+    <table>
+      <tr><th>Cluster</th><th>Tickers</th></tr>
+      <tr><td>AI_INFRA</td><td>NVDA, AMD, SMCI, AVGO, TSM, MRVL, MU, ANET</td></tr>
+      <tr><td>AI_SOFTWARE</td><td>MSFT, GOOG, META, CRM, SNOW, PLTR, DDOG, NOW</td></tr>
+      <tr><td>SEMIS</td><td>NVDA, AMD, AVGO, TSM, INTC, MRVL, MU, QCOM, TXN, LRCX, AMAT, KLAC</td></tr>
+      <tr><td>MEGA_TECH</td><td>AAPL, MSFT, GOOG, AMZN, META, NVDA, TSLA</td></tr>
+      <tr><td>RETAIL</td><td>AMZN, WMT, COST, TGT, HD, LOW</td></tr>
+      <tr><td>FINANCIALS</td><td>JPM, GS, MS, BAC, C, WFC, SCHW</td></tr>
+      <tr><td>ENERGY</td><td>XOM, CVX, COP, SLB, EOG, PXD</td></tr>
+      <tr><td>BIOTECH</td><td>MRNA, PFE, JNJ, ABBV, LLY, NVO, AMGN</td></tr>
+      <tr><td>EV_CLEAN</td><td>TSLA, RIVN, NIO, ENPH, FSLR, PLUG</td></tr>
+      <tr><td>DEFENSE</td><td>LMT, RTX, NOC, GD, BA</td></tr>
+      <tr><td>CHINA</td><td>BABA, PDD, JD, NIO, BIDU, KWEB</td></tr>
+      <tr><td>CRYPTO_PROXY</td><td>COIN, MSTR, MARA, RIOT, IBIT</td></tr>
+    </table>
+    <p class="dim">Tickers can belong to multiple clusters (NVDA = AI_INFRA + SEMIS + MEGA_TECH). Unknown tickers fall back to sector ETF mapping.</p>
+
+    <h3>Hedge Pair Detection</h3>
+    <table>
+      <tr><th>Inverse ETF</th><th>Hedges Cluster</th><th>Effect</th></tr>
+      <tr><td>SOXS</td><td>SEMIS</td><td>Reduces net exposure, not adds</td></tr>
+      <tr><td>TECS</td><td>MEGA_TECH</td><td>Reduces net exposure</td></tr>
+      <tr><td>SQQQ</td><td>MEGA_TECH</td><td>Reduces net exposure</td></tr>
+      <tr><td>SH</td><td>MEGA_TECH</td><td>Reduces net exposure</td></tr>
+      <tr><td>YANG</td><td>CHINA</td><td>Reduces net exposure</td></tr>
+    </table>
+
+    <h3>Concentration Scoring (Scorecard)</h3>
+    <p><span class="tag tag-green">GREEN</span> No cluster overlap with existing positions, OR hedge detected.<br>
+    <span class="tag tag-yellow">YELLOW</span> 1 cluster overlap with 1 existing position, or cluster exposure &lt; 15% of equity.<br>
+    <span class="tag tag-red">RED</span> 2+ cluster overlap AND cluster exposure &gt; 20% of equity.</p>
+
+    <h3>Portfolio Section Redesign</h3>
+    <p>Currently the Book section shows positions split by SW (swing) and Cash. With theme clustering, the portfolio view becomes a diversification dashboard:</p>
+    <p><strong>Primary view: Theme Exposure Map</strong><br>
+    Each cluster shows: total $ exposure, % of equity, number of positions, net direction (long/short/hedged), and a heat bar. Clusters with high concentration glow red. Clusters with hedges show net exposure after offset.</p>
+    <p><strong>Example display:</strong></p>
+    <div class="card" style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:12px">
+      <div style="margin-bottom:6px"><span style="color:var(--white)">AI_INFRA</span> <span style="color:var(--yellow)">$14,200 (14.2%)</span> — 2 positions, LONG</div>
+      <div class="bar-track"><div class="bar-fill" style="width:35%;background:var(--yellow)"></div></div>
+      <div style="margin-bottom:2px;color:var(--text2)">&nbsp; NVDA $8,200 (LONG, BE ✓) · AMD $6,000 (LONG, INIT)</div>
+      <div style="margin-bottom:12px"></div>
+      <div style="margin-bottom:6px"><span style="color:var(--white)">SEMIS</span> <span style="color:var(--green)">$8,200 net (8.2%)</span> — 3 positions, HEDGED</div>
+      <div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--green)"></div></div>
+      <div style="margin-bottom:2px;color:var(--text2)">&nbsp; NVDA $8,200 (L) · AMD $6,000 (L) · SOXS $6,000 (L=hedge) → net $8,200</div>
+      <div style="margin-bottom:12px"></div>
+      <div style="margin-bottom:6px"><span style="color:var(--white)">FINANCIALS</span> <span style="color:var(--green)">$5,500 (5.5%)</span> — 1 position, LONG</div>
+      <div class="bar-track"><div class="bar-fill" style="width:14%;background:var(--green)"></div></div>
+      <div style="color:var(--text2)">&nbsp; JPM $5,500 (LONG, TRAILING +1.5R)</div>
+    </div>
+    <p><strong>Secondary views (toggle):</strong> By Account (DT/SW/Paper split — current behavior preserved), By Stop State (INITIAL/BE/TRAILING), By Trade Type (DT vs SW vs CORE). All views available, theme view is default.</p>
+    <p><strong>Optimal overlap detection:</strong> The system flags both over-concentration (too much in one theme) AND under-diversification (all positions in the same macro direction). Example coaching: "All 4 positions are growth/tech longs — consider a defensive or uncorrelated position for balance."</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">3.4 Unplanned Trade Tagging</span><span class="tag tag-yellow">Priority #4</span></div>
+    <p>Toast notification on was_planned=false detection. Lightweight tag form: setup type + stop + reason. EOD prompt for untagged trades. Plan adherence metric in DailyLog. Coaching: "4 planned, 1 unplanned (80% adherence)."</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">3.5 DT → Swing Transition</span><span class="tag tag-yellow">Priority #5</span></div>
+    <p>When a day trade is working and you want to hold overnight, the system needs to formally transition it — not just let it sit. The trade type changes, the risk profile changes, the stop needs to change, and all of that history needs to be captured.</p>
+
+    <h3>Transition Triggers</h3>
+    <p><strong>Manual:</strong> Click "Convert to Swing" in the dashboard modal for any OPEN DT position.<br>
+    <strong>Auto-detect:</strong> runEOD() at 2:00pm AZ finds OPEN trades with trade_type=DT and no exit. Prompts: "Close or convert?"</p>
+
+    <h3>Conversion Form</h3>
+    <table>
+      <tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+      <tr><td>New overnight stop</td><td>Yes</td><td>Must exist — no holding overnight without a stop. Warn if tighter than 1 ATR.</td></tr>
+      <tr><td>Swing thesis</td><td>Optional</td><td>Why are you holding? "Gap fill thesis, expecting continuation tomorrow"</td></tr>
+      <tr><td>Target adjustment</td><td>Optional</td><td>Swing target may differ from intraday target</td></tr>
+    </table>
+
+    <h3>What Gets Updated in Trades Tab</h3>
+    <table>
+      <tr><th>Field</th><th>Before</th><th>After</th></tr>
+      <tr><td>trade_type</td><td>DT</td><td>SW</td></tr>
+      <tr><td>planned_stop</td><td>$139.50 (original DT stop)</td><td>$138.00 (new overnight stop)</td></tr>
+      <tr><td>current_stop</td><td>$140.67 (was at BE)</td><td>$138.00 (wider for overnight)</td></tr>
+      <tr><td>notes</td><td>—</td><td>"Converted DT→SW at 1:42pm. Original stop: $139.50. Thesis: gap fill continuation"</td></tr>
+    </table>
+
+    <h3>Carryover Data Preserved</h3>
+    <p>The original DT context stays intact — it doesn't get overwritten:</p>
+    <table>
+      <tr><th>Data</th><th>Preserved?</th><th>Why</th></tr>
+      <tr><td>Original entry_price + entry_time</td><td>Yes</td><td>True cost basis for P&L</td></tr>
+      <tr><td>Original planned_stop (DT stop)</td><td>Yes, in notes</td><td>Shows how risk changed at transition</td></tr>
+      <tr><td>Entry scorecard results</td><td>Yes</td><td>Was this a good DT entry? Still relevant.</td></tr>
+      <tr><td>Entry context snapshot</td><td>Yes</td><td>What did the market look like when you entered?</td></tr>
+      <tr><td>Scale-in/out legs before conversion</td><td>Yes</td><td>Partial exits during DT phase preserved in exit_legs</td></tr>
+      <tr><td>Conversion context snapshot</td><td>NEW</td><td>Captures market state at decision to hold overnight</td></tr>
+      <tr><td>DT session P&L</td><td>Derivable</td><td>Mark-to-market at conversion time in notes</td></tr>
+    </table>
+
+    <h3>Deployment Guardrail Recalculation</h3>
+    <p>On conversion:</p>
+    <p>• <strong>Removed from:</strong> Intraday risk budget (dollar risk freed up, DT slot freed up)<br>
+    • <strong>Added to:</strong> Swing exposure cap (full market value, INITIAL stop state)<br>
+    • Validation: if adding to swing exposure would exceed the cap for current GP, show RED warning but allow override — the position already exists, you're just re-categorizing it.</p>
+
+    <h3>EOD Auto-Detection</h3>
+    <p>If a DT is still open at 2:00pm AZ and user doesn't convert:</p>
+    <div class="card" style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:12px;border-color:var(--yellow)">
+      ⚠️ NVDA (DT) held past close<br>
+      Entry: $140.00 | Current: $143.50 | P&L: +$1,050<br>
+      DT Stop: $139.50 | No overnight stop set<br><br>
+      [Convert to Swing] &nbsp; [Plan to Close at Open]
+    </div>
+    <p class="dim" style="margin-top:8px">"Plan to Close at Open" keeps trade_type=DT, adds note "Held overnight — plan to close at open." Next morning's dashboard shows: "⚠️ NVDA held overnight. Close or convert."</p>
+
+    <h3>Analytics Impact</h3>
+    <p>For performance analysis, the system tracks both the label and the behavior:</p>
+    <p>• <code>trade_type</code> = current label (DT or SW after conversion)<br>
+    • <code>hold_days</code> = actual calendar days held (0 = true intraday, 1+ = held overnight)<br>
+    • <code>was_converted</code> = boolean flag for DT→SW transitions<br>
+    • Analytics can filter by actual behavior: "Show me trades that started as DTs but became swings" — how did those perform vs planned swings?</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Nice-to-Haves</span><span class="tag tag-purple">Lower Priority</span></div>
+    <p><strong>Daily loss limit:</strong> Advisory not hard block. Per-account limits. was_limit_exceeded tracking for coaching patterns.<br>
+    <strong>TOD sizing:</strong> 1.0x Open/Core, 0.85x Power, 0.65x Close. Setup exemptions (Scalping, MarketPlay).</p>
+  </div>
+</div>
+
+<!-- ═══ 10. MIGRATION ═══ -->
+<div class="section" id="migration">
+  <h1><span class="num">10</span> Google Account Migration</h1>
+
+  <h3>Steps</h3>
+  <table>
+    <tr><th>#</th><th>Action</th><th>Notes</th></tr>
+    <tr><td>1</td><td>Create new Google account</td><td>Free Gmail works — same 20K/day UrlFetch</td></tr>
+    <tr><td>2</td><td>Copy scanner spreadsheet</td><td>File → Make a Copy. Tabs/data transfer. Props/triggers don't.</td></tr>
+    <tr><td>3</td><td>Deploy Apps Script</td><td>Paste v91, re-run setups, re-auth TradeStation OAuth, set keys</td></tr>
+    <tr><td>4</td><td>Update dashboard EP</td><td>New doGet URL → update EP in v9_dashboard.html + chartwall</td></tr>
+    <tr><td>5</td><td>Copy Watchlist Doc</td><td>New doc ID → update scanner reference</td></tr>
+    <tr><td>6</td><td>Gmail / Arete</td><td>Forward emails or update Arete subscription</td></tr>
+    <tr><td>7</td><td>Verify everything</td><td>Run scanner, check dashboard, test positions, sparklines, pulse</td></tr>
+  </table>
+
+  <h3>What Does NOT Change</h3>
+  <p class="dim">GitHub repo, Python bridge, ngrok domain, TradeStation/TastyTrade/Alpaca accounts, TradingView, TradesViz, ic_slugs.json, all project knowledge files — all separate from Google.</p>
+</div>
+
+<!-- ═══ 11. ROADMAP ═══ -->
+<div class="section" id="roadmap">
+  <h1><span class="num">11</span> Roadmap</h1>
+
+  <div class="card" style="border-left: 3px solid var(--green)">
+    <div class="card-header"><span class="card-title">Phase 1 — % of Equity Sizing</span><span class="tag tag-green">WITH V91</span></div>
+    <p>Replace fixed dollar sizing with SUBMODE_SIZING_PCT. Risk cap auto-reduces shares. Dashboard shows $ + % of equity.</p>
+  </div>
+  <div class="card" style="border-left: 3px solid var(--blue)">
+    <div class="card-header"><span class="card-title">Phase 2 — Deployment Guardrails</span><span class="tag tag-blue">AFTER V91</span></div>
+    <p>Swing exposure cap + intraday risk budget. Scorecard Check 9. Portfolio Heat display in pre-trade modal.</p>
+  </div>
+  <div class="card" style="border-left: 3px solid var(--yellow)">
+    <div class="card-header"><span class="card-title">Phase 3 — Trade Management</span><span class="tag tag-yellow">BUILD IN ORDER</span></div>
+    <p>Scale-in/out → Stop lifecycle → Theme clusters → Unplanned tagging → DT/Swing transition. 24 build steps total.</p>
+  </div>
+  <div class="card" style="border-left: 3px solid var(--purple)">
+    <div class="card-header"><span class="card-title">Phase 4 — Broker Stop Polling</span><span class="tag tag-purple">FUTURE</span></div>
+    <p>Bridge polls active stop orders → auto-updates current_stop. Full stop lifecycle without manual intervention.</p>
+  </div>
+  <div class="card" style="border-left: 3px solid var(--text2)">
+    <div class="card-header"><span class="card-title">Deferred</span></div>
+    <p class="dim">Flutter mobile app · SMB playbook transcripts · Backtesting framework · Full TradesViz replacement</p>
+  </div>
+</div>
+
+<!-- ═══ VERSION ═══ -->
+<div class="section" id="versions">
+  <h1><span class="num">12</span> Current Versions</h1>
+  <table>
+    <tr><th>Component</th><th>Version</th><th>Status</th></tr>
+    <tr><td>Scanner</td><td>v90.10.3 / v91 pending</td><td><span class="tag tag-yellow">v91 needs paste</span></td></tr>
+    <tr><td>Dashboard</td><td>v11.17.9</td><td><span class="tag tag-green">LIVE</span></td></tr>
+    <tr><td>Chart Wall</td><td>v2 (Mar 6)</td><td><span class="tag tag-yellow">Needs verification</span></td></tr>
+    <tr><td>Python Bridge</td><td>v4.0</td><td><span class="tag tag-green">Running</span></td></tr>
+    <tr><td>Data Model</td><td>v1</td><td><span class="tag tag-green">Tabs built</span></td></tr>
+    <tr><td>System Reference</td><td>v1.0</td><td><span class="tag tag-green">This page</span></td></tr>
+  </table>
+</div>
+
+</div><!-- /container -->
+
+<div class="footer">THE SYSTEM PROTECTS YOU. FOLLOW IT.</div>
+
+<script>
+// Nav active state
+var sections = document.querySelectorAll('.section');
+var navLinks = document.querySelectorAll('.nav-link');
+window.addEventListener('scroll', function() {
+  var scrollPos = window.scrollY + 80;
+  sections.forEach(function(sec) {
+    if (sec.offsetTop <= scrollPos && sec.offsetTop + sec.offsetHeight > scrollPos) {
+      navLinks.forEach(function(l) { l.classList.remove('active'); });
+      var target = sec.id;
+      navLinks.forEach(function(l) {
+        if (l.getAttribute('href') === '#' + target) l.classList.add('active');
+      });
+    }
+  });
+});
+
+// Timestamp
+document.getElementById('lastUpdated').textContent = 'Updated: Mar 10, 2026';
+</script>
+</body></html>
