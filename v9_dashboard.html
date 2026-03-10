@@ -1042,14 +1042,14 @@ function _renderQuotaChart(){
 
   h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:9px;font-family:JetBrains Mono,monospace">';
   h+='<span style="color:#484f58">Showing '+n+'h</span>';
-  h+='<span class="qz-btn" onclick="qcZoomPreset(0)">All</span>';
-  h+='<span class="qz-btn" onclick="qcZoomPreset(24)">24h</span>';
-  h+='<span class="qz-btn" onclick="qcZoomPreset(8)">8h</span>';
+  h+='<span class="qz-btn" onclick="event.stopPropagation();qcZoomPreset(0)">All</span>';
+  h+='<span class="qz-btn" onclick="event.stopPropagation();qcZoomPreset(24)">24h</span>';
+  h+='<span class="qz-btn" onclick="event.stopPropagation();qcZoomPreset(8)">8h</span>';
   h+='<span style="color:#30363d">|</span>';
-  h+='<span class="qz-btn" onclick="qcZoomOut()">\u2212</span>';
-  h+='<span class="qz-btn" onclick="qcZoomIn()">+</span>';
-  h+='<span class="qz-btn" onclick="qcPan(-1)">\u25c0</span>';
-  h+='<span class="qz-btn" onclick="qcPan(1)">\u25b6</span>';
+  h+='<span class="qz-btn" onclick="event.stopPropagation();qcZoomOut()">\u2212</span>';
+  h+='<span class="qz-btn" onclick="event.stopPropagation();qcZoomIn()">+</span>';
+  h+='<span class="qz-btn" onclick="event.stopPropagation();qcPan(-1)">\u25c0</span>';
+  h+='<span class="qz-btn" onclick="event.stopPropagation();qcPan(1)">\u25b6</span>';
   h+='</div>';
 
   h+='<svg width="'+cW+'" height="'+cH+'" style="display:block;background:#0a0e14;border-radius:4px;cursor:default" id="qcSvg">';
@@ -3883,8 +3883,8 @@ function qcWheel(deltaY){
   _renderQuotaChart();
 }
 
-// Click outside popups to close
-document.addEventListener('click',function(ev){
+// Click outside popups to close — uses mousedown to avoid race with innerHTML rebuild
+document.addEventListener('mousedown',function(ev){
   var qp=$('quotaPopup'),ap=$('apiPopup');
   if(qp&&qp.style.display==='block'&&!qp.contains(ev.target)&&!ev.target.closest('#tmrBar .ti'))hideQuotaChart();
   if(ap&&ap.style.display==='block'&&!ap.contains(ev.target)&&!ev.target.closest('#tmrBar .ti'))hideApiChart();
