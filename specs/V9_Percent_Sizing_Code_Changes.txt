@@ -1,0 +1,1193 @@
+V9 PERCENT-BASED POSITION SIZING — CODE CHANGES
+====================================================
+Date: March 10, 2026
+Summary: Convert all position sizing from fixed dollar amounts to
+         % of current live equity. Affects scanner (3 edits) and
+         dashboard (1 edit).
+
+Reference: Current live equity from Accounts tab, refreshed each
+           scanner cycle via refreshAccountEquity().
+
+====================================================
+SCANNER EDIT 1 of 3: Replace SUBMODE_SIZING + GP_SIZING constants
+====================================================
+LOCATION: Near top of scanner, after SETUP_REGISTRY definition.
+
+FIND THIS CODE (the two constants + comment):
+────────────────────────────────────────────────
+// ── Gameplan position sizing base amounts (legacy fallback) ──
+var GP_SIZING = {
+  'A': { baseLo: 15000, baseHi: 20000, riskLo: 150, riskHi: 200 },
+  'B': { baseLo:  8000, baseHi: 12000, riskLo: 100, riskHi: 150 },
+  'C': { baseLo:     0, baseHi:     0, riskLo:   0, riskHi:   0 },
+  'D': { baseLo:  8000, baseHi: 12000, riskLo: 100, riskHi: 150 }
+};
+
+// ── Sub-mode sizing overrides (sizingAdj → dollar ranges) ──
+// Maps the sizingAdj field from getGPSubMode() to actual dollar ranges.
+// This is the authoritative sizing source; GP_SIZING is legacy fallback.
+var SUBMODE_SIZING = {
+  'full':     { baseLo: 15000, baseHi: 20000, riskLo: 150, riskHi: 200 },   // A-Surge, A-Steady
+  'standard': { baseLo:  8000, baseHi: 12000, riskLo: 100, riskHi: 150 },   // B-Building, B-Steady, D-Persistent
+  'reduce':   { baseLo:  6000, baseHi:  9000, riskLo:  75, riskHi: 120 },   // A-Cooling, A-Choppy, B-Weakening, B-Choppy, D-Bottoming
+  'caution':  { baseLo:  6000, baseHi:  9000, riskLo:  75, riskHi: 120 },   // alias for reduce (same dollars, different label)
+  'small':    { baseLo:  3000, baseHi:  5000, riskLo:  40, riskHi:  70 },   // C-Recovery — Tier 1-3 max
+  'bench':    { baseLo:     0, baseHi:     0, riskLo:   0, riskHi:   0 },   // C-Flat, C-Choppy, C-Deteriorating
+  'inverse':  { baseLo:  8000, baseHi: 12000, riskLo: 100, riskHi: 150 }    // D-Persistent, D-Capitulation, D-Choppy
+};
+────────────────────────────────────────────────
+
+REPLACE WITH:
+────────────────────────────────────────────────
+// ── Gameplan position sizing — PERCENT OF CURRENT LIVE EQUITY ──
+// All sizing is now % based. Dollar amounts computed at runtime by
+// multiplying % × current equity from Accounts tab.
+// Equity reference: current_equity (live, updates intraday).
+var GP_SIZING_PCT = {
+  'A': { posLo: 0.20, posHi: 0.25, riskLo: 0.0075, riskHi: 0.010 },
+  'B': { posLo: 0.12, posHi: 0.18, riskLo: 0.0050, riskHi: 0.0075 },
+  'C': { posLo: 0,    posHi: 0,    riskLo: 0,       riskHi: 0 },
+  'D': { posLo: 0.12, posHi: 0.18, riskLo: 0.0050, riskHi: 0.0075 }
+};
+
+// ── Sub-mode sizing overrides (sizingAdj → % of equity) ──
+// Authoritative sizing source. GP_SIZING_PCT is legacy fallback.
+// posLo/posHi = position size as fraction of equity (0.20 = 20%)
+// riskLo/riskHi = max risk per trade as fraction of equity (0.01 = 1%)
+var SUBMODE_SIZING_PCT = {
+  'full':     { posLo: 0.20, posHi: 0.25, riskLo: 0.0075, riskHi: 0.010 },   // A-Surge, A-Steady
+  'standard': { posLo: 0.12, posHi: 0.18, riskLo: 0.0050, riskHi: 0.0075 },  // B-Building, B-Steady, D-Persistent
+  'reduce':   { posLo: 0.08, posHi: 0.12, riskLo: 0.0035, riskHi: 0.005 },   // A-Cooling, A-Choppy, B-Weakening, B-Choppy, D-Bottoming
+  'caution':  { posLo: 0.08, posHi: 0.12, riskLo: 0.0035, riskHi: 0.005 },   // alias for reduce
+  'small':    { posLo: 0.04, posHi: 0.07, riskLo: 0.0020, riskHi: 0.0035 },  // C-Recovery — Tier 1-3 max
+  'bench':    { posLo: 0,    posHi: 0,    riskLo: 0,       riskHi: 0 },       // C-Flat, C-Choppy, C-Deteriorating
+  'inverse':  { posLo: 0.12, posHi: 0.18, riskLo: 0.0050, riskHi: 0.0075 }   // D-Persistent, D-Capitulation, D-Choppy
+};
+────────────────────────────────────────────────
+
+
+====================================================
+SCANNER EDIT 2 of 3: Update _getEffectiveSizing() helper
+====================================================
+LOCATION: Right after _checkSetupGP() function.
+
+FIND THIS CODE:
+────────────────────────────────────────────────
+// ── Helper: get effective sizing for current sub-mode ──
+function _getEffectiveSizing(subMode, gpLetter) {
+  if (subMode && subMode.sizingAdj && SUBMODE_SIZING[subMode.sizingAdj]) {
+    return SUBMODE_SIZING[subMode.sizingAdj];
+  }
+  return GP_SIZING[gpLetter] || GP_SIZING['C'];
+}
+────────────────────────────────────────────────
+
+REPLACE WITH:
+────────────────────────────────────────────────
+// ── Helper: get effective sizing percentages for current sub-mode ──
+// Returns { posLo, posHi, riskLo, riskHi } as fractions (0.20 = 20%)
+function _getEffectiveSizingPct(subMode, gpLetter) {
+  if (subMode && subMode.sizingAdj && SUBMODE_SIZING_PCT[subMode.sizingAdj]) {
+    return SUBMODE_SIZING_PCT[subMode.sizingAdj];
+  }
+  return GP_SIZING_PCT[gpLetter] || GP_SIZING_PCT['C'];
+}
+
+// ── Helper: resolve current live equity from Accounts tab ──
+// Falls back to 0 if no accounts configured.
+function _getCurrentEquity(accountId) {
+  try {
+    var accounts = getAccountsMap();
+    if (accountId && accounts[accountId]) {
+      return parseFloat(accounts[accountId].current_equity) || 0;
+    }
+    // If no specific account, use sum of all accounts
+    var total = 0;
+    for (var id in accounts) {
+      total += parseFloat(accounts[id].current_equity) || 0;
+    }
+    return total;
+  } catch(e) {
+    return 0;
+  }
+}
+
+// ── Helper: convert sizing percentages to dollar amounts given equity ──
+// This is used by getPreTradeData() and computePositionSize() so the
+// dashboard receives ready-to-use dollar amounts while the source of
+// truth remains percentage-based.
+function _getEffectiveSizing(subMode, gpLetter, accountId) {
+  var pct = _getEffectiveSizingPct(subMode, gpLetter);
+  var equity = _getCurrentEquity(accountId);
+  if (equity <= 0) {
+    // No equity data — return zeros with a flag
+    return { baseLo: 0, baseHi: 0, riskLo: 0, riskHi: 0,
+             posLoPct: pct.posLo, posHiPct: pct.posHi,
+             riskLoPct: pct.riskLo, riskHiPct: pct.riskHi,
+             equity: 0, pctBased: true };
+  }
+  return {
+    baseLo: Math.round(equity * pct.posLo),
+    baseHi: Math.round(equity * pct.posHi),
+    riskLo: Math.round(equity * pct.riskLo),
+    riskHi: Math.round(equity * pct.riskHi),
+    posLoPct: pct.posLo,
+    posHiPct: pct.posHi,
+    riskLoPct: pct.riskLo,
+    riskHiPct: pct.riskHi,
+    equity: equity,
+    pctBased: true
+  };
+}
+────────────────────────────────────────────────
+
+NOTE: _getEffectiveSizing() keeps the same function name so ALL existing
+callers (computePositionSize, getPreTradeData, etc.) work without changes.
+The return object still has baseLo/baseHi/riskLo/riskHi (as dollar amounts)
+PLUS the new pct fields and equity reference. This means:
+  - computePositionSize() → baseDollars midpoint calc works unchanged
+  - getPreTradeData() → gpSizing field works unchanged
+  - Dashboard → receives dollars + can display %
+
+
+====================================================
+SCANNER EDIT 3 of 3: Update _getEffectiveSizing call sites
+====================================================
+
+There are 3 places that call _getEffectiveSizing(). Two of them pass
+only (subMode, gpLetter) and need the accountId added:
+
+A) In getPreTradeData():
+FIND:   var effectiveSizing = _getEffectiveSizing(subMode, gameplan);
+REPLACE: var effectiveSizing = _getEffectiveSizing(subMode, gameplan, '');
+
+B) In computePositionSize():
+FIND:   var effectiveSizing = _getEffectiveSizing(subMode, gp);
+REPLACE: var effectiveSizing = _getEffectiveSizing(subMode, gp, accountId);
+
+C) In computePositionSize(), ADD risk cap check after dollarRisk calc.
+FIND THIS BLOCK:
+────────────────────────────────────────────────
+  // Risk calculation
+  var stopDist = Math.abs(price - stop);
+  var dollarRisk = Math.round(shares * stopDist * 100) / 100;
+
+  // Account risk %
+  var riskPctAccount = 0;
+  if (accountId) {
+    try {
+      var accounts = getAccountsMap();
+      var acct = accounts[accountId];
+      if (acct && acct.current_equity > 0) {
+        riskPctAccount = Math.round(dollarRisk / parseFloat(acct.current_equity) * 10000) / 100;
+      }
+    } catch(e) {}
+  }
+────────────────────────────────────────────────
+
+REPLACE WITH:
+────────────────────────────────────────────────
+  // Risk calculation
+  var stopDist = Math.abs(price - stop);
+  var dollarRisk = Math.round(shares * stopDist * 100) / 100;
+
+  // ── Risk cap: if dollarRisk exceeds max risk %, reduce shares ──
+  var maxRiskDollars = effectiveSizing.riskHi || 0;
+  if (maxRiskDollars > 0 && dollarRisk > maxRiskDollars && stopDist > 0) {
+    shares = Math.floor(maxRiskDollars / stopDist);
+    if (shares < 1) shares = 1;
+    finalDollars = Math.round(shares * price);
+    dollarRisk = Math.round(shares * stopDist * 100) / 100;
+  }
+
+  // Account risk %
+  var riskPctAccount = 0;
+  var equity = effectiveSizing.equity || 0;
+  if (equity > 0) {
+    riskPctAccount = Math.round(dollarRisk / equity * 10000) / 100;
+  } else if (accountId) {
+    try {
+      var accounts = getAccountsMap();
+      var acct = accounts[accountId];
+      if (acct && acct.current_equity > 0) {
+        equity = parseFloat(acct.current_equity);
+        riskPctAccount = Math.round(dollarRisk / equity * 10000) / 100;
+      }
+    } catch(e) {}
+  }
+────────────────────────────────────────────────
+
+
+====================================================
+DASHBOARD EDIT 1 of 1: Update client-side sizing fallback
+====================================================
+LOCATION: In _buildPTData() function (client-side pre-trade data builder)
+
+FIND THIS CODE:
+────────────────────────────────────────────────
+  // Sizing
+  var sizing=d.gpSizing||null;
+  if(!sizing){
+    var SIZING_MAP={full:{baseLo:15000,baseHi:20000},standard:{baseLo:8000,baseHi:12000},reduce:{baseLo:6000,baseHi:9000},caution:{baseLo:6000,baseHi:9000},small:{baseLo:3000,baseHi:5000},bench:{baseLo:0,baseHi:0},inverse:{baseLo:8000,baseHi:12000}};
+    sizing=SIZING_MAP[sizAdj]||{baseLo:8000,baseHi:12000};
+  }
+────────────────────────────────────────────────
+
+REPLACE WITH:
+────────────────────────────────────────────────
+  // Sizing — scanner now returns % based amounts resolved to dollars.
+  // Fallback uses % × estimated equity if scanner data missing.
+  var sizing=d.gpSizing||null;
+  if(!sizing){
+    var SIZING_PCT={full:{lo:0.20,hi:0.25},standard:{lo:0.12,hi:0.18},reduce:{lo:0.08,hi:0.12},caution:{lo:0.08,hi:0.12},small:{lo:0.04,hi:0.07},bench:{lo:0,hi:0},inverse:{lo:0.12,hi:0.18}};
+    var pct=SIZING_PCT[sizAdj]||{lo:0.12,hi:0.18};
+    // Estimate equity from accounts data if available
+    var estEquity=0;
+    if(d.accounts){for(var aId in d.accounts){estEquity+=parseFloat(d.accounts[aId].current_equity)||0;}}
+    sizing={baseLo:Math.round(estEquity*pct.lo),baseHi:Math.round(estEquity*pct.hi),pctBased:true,equity:estEquity};
+  }
+────────────────────────────────────────────────
+
+
+ALSO in _buildSizingHTML() function, update the bottom label line.
+
+FIND:
+────────────────────────────────────────────────
+  h+='<div style="margin-top:6px;font-size:10px;color:#6e7590">Base: $'+sizing.baseLo+'–$'+sizing.baseHi+' ('+e(sizingAdj)+') · '+e(reg.scale||'')+'</div>';
+────────────────────────────────────────────────
+
+REPLACE WITH:
+────────────────────────────────────────────────
+  var pctLabel=(sizing.pctBased&&sizing.equity>0)?' ('+(sizing.baseLo/sizing.equity*100).toFixed(0)+'–'+(sizing.baseHi/sizing.equity*100).toFixed(0)+'% of $'+Math.round(sizing.equity/1000)+'K)':'';
+  h+='<div style="margin-top:6px;font-size:10px;color:#6e7590">Size: $'+sizing.baseLo+'–$'+sizing.baseHi+pctLabel+' ('+e(sizingAdj)+') · '+e(reg.scale||'')+'</div>';
+────────────────────────────────────────────────
+
+
+====================================================
+HOW IT WORKS END-TO-END
+====================================================
+
+1. Scanner refreshAccountEquity() runs each cycle → writes current_equity
+   to Accounts tab.
+
+2. When pre-trade modal opens or computePositionSize() is called:
+   - _getEffectiveSizing(subMode, gp, accountId) reads SUBMODE_SIZING_PCT
+   - Multiplies % × current_equity → returns baseLo/baseHi in dollars
+   - computePositionSize() uses baseDollars midpoint as before
+   - IVR/Beta adjustments apply on top (same as before)
+   - NEW: risk cap — if dollar risk exceeds riskHi %, shares are reduced
+
+3. Dashboard receives gpSizing with dollar amounts (backward compatible)
+   PLUS pctBased flag and equity reference for display.
+
+4. Pre-trade modal shows: "Size: $12,000–$18,000 (12–18% of $100K)"
+
+====================================================
+WHAT SCALES AUTOMATICALLY NOW
+====================================================
+
+Account grows from $75K → $100K:
+  full:     $15-20K → $20-25K
+  standard: $9-13.5K → $12-18K
+  small:    $3-5.25K → $4-7K
+
+Account draws down to $50K:
+  full:     $10-12.5K
+  standard: $6-9K
+  small:    $2-3.5K
+
+Risk scales identically — 1% of $100K = $1,000, 1% of $50K = $500.
+The system automatically tightens on drawdown and expands on growth.
+
+====================================================
+BACKWARD COMPATIBILITY
+====================================================
+
+- getPreTradeData().gpSizing still has baseLo/baseHi/riskLo/riskHi
+  (now computed as %×equity instead of hardcoded)
+- computePositionSize() return object unchanged
+- evaluateScorecard() unchanged
+- logPlannedTrade() unchanged — uses computePositionSize() which now
+  returns equity-scaled dollars
+- TradesViz export unchanged — dollar amounts in Trades tab are the
+  resolved amounts, not percentages
+- Dashboard client-side fallback updated to use % when scanner data
+  is missing
+
+====================================================
+DEPLOY ORDER
+====================================================
+
+1. Make scanner edits (3 changes above)
+2. Save + test: run computePositionSize() from Script Editor with test params
+3. Deploy new scanner version
+4. Push dashboard edit to GitHub
+5. Verify pre-trade modal shows % label
+
+No dashboard functionality breaks during transition — the old dollar
+fallback just becomes less accurate until scanner is deployed.
+
+
+====================================================
+PHASE 2: CAPITAL DEPLOYMENT GUARDRAILS (BUILD AFTER V91)
+====================================================
+Status: SPEC ONLY — build after v91 scanner is live and % sizing verified.
+
+CONCEPT:
+Position sizing (Phase 1 above) determines how big each INDIVIDUAL trade
+should be. Capital deployment guardrails determine whether you're ALLOWED
+to take another trade given what's already in play.
+
+Two types of positions carry fundamentally different risk:
+  - Day trades: transient, actively managed, real risk = dollar risk (stop × shares)
+  - Swing positions: persistent, exposed to gap/overnight risk, real risk ≈ full market value
+
+Therefore two separate guardrails with different measurement:
+
+────────────────────────────────────────────────
+GUARDRAIL 1: SWING EXPOSURE CAP
+────────────────────────────────────────────────
+
+Measures: Total swing position market value / current equity
+
+| Gameplan | Max Swing Exposure |
+|----------|--------------------|
+| A        | 40% of equity      |
+| B        | 30% of equity      |
+| C-Recov  | 15% of equity      |
+| D        | 20% of equity      |
+
+Calculation:
+  swingExposure = SUM(mktValue) for all positions WHERE trade_type IN ('SW','CORE')
+
+Breakeven Stop Discount:
+  If a swing position's current stop is at or above entry price (for longs)
+  or at or below entry price (for shorts), it is "risk-free" — the worst
+  case is breakeven. These positions count at 50% of market value against
+  the cap instead of 100%.
+
+  Formula per position:
+    if (side === 'LONG' && currentStop >= entryPrice) → weight = 0.5
+    if (side === 'SHORT' && currentStop <= entryPrice) → weight = 0.5
+    else → weight = 1.0
+    
+    weightedValue = mktValue × weight
+
+  This rewards good trade management — as you trail stops to breakeven,
+  you free up capacity for new positions.
+
+Data sources:
+  - trade_type: Trades tab column 5
+  - mktValue: My Positions tab (live from broker)
+  - entryPrice: Trades tab column 38 (entry_price)
+  - currentStop: needs new field OR read from broker stop orders
+    (FUTURE: bridge could poll active stop orders per position)
+  - For now: use planned_stop from Trades tab as proxy, with manual
+    update capability via the dashboard modal
+
+────────────────────────────────────────────────
+GUARDRAIL 2: INTRADAY RISK BUDGET
+────────────────────────────────────────────────
+
+Measures: Sum of all OPEN day trade dollar risk / current equity
+
+| Gameplan | Max Intraday Risk | Max Concurrent DT |
+|----------|-------------------|--------------------|
+| A        | 2.5% of equity    | 4                  |
+| B        | 1.5% of equity    | 3                  |
+| C-Recov  | 0.5% of equity    | 1                  |
+| D        | 1.5% of equity    | 2                  |
+
+Calculation:
+  intradayRisk = SUM(dollar_risk) for all positions WHERE trade_type = 'DT' AND status = 'OPEN'
+  intradayCount = COUNT of same
+
+Why dollar risk not market value:
+  A $20K position with a tight $0.30 stop (= $150 risk on 500 shares)
+  is very different from a $20K position with a $2.00 stop (= $1,000 risk).
+  The dollar risk is what you're actually exposed to losing.
+
+Data sources:
+  - dollar_risk: Trades tab column 13
+  - trade_type: Trades tab column 5
+  - status: Trades tab column 6
+
+────────────────────────────────────────────────
+SCORECARD INTEGRATION: CHECK 9 — PORTFOLIO HEAT
+────────────────────────────────────────────────
+
+Added as 9th check in evaluateScorecard(). Logic:
+
+  function _checkPortfolioHeat(tradeType, dollarRisk, gameplan) {
+    // Read current deployment from Trades + Positions tabs
+    var swingExposure = _calcSwingExposure();  // weighted by BE discount
+    var intradayRisk = _calcIntradayRisk();
+    var intradayCount = _calcIntradayCount();
+    var equity = _getCurrentEquity();
+
+    if (tradeType === 'DT') {
+      var cap = INTRADAY_CAPS[gameplan];
+      var newTotal = intradayRisk + dollarRisk;
+      var newCount = intradayCount + 1;
+      if (newCount > cap.maxTrades) return 'RED: Max ' + cap.maxTrades + ' concurrent day trades on GP-' + gameplan;
+      if (newTotal / equity > cap.riskPct) return 'RED: Intraday risk would be ' + (newTotal/equity*100).toFixed(1) + '% (max ' + (cap.riskPct*100) + '%)';
+      if (newTotal / equity > cap.riskPct * 0.8) return 'YELLOW: Approaching intraday risk limit';
+      return 'GREEN';
+    }
+
+    if (tradeType === 'SW' || tradeType === 'CORE') {
+      var cap = SWING_CAPS[gameplan];
+      var positionValue = dollarRisk / ... ; // estimate from sizing
+      var newTotal = swingExposure + positionValue;
+      if (newTotal / equity > cap.exposurePct) return 'RED: Swing exposure would be ' + (newTotal/equity*100).toFixed(0) + '% (max ' + (cap.exposurePct*100) + '%)';
+      if (newTotal / equity > cap.exposurePct * 0.8) return 'YELLOW: Approaching swing exposure limit';
+      return 'GREEN';
+    }
+
+    return 'GREEN'; // PAPER trades always pass
+  }
+
+Constants:
+  var INTRADAY_CAPS = {
+    'A': { riskPct: 0.025, maxTrades: 4 },
+    'B': { riskPct: 0.015, maxTrades: 3 },
+    'C': { riskPct: 0.005, maxTrades: 1 },
+    'D': { riskPct: 0.015, maxTrades: 2 }
+  };
+  var SWING_CAPS = {
+    'A': { exposurePct: 0.40 },
+    'B': { exposurePct: 0.30 },
+    'C': { exposurePct: 0.15 },
+    'D': { exposurePct: 0.20 }
+  };
+
+────────────────────────────────────────────────
+DASHBOARD DISPLAY
+────────────────────────────────────────────────
+
+Pre-trade modal gets a new "Portfolio Heat" section above the scorecard:
+
+  ┌─────────────────────────────────────────┐
+  │ PORTFOLIO HEAT                          │
+  │                                         │
+  │ Swing Exposure    ████████░░  32% / 40% │
+  │   NVDA $8,200 (BE ✓ → 50%)             │
+  │   PLTR $6,100                           │
+  │                                         │
+  │ Intraday Risk     ███░░░░░░░  0.8%/2.5% │
+  │   (1 of 4 DT slots used)               │
+  │                                         │
+  │ ✅ Room for this trade                  │
+  └─────────────────────────────────────────┘
+
+The progress bars show how close to the cap you are.
+Green < 60% of cap, Yellow 60-80%, Red > 80%.
+Swing positions with BE stops show the ✓ discount.
+
+────────────────────────────────────────────────
+BUILD ORDER (after v91 is live)
+────────────────────────────────────────────────
+
+1. Scanner: Add INTRADAY_CAPS + SWING_CAPS constants
+2. Scanner: Add _calcSwingExposure() — reads Trades + Positions, applies BE discount
+3. Scanner: Add _calcIntradayRisk() + _calcIntradayCount()
+4. Scanner: Add Check 9 to evaluateScorecard()
+5. Scanner: Include heat data in getPreTradeData() response
+6. Dashboard: Portfolio Heat bar in pre-trade modal
+7. Dashboard: Heat summary in GP banner (quick glance)
+
+────────────────────────────────────────────────
+OPEN QUESTIONS (resolve during build)
+────────────────────────────────────────────────
+
+1. Current stop tracking: Trades tab has planned_stop but not CURRENT
+   trailing stop. Options:
+   a) Manual update in dashboard modal (user adjusts as they trail)
+   b) Bridge polls active stop orders from TradeStation API
+   c) Use planned_stop as floor, assume BE after trade is 1R+ profitable
+   Option (c) is simplest and probably good enough for v1.
+
+2. Closed DT risk: When a day trade closes, should its risk "free up"
+   immediately? Yes — the Trades tab status goes OPEN → CLOSED, so
+   _calcIntradayRisk() naturally excludes it on next check.
+
+3. Paper trades: Should paper (Alpaca) positions count against caps?
+   Probably not — they're learning/testing, not real capital. The
+   check should skip trade_type = 'PAPER'.
+
+4. GP transitions mid-day: If breadth fades from A to B while you have
+   4 day trades open (A allows 4, B allows 3), do you force-close one?
+   No — existing positions are grandfathered. The cap only blocks NEW
+   entries. Add a YELLOW warning: "Over B-limit with 4 DTs (A → B transition)".
+
+
+====================================================
+====================================================
+PHASE 3: TRADE MANAGEMENT SPECS (PRIORITY ORDER)
+====================================================
+====================================================
+These 5 items + 2 nice-to-haves complete the trade management layer.
+Build in order after Phase 1 (% sizing) and Phase 2 (deployment caps).
+All items surface in the pre-trade card.
+
+
+====================================================
+SPEC 3.1: SCALE-IN / SCALE-OUT TRACKING + PARTIAL EXITS
+====================================================
+Priority: #1 — This is how real trading works.
+
+PROBLEM:
+The Trades tab has one row per "trade idea." But real trades have multiple
+legs: initial entry, add at confirmation, scale out at 1R, trail runner.
+Currently syncTrades() groups broker fills into parent trades, but the
+grouping logic and partial P&L math aren't fully specced.
+
+────────────────────────────────────────────────
+GROUPING LOGIC (syncTrades)
+────────────────────────────────────────────────
+
+When a new broker fill arrives from Executions:
+
+  Step 1: Match to existing OPEN or PLANNED trade?
+    - Same symbol + same account + status IN ('OPEN','PLANNED')
+    - If PLANNED: transition to OPEN, populate entry fields
+    - If OPEN: this is a scale-in or scale-out leg
+
+  Step 2: No match found?
+    - Create new OPEN trade with was_planned = false
+    - Log as unplanned (tag prompt at EOD)
+
+  Step 3: Direction determines scale-in vs scale-out
+    - OPEN trade side = LONG:
+      - BUY fill = scale-in (adding to position)
+      - SELL fill = scale-out (reducing position)
+    - OPEN trade side = SHORT:
+      - SHORT/SELL fill = scale-in
+      - BUY/COVER fill = scale-out
+
+  Edge case: Same ticker, same account, TWO separate trade ideas same day?
+    - This is rare but happens (e.g., morning DT in NVDA, afternoon DT in NVDA)
+    - Resolution: if the existing OPEN trade has running_qty = 0 (fully exited),
+      the next fill starts a NEW trade row. A fill arriving while running_qty > 0
+      always attaches to the existing OPEN trade.
+
+────────────────────────────────────────────────
+ENTRY FIELDS — WEIGHTED AVERAGE ON SCALE-IN
+────────────────────────────────────────────────
+
+When a scale-in fill arrives:
+
+  Old: entry_price = 140.00, total_shares = 200
+  New fill: BUY 100 @ 142.00
+
+  Updated:
+    total_shares = 300
+    entry_price = (200 × 140.00 + 100 × 142.00) / 300 = 140.67
+    position_dollars = 300 × 140.67 = 42,200
+    entry_legs = "200@140.00 | 100@142.00"  (pipe-delimited append)
+
+  Dollar risk recalculates:
+    dollar_risk = total_shares × |entry_price - planned_stop|
+    (or use current_stop if stop lifecycle is implemented)
+
+────────────────────────────────────────────────
+EXIT FIELDS — PARTIAL EXIT TRACKING
+────────────────────────────────────────────────
+
+When a scale-out fill arrives:
+
+  Current: entry_price = 140.67, total_shares = 300, planned_stop = 139.50
+  Fill: SELL 150 @ 142.50 (selling half at ~1.5R)
+
+  Updated:
+    total_shares = 150 (remaining)
+    exit_legs = "150@142.50"  (pipe-delimited append)
+    
+  Partial P&L realized:
+    partial_gross_pnl = 150 × (142.50 - 140.67) = 274.50
+    (accumulated in a running gross_pnl field)
+    
+  Remaining position:
+    Still OPEN with 150 shares
+    Dollar risk on remaining = 150 × |140.67 - stop|
+    → Deployment guardrail updates immediately (less intraday risk)
+
+  When final shares exit:
+    All exit fills accumulated in exit_legs
+    exit_price = weighted avg of all exit fills
+    exit_time = timestamp of final fill
+    status → CLOSED
+    net_pnl = gross_pnl - total_commissions
+
+────────────────────────────────────────────────
+R-LEVEL AUTO-DETECTION
+────────────────────────────────────────────────
+
+The system knows planned_stop and entry_price, so 1R distance is known.
+When a partial exit occurs, tag which R-level it hit:
+
+  1R = entry_price + (entry_price - planned_stop)  [for longs]
+  2R = entry_price + 2 × (entry_price - planned_stop)
+  3R = entry_price + 3 × (entry_price - planned_stop)
+
+  For each exit leg, calculate:
+    r_at_exit = (fill_price - entry_price) / (entry_price - planned_stop)
+  
+  Store as: exit_legs = "150@142.50(1.5R) | 100@144.00(2.8R) | 50@139.80(-0.7R)"
+
+  This auto-populates the EOD review — did you follow the scale plan?
+  If scale_plan says "50% at 1R, trail rest" and exit_legs show
+  "150@142.50(1.5R)" that's close to plan. If it shows "300@141.00(0.3R)"
+  that's a panic exit before target.
+
+────────────────────────────────────────────────
+IMPACT ON PRE-TRADE CARD
+────────────────────────────────────────────────
+
+When opening the modal for a ticker you're already in:
+  - Show "ADDING TO EXISTING POSITION" header
+  - Display current position: 200 sh @ $140.00 avg
+  - Show what this add does to total size + risk
+  - Recalculate deployment heat with new total
+  - Warn if total position exceeds sizing tier max
+
+When opening for a new ticker:
+  - Normal flow, but scale plan is displayed prominently
+  - "Plan: 50% at 1R ($142.00), trail rest"
+  - Quick buttons: "Enter Full Size" / "Enter Half (scale plan)"
+
+────────────────────────────────────────────────
+DATA MODEL CHANGES
+────────────────────────────────────────────────
+
+Trades tab — no new columns needed. Existing fields handle it:
+  - entry_legs (col 41): pipe-delimited fill history "qty@price | qty@price"
+  - exit_legs (col 43): same format, with R-level annotation
+  - entry_price (col 38): weighted average, updates on scale-in
+  - total_shares (col 39): running total, updates on each leg
+  - gross_pnl (col 44): running realized P&L from partial exits
+  - net_pnl (col 45): gross - commissions
+
+New ScriptProperty (cache):
+  - OPEN_TRADE_MAP: JSON of {symbol+account → trade_num} for fast lookup
+    during syncTrades(). Rebuilt on scanner restart.
+
+
+====================================================
+SPEC 3.2: STOP MANAGEMENT LIFECYCLE
+====================================================
+Priority: #2 — Feeds into deployment guardrails (BE discount) and EOD review.
+
+PROBLEM:
+The system only knows planned_stop (set at entry). Real stops move:
+initial stop → breakeven → trailing. The system needs to track this
+for: deployment guardrail BE discount, risk calculation updates,
+EOD exit quality grading, and the pre-trade card's risk display.
+
+────────────────────────────────────────────────
+NEW FIELD: current_stop
+────────────────────────────────────────────────
+
+Add to Trades tab after planned_stop (insert new column or use a
+currently empty one in the Plan section):
+
+  current_stop: number — the LIVE stop price for this trade right now.
+  Initialized to planned_stop at entry. Updated by:
+
+  Source priority:
+    1. Broker API (highest authority) — if we can read active stop orders
+    2. Manual update via dashboard modal
+    3. Auto-inference from P&L (if trade is 1R+ profitable, assume BE)
+
+────────────────────────────────────────────────
+STOP STATES
+────────────────────────────────────────────────
+
+  INITIAL   — current_stop = planned_stop (just entered)
+  BREAKEVEN — current_stop = entry_price (stop moved to entry)
+  TRAILING  — current_stop > entry_price for longs (locking in profit)
+  WIDENED   — current_stop further from entry than planned (bad practice)
+
+  Calculated:
+    stop_state = 
+      if current_stop == planned_stop → 'INITIAL'
+      if |current_stop - entry_price| < 0.01 → 'BREAKEVEN'  
+      if (LONG && current_stop > entry_price) || (SHORT && current_stop < entry_price) → 'TRAILING'
+      if (LONG && current_stop < planned_stop) || (SHORT && current_stop > planned_stop) → 'WIDENED'
+
+────────────────────────────────────────────────
+UPDATE MECHANISMS
+────────────────────────────────────────────────
+
+Option A — Dashboard modal manual update (v1, build first):
+  When viewing an OPEN position in the pre-trade modal:
+    Current Stop: [139.50] [Move to BE] [Trail to: ___]
+  
+  onClick "Move to BE" → sets current_stop = entry_price
+  onClick "Trail to" → sets current_stop = user input
+  
+  Writes to Trades tab immediately. Creates a STOP_UPDATE event
+  in a lightweight audit trail (ScriptProperty or Snapshots tab):
+    "Trade #47 NVDA: stop 139.50 → 140.67 (BE) at 10:42 AZ"
+
+Option B — Broker API polling (v2, build later):
+  Bridge polls TradeStation: GET /v3/brokerage/accounts/{id}/orders
+  Filter: active STOP or STOP_LIMIT orders for symbols with OPEN trades
+  Match by symbol + account → update current_stop
+  Runs on each syncTrades() cycle (every 1-5 min)
+
+Option C — Auto-inference (always active, fallback):
+  On each scanner refresh, for each OPEN trade:
+    current_price = latest quote
+    r_distance = |entry_price - planned_stop|
+    current_r = (current_price - entry_price) / r_distance  [for longs]
+    
+    if current_r >= 1.0 AND current_stop == planned_stop:
+      → Show YELLOW alert: "NVDA at 1R+ but stop still at initial. Move to BE?"
+      → Do NOT auto-update (user's decision) but nag them
+
+────────────────────────────────────────────────
+IMPACT ON DEPLOYMENT GUARDRAILS
+────────────────────────────────────────────────
+
+The swing exposure BE discount from Phase 2 now uses current_stop:
+
+  if stop_state IN ('BREAKEVEN', 'TRAILING') → weight = 0.5
+  if stop_state == 'INITIAL' → weight = 1.0
+  if stop_state == 'WIDENED' → weight = 1.2 (PENALTY — bad practice)
+
+────────────────────────────────────────────────
+IMPACT ON PRE-TRADE CARD
+────────────────────────────────────────────────
+
+Portfolio Heat section shows stop state per position:
+  NVDA $8,200 (BE ✓) ← stop at breakeven, 50% weight
+  PLTR $6,100 (INIT) ← stop at initial, full weight
+  AMD  $4,500 (TRAIL +1.2R) ← trailing, 50% weight
+
+────────────────────────────────────────────────
+IMPACT ON EOD REVIEW
+────────────────────────────────────────────────
+
+Stop history enables auto-grading:
+  - Did you move to BE after 1R? (good practice)
+  - Did you widen the stop? (bad practice)
+  - Was the stop honored? (compare exit_price vs current_stop at exit time)
+  - Trail quality: how much profit did trailing capture vs leaving on table?
+
+
+====================================================
+SPEC 3.3: CORRELATION / THEME CLUSTERING
+====================================================
+Priority: #3 — Prevents hidden concentration risk.
+
+PROBLEM:
+Scorecard Check 5 (correlation) and Check 7 (sector concentration) use
+simple sector ETF labels. But NVDA and SMCI are both "AI infrastructure"
+even though SMCI might map to a different sector. NVDA long + SOXS long
+is actually a hedge, not concentration. The system needs smarter grouping.
+
+────────────────────────────────────────────────
+THEME CLUSTER MAP
+────────────────────────────────────────────────
+
+Static map in scanner (updated periodically, not real-time):
+
+var THEME_CLUSTERS = {
+  'AI_INFRA':     ['NVDA','AMD','SMCI','AVGO','TSM','MRVL','MU','ANET'],
+  'AI_SOFTWARE':  ['MSFT','GOOG','META','CRM','SNOW','PLTR','DDOG','NOW'],
+  'SEMIS':        ['NVDA','AMD','AVGO','TSM','INTC','MRVL','MU','QCOM','TXN','LRCX','AMAT','KLAC'],
+  'MEGA_TECH':    ['AAPL','MSFT','GOOG','AMZN','META','NVDA','TSLA'],
+  'RETAIL':       ['AMZN','WMT','COST','TGT','HD','LOW'],
+  'FINANCIALS':   ['JPM','GS','MS','BAC','C','WFC','SCHW'],
+  'ENERGY':       ['XOM','CVX','COP','SLB','EOG','PXD'],
+  'BIOTECH':      ['MRNA','PFE','JNJ','ABBV','LLY','NVO','AMGN'],
+  'EV_CLEAN':     ['TSLA','RIVN','NIO','ENPH','FSLR','PLUG'],
+  'DEFENSE':      ['LMT','RTX','NOC','GD','BA'],
+  'CHINA':        ['BABA','PDD','JD','NIO','BIDU','KWEB'],
+  'CRYPTO_PROXY': ['COIN','MSTR','MARA','RIOT','IBIT']
+};
+
+// Inverse/hedge relationships — these REDUCE concentration, not add
+var HEDGE_PAIRS = {
+  'SOXS': 'SEMIS',      // inverse semis
+  'TECS': 'MEGA_TECH',  // inverse tech
+  'SQQQ': 'MEGA_TECH',  // inverse QQQ
+  'SH':   'MEGA_TECH',  // inverse S&P
+  'YANG': 'CHINA',       // inverse China
+};
+
+Notes:
+  - A ticker can belong to multiple clusters (NVDA is in AI_INFRA + SEMIS + MEGA_TECH)
+  - The map is ~50-80 tickers covering Config watchlist high-conviction names
+  - Unknown tickers fall back to sector ETF mapping (existing behavior)
+  - Map lives as a constant in scanner, easy to update
+
+────────────────────────────────────────────────
+CONCENTRATION SCORING
+────────────────────────────────────────────────
+
+When evaluating a new trade for symbol X:
+
+  1. Get all clusters X belongs to
+  2. For each OPEN trade in portfolio:
+     - Get all clusters that trade belongs to
+     - Find intersection with X's clusters
+  3. Score:
+     - 0 overlapping clusters = GREEN (independent)
+     - 1 overlapping cluster = YELLOW if same cluster has 2+ positions already
+     - 2+ overlapping clusters = RED ("high theme overlap")
+  4. Hedge detection:
+     - If X is in HEDGE_PAIRS and existing position is in the hedged cluster:
+       → Override to GREEN ("hedging existing SEMIS exposure")
+     - If existing position is an inverse and X is in the hedged cluster:
+       → Same — it's a hedge
+
+────────────────────────────────────────────────
+PRE-TRADE CARD DISPLAY
+────────────────────────────────────────────────
+
+  Theme Overlap: ⚠️ YELLOW
+    NVDA shares clusters with:
+    • AMD (AI_INFRA, SEMIS) — OPEN, $8,200
+    • AVGO (AI_INFRA, SEMIS) — OPEN, $6,000
+    
+    Total AI_INFRA exposure: $14,200 + this trade = $26,200 (26% of equity)
+    Total SEMIS exposure: $14,200 + this trade = $26,200 (26% of equity)
+    
+    Consider: reduce size or wait for one to close.
+
+Or for a hedge:
+
+  Theme Overlap: ✅ GREEN (HEDGE)
+    SOXS hedges your SEMIS exposure:
+    • NVDA LONG $8,200
+    • AMD LONG $6,000
+    This trade reduces net SEMIS exposure.
+
+────────────────────────────────────────────────
+SCORECARD INTEGRATION
+────────────────────────────────────────────────
+
+Replace existing Check 5 + Check 7 with a unified Check 5:
+  "Theme Concentration"
+  
+  GREEN: No cluster overlap OR hedge detected
+  YELLOW: 1 cluster overlap with 1 existing position, or 2+ clusters
+          with small existing exposure (< 15% of equity in that cluster)
+  RED: 2+ cluster overlap AND existing cluster exposure > 20% of equity
+
+────────────────────────────────────────────────
+MAINTENANCE
+────────────────────────────────────────────────
+
+THEME_CLUSTERS should be reviewed monthly or when watchlist changes
+significantly. Could eventually be auto-generated from beta/correlation
+data, but a manual curated map is more reliable for v1.
+
+
+====================================================
+SPEC 3.4: UNPLANNED TRADE TAGGING WORKFLOW
+====================================================
+Priority: #4 — Keeps the journal complete even when you skip the card.
+
+PROBLEM:
+When you execute directly in TradeStation without going through the
+pre-trade card, syncTrades() creates a trade with was_planned = false
+and missing: setup_type, planned_stop, planned_target, scorecard,
+context snapshot at decision time. The EOD review can't grade what
+it can't measure.
+
+────────────────────────────────────────────────
+DETECTION
+────────────────────────────────────────────────
+
+syncTrades() already sets was_planned = false when no PLANNED match exists.
+The dashboard needs to surface these prominently.
+
+────────────────────────────────────────────────
+IMMEDIATE NOTIFICATION
+────────────────────────────────────────────────
+
+When dashboard polls and sees a new OPEN trade with was_planned = false:
+
+  Toast notification (top of screen, persistent until dismissed):
+  ┌─────────────────────────────────────────────────────┐
+  │ ⚠️ UNPLANNED TRADE DETECTED                        │
+  │ NVDA LONG 200sh @ $142.35 (TS-DT)                  │
+  │ [Tag Now]  [Tag at EOD]  [Dismiss]                  │
+  └─────────────────────────────────────────────────────┘
+
+"Tag Now" opens a lightweight version of the pre-trade modal:
+  - Setup type dropdown (required)
+  - Stop price (required — "where IS your stop right now?")
+  - Target price (optional)
+  - Catalyst / reason (optional, 1-line text)
+  - [Save]
+
+On save:
+  - Updates Trades row: setup_type, planned_stop (= current_stop),
+    planned_target, catalyst
+  - Takes a context snapshot (same as logPlannedTrade would have)
+  - Marks trade as "tagged" (new field: tagged_at timestamp)
+  - Recalculates dollar_risk from stop price
+
+"Tag at EOD" dismisses the toast but adds the trade to an
+EOD_UNTAGGED list. The EOD review surfaces these first:
+  "3 unplanned trades need tagging before review can complete."
+
+────────────────────────────────────────────────
+EOD HANDLING
+────────────────────────────────────────────────
+
+During EOD review, unplanned trades get a special section:
+
+  UNPLANNED TRADES (3)
+  These trades bypassed the pre-trade card.
+  
+  #48 NVDA LONG 200sh @ $142.35
+    Setup: [dropdown]  Stop was: [___]  Why: [___]
+    Grade penalty: -1 letter (skipping the system IS a mistake)
+  
+  #49 AMD SHORT 100sh @ $168.20
+    ...
+
+The "grade penalty" is advisory — it shows up in the coaching summary:
+  "2 of 5 trades were unplanned. The system can't protect you if you skip it."
+
+────────────────────────────────────────────────
+TRACKING METRIC
+────────────────────────────────────────────────
+
+DailyLog gets a new field (or repurpose an existing empty one):
+  unplanned_trade_count: number
+  planned_trade_count: number
+  plan_adherence_pct: planned / (planned + unplanned) × 100
+
+Over time this builds a "discipline score" — are you using the system
+more consistently? The coaching engine can reference trends:
+  "Plan adherence: 85% this week (up from 60% last week). Nice improvement."
+
+────────────────────────────────────────────────
+PRE-TRADE CARD IMPACT
+────────────────────────────────────────────────
+
+The pre-trade card gets a subtle reminder at the bottom:
+  "Last 5 days: 4 planned, 1 unplanned (80% adherence)"
+
+This nudges you to use the card without being preachy.
+
+
+====================================================
+SPEC 3.5: DAY TRADE → SWING TRANSITION
+====================================================
+Priority: #5 — Handles the "it's working, I want to hold overnight" scenario.
+
+PROBLEM:
+You planned a day trade (trade_type = DT, tight stop, intraday thesis).
+By 1:30pm AZ it's up 2R and still moving. You want to hold overnight.
+But the system thinks it's a DT — it counts against intraday risk budget,
+not swing exposure. The stop might be too tight for overnight gap risk.
+And the deployment guardrails don't know it's now a swing.
+
+────────────────────────────────────────────────
+TRANSITION TRIGGER
+────────────────────────────────────────────────
+
+Two ways a DT becomes a swing:
+
+  1. MANUAL: User clicks "Convert to Swing" in the dashboard modal
+  2. AUTO-DETECT: Trade is still OPEN at EOD (2:00pm AZ)
+     → System prompts: "3 day trades still open. Close or convert?"
+
+────────────────────────────────────────────────
+CONVERSION FLOW (manual, via dashboard)
+────────────────────────────────────────────────
+
+Button in the pre-trade modal for OPEN DT positions:
+  [Convert to Swing]
+
+On click, mini-form:
+  New stop for overnight: [_______]  (required — must be wider or equal)
+  Swing thesis: [_______]  (optional, 1-line)
+  Target adjustment: [_______]  (optional)
+
+Validation:
+  - New stop must exist (no holding overnight without a stop)
+  - Warn if new stop is tighter than 1 ATR: "Stop may be too tight for overnight gap risk"
+  - Check swing exposure cap: will this push swing exposure over the limit?
+    If yes → RED warning but allow override (it's already a position)
+
+On confirm:
+  Trades tab updates:
+    trade_type: DT → SW
+    planned_stop → new stop (original stop preserved in notes or entry_legs)
+    current_stop → new stop
+    Add to notes: "Converted from DT at [time]. Original stop: $X. Reason: [thesis]"
+  
+  Deployment recalculates:
+    - Removed from intraday risk budget
+    - Added to swing exposure (at full market value, INITIAL stop state)
+  
+  Context snapshot taken: captures market state at conversion decision
+
+────────────────────────────────────────────────
+AUTO-DETECT AT EOD
+────────────────────────────────────────────────
+
+When runEOD() fires at 2:00pm AZ:
+
+  Check for OPEN trades where trade_type = 'DT' and exit_time is empty.
+  
+  For each:
+    If market is still open (rare, but possible on early close days):
+      → Skip, let user decide
+    
+    If market is closed:
+      → Add to EOD_HELD_OVERNIGHT list
+      → Prompt in EOD review:
+        "NVDA (DT) held overnight. Convert to swing or close tomorrow morning?"
+        [Convert to Swing]  [Plan to Close at Open]
+      
+      If Convert: same flow as manual conversion above
+      If Plan to Close: trade_type stays DT, add note "Held overnight — plan to close at open"
+        → Next day's pre-trade card shows: "⚠️ NVDA held overnight from yesterday. Close or convert."
+
+────────────────────────────────────────────────
+REVERSE: SWING → DAY TRADE
+────────────────────────────────────────────────
+
+Less common but possible. A swing position that you decide to close
+intraday becomes effectively a DT on its exit day. The system doesn't
+need to formally convert — the exit just happens. But the Trades tab
+should note the hold_days for performance analytics:
+  hold_days = 0 means same-day (DT behavior)
+  hold_days ≥ 1 means true swing behavior
+  
+The analytics engine should be able to filter by ACTUAL hold behavior,
+not just the trade_type label. A "DT" held for 3 days performed as a
+swing regardless of what it was labeled.
+
+────────────────────────────────────────────────
+PRE-TRADE CARD IMPACT
+────────────────────────────────────────────────
+
+For OPEN DT positions in the modal:
+  Position Status: DT — OPEN since 8:15am
+  [Convert to Swing]  [Update Stop]
+
+For converted positions:
+  Position Status: SW (was DT, converted 1:45pm)
+  Original entry: DT @ $140.00, stop $139.50
+  Swing stop: $138.00 (1 ATR)
+
+
+====================================================
+SPEC 3.6: DAILY LOSS LIMIT ENFORCEMENT (NICE-TO-HAVE)
+====================================================
+
+DECISION: Advisory (YELLOW/RED on scorecard) not hard block.
+
+Reasoning: Hard blocks in a trading system create panic ("the system
+locked me out, do I need to override?"). Advisory lets the trader see
+the warning and make the conscious decision. The coaching engine
+tracks whether they respected the limit.
+
+Implementation:
+  - Scorecard Check 6 already exists
+  - Make it smarter: per-account limits (DT account might have $500/day,
+    swing account $1,000/day)
+  - Aggregate limit: total across all accounts (e.g., $1,500/day)
+  - Display in GP banner: "Day P&L: -$320 / -$500 limit (64%)"
+  - At 80% of limit → YELLOW: "Approaching daily loss limit"
+  - At 100% → RED: "Daily loss limit reached. System recommends stopping."
+  - At 120% → RED + coaching flag: "Over daily loss limit by $100. Review required."
+  - Never blocks logPlannedTrade() — but was_limit_exceeded flag gets
+    written to Trades tab for pattern detection
+
+DailyLog tracking:
+  - daily_limit_hit: boolean (did P&L touch the limit at any point?)
+  - daily_limit_exceeded: boolean (did trading continue past limit?)
+  - Over time: "You've exceeded daily loss limit on 3 of last 10 trading days.
+    Consider whether the limit should be adjusted or discipline improved."
+
+
+====================================================
+SPEC 3.7: TIME-OF-DAY SIZING ADJUSTMENT (NICE-TO-HAVE)
+====================================================
+
+CONCEPT: Reduce position size in late session when there's less
+time for the thesis to play out.
+
+Session phases (already defined in scanner):
+  PREMARKET:  before 7:30 AZ
+  OPEN:       7:30 – 8:00 AZ  (first 30 min)
+  CORE:       8:00 – 12:00 AZ
+  POWER:      12:00 – 1:30 AZ  (power hour equivalent)
+  CLOSE:      1:30 – 2:00 AZ  (last 30 min)
+
+Proposed TOD multiplier on position size:
+  OPEN:    1.0x (full size — most opportunity, most liquidity)
+  CORE:    1.0x (full size)
+  POWER:   0.85x (slightly reduced — less time for follow-through)
+  CLOSE:   0.65x (significantly reduced — minimal time, wider spreads)
+
+This stacks with IVR and beta adjustments:
+  finalDollars = baseDollars × ivrAdj × betaAdj × todAdj
+
+Setup-specific override:
+  Some setups are DESIGNED for late session:
+    - PowerHour setups (if we add one) → 1.0x even in POWER/CLOSE
+    - Scalping → 1.0x always (quick in/out, time doesn't matter)
+    - OpeningDrive → only valid in OPEN anyway
+
+Constants:
+  var TOD_SIZE_ADJ = {
+    'PREMARKET': 0, 'OPEN': 1.0, 'CORE': 1.0,
+    'POWER': 0.85, 'CLOSE': 0.65
+  };
+  var TOD_EXEMPT_SETUPS = ['Scalping', 'MarketPlay'];
+
+PRE-TRADE CARD:
+  Shows: "Session: POWER (−15% size adj)"
+  If exempt: "Session: POWER (exempt — Scalping)"
+
+
+====================================================
+MASTER BUILD ORDER (ALL PHASES)
+====================================================
+
+PHASE 1 — % of Equity Sizing (NOW, with v91 paste)
+  1. Scanner: Replace SUBMODE_SIZING + GP_SIZING with PCT versions
+  2. Scanner: Update _getEffectiveSizing() to resolve % × equity
+  3. Scanner: Add risk cap in computePositionSize()
+  4. Dashboard: Update client-side sizing fallback
+
+PHASE 2 — Deployment Guardrails (after v91 verified)
+  5. Scanner: INTRADAY_CAPS + SWING_CAPS constants
+  6. Scanner: _calcSwingExposure(), _calcIntradayRisk()
+  7. Scanner: Scorecard Check 9 (Portfolio Heat)
+  8. Dashboard: Portfolio Heat bars in pre-trade modal
+
+PHASE 3 — Trade Management (build in priority order)
+  9.  Scale-in/out grouping logic in syncTrades()
+  10. Weighted avg entry on scale-in
+  11. Partial exit P&L tracking + R-level annotation
+  12. current_stop field + stop state tracking
+  13. Manual stop update in dashboard modal
+  14. Auto-inference nag ("move to BE?")
+  15. THEME_CLUSTERS + HEDGE_PAIRS constants
+  16. Unified theme concentration check (replaces Check 5+7)
+  17. Unplanned trade toast notification
+  18. Lightweight tag form
+  19. EOD untagged trade prompt
+  20. Plan adherence metric in DailyLog
+  21. DT → Swing conversion flow
+  22. EOD auto-detect held overnight
+  23. Daily loss limit per-account config
+  24. TOD sizing multiplier (nice-to-have, lowest priority)
+
+PHASE 4 — Broker API Stop Polling (future)
+  25. Bridge: poll active stop orders from TradeStation
+  26. Scanner: auto-update current_stop from broker data
+  27. Full stop lifecycle without manual intervention
