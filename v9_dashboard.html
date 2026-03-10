@@ -1018,72 +1018,103 @@ function _renderQuotaChart(){
 
   var max=0;for(var i=0;i<_quotaHourly.length;i++){if(_quotaHourly[i].v>max)max=_quotaHourly[i].v;}
   if(max===0)max=1;
+  // Round max up for clean Y-axis
+  var yMax=max<=100?Math.ceil(max/10)*10:max<=500?Math.ceil(max/50)*50:max<=2000?Math.ceil(max/200)*200:Math.ceil(max/500)*500;
+  if(yMax<max)yMax=max;
+
+  var numBars=_quotaHourly.length;
+  var barW=Math.max(6,Math.min(14,Math.floor(560/numBars)));
+  var chartW=numBars*(barW+2)+40; // +40 for Y-axis
 
   var h='<div class="qc">';
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="qc-title" style="margin:0">UrlFetch \u00b7 24h Hourly Breakdown</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideQuotaChart()">\u2715</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="qc-title" style="margin:0">UrlFetch \u00b7 Hourly Breakdown ('+numBars+'h)</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideQuotaChart()">\u2715</span></div>';
 
-  // Chart area — dark box, 160px tall, 24 bars
-  h+='<div style="overflow-x:auto;overflow-y:hidden;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 8px"><div style="display:flex;align-items:flex-end;gap:2px;height:160px;min-width:'+Math.max(600,_quotaHourly.length*8)+'px">';
+  // Chart area with Y-axis
+  h+='<div style="overflow-x:auto;overflow-y:hidden;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 4px 10px 0">';
+  h+='<div style="display:flex;min-width:'+chartW+'px;height:180px">';
+
+  // Y-axis labels (left side)
+  h+='<div style="width:36px;flex-shrink:0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding-right:4px;font-size:8px;font-family:JetBrains Mono,monospace;color:#484f58">';
+  h+='<span>'+yMax+'</span>';
+  h+='<span>'+Math.round(yMax*0.75)+'</span>';
+  h+='<span>'+Math.round(yMax*0.5)+'</span>';
+  h+='<span>'+Math.round(yMax*0.25)+'</span>';
+  h+='<span>0</span>';
+  h+='</div>';
+
+  // Bars
+  h+='<div style="flex:1;display:flex;align-items:flex-end;gap:1px;height:100%;position:relative;border-left:1px solid #21262d">';
+
+  // Horizontal grid lines
+  h+='<div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none">';
+  for(var gi=1;gi<=4;gi++){
+    h+='<div style="position:absolute;top:'+(gi*25-25)+'%;left:0;right:0;border-bottom:1px solid #161b22"></div>';
+  }
+  h+='</div>';
+
   for(var i=0;i<_quotaHourly.length;i++){
     var d=_quotaHourly[i];
     var hasCats=d.c&&Object.keys(d.c).some(function(k){return d.c[k]>0;});
 
-    // Build tooltip
-    var tip=e(d.h)+': '+d.v+' total';
-    if(d.c){for(var ci=0;ci<catOrder.length;ci++){var cv=d.c[catOrder[ci]]||0;if(cv>0)tip+='\n'+catOrder[ci]+': '+cv;}}
+    h+='<div class="qc-col" style="width:'+barW+'px;flex-shrink:0;height:100%;display:flex;flex-direction:column-reverse;position:relative">';
 
-    h+='<div class="qc-col" style="flex:1;height:100%;display:flex;flex-direction:column-reverse;min-width:0;position:relative">';
     // Styled hover tooltip
-    var tipHtml='<div class="qc-tip"><div class="qc-tip-h">'+e(d.h)+': '+d.v+' total</div>';
-    if(d.c){for(var ci3=0;ci3<catOrder.length;ci3++){var cv3=d.c[catOrder[ci3]]||0;if(cv3>0)tipHtml+='<div><span style="color:'+catColors[catOrder[ci3]]+'">■</span> '+catLabels[catOrder[ci3]]+': '+cv3+'</div>';}}
-    if(d.v>0&&!hasCats){var col2=d.v>1500?'#ef5350':d.v>800?'#ffc107':'#00c853';tipHtml+='<div><span style="color:'+col2+'">\u25a0</span> Total: '+d.v+'</div>';}
+    var tipHtml='<div class="qc-tip"><div class="qc-tip-h">'+e(d.h)+'</div>';
+    tipHtml+='<div style="font-size:12px;font-weight:700;color:#e6edf3;margin-bottom:3px">'+d.v+' fetches</div>';
+    if(hasCats){for(var ci3=0;ci3<catOrder.length;ci3++){var cv3=d.c[catOrder[ci3]]||0;if(cv3>0)tipHtml+='<div style="display:flex;justify-content:space-between;gap:12px"><span><span style="color:'+catColors[catOrder[ci3]]+'">\u25a0</span> '+catLabels[catOrder[ci3]]+'</span><span style="color:#e6edf3;font-weight:600">'+cv3+'</span></div>';}}
     tipHtml+='</div>';
     h+=tipHtml;
 
     if(d.v===0){
-      // Empty hour — full height dashed placeholder
-      h+='<div style="flex:1;border:1px dashed #30363d;border-radius:2px"></div>';
+      h+='<div style="flex:1"></div>';
     } else if(hasCats){
-      // Stacked category segments
       for(var ci2=0;ci2<catOrder.length;ci2++){
         var ck=catOrder[ci2],cv2=d.c[ck]||0;
         if(cv2>0){
-          var segPct=cv2/max*100;
-          h+='<div style="height:'+Math.max(segPct,1)+'%;background:'+catColors[ck]+';border-radius:1px;margin-top:1px"></div>';
+          var segPct=cv2/yMax*100;
+          h+='<div style="height:'+Math.max(segPct,0.5)+'%;background:'+catColors[ck]+';min-height:1px"></div>';
         }
       }
     } else {
-      // Has total but no category breakdown — solid bar
-      var pct=d.v/max*100;
+      var pct=d.v/yMax*100;
       var col=d.v>1500?'#ef5350':d.v>800?'#ffc107':'#00c853';
-      h+='<div style="height:'+Math.max(pct,3)+'%;background:'+col+';border-radius:2px 2px 0 0"></div>';
+      h+='<div style="height:'+Math.max(pct,2)+'%;background:'+col+';border-radius:1px 1px 0 0"></div>';
     }
+
+    // Count label on top of bar (for bars > 5% of max)
+    if(d.v>yMax*0.05){
+      h+='<div style="position:absolute;top:-1px;left:50%;transform:translateX(-50%) translateY(-100%);font-size:7px;color:#7d8590;font-family:JetBrains Mono,monospace;white-space:nowrap">'+d.v+'</div>';
+    }
+
     h+='</div>';
   }
-  h+='</div>';
+  h+='</div></div></div>';
 
   // Hour labels
-  h+='<div style="overflow-x:auto;padding:3px 8px 0 8px"><div style="display:flex;gap:2px;min-width:'+Math.max(600,_quotaHourly.length*8)+'px">';
-  var _prevDay='';
+  h+='<div style="overflow-x:auto;padding:3px 4px 0 36px"><div style="display:flex;gap:1px;min-width:'+(chartW-40)+'px">';
+  var _prevDay2='';
   for(var i=0;i<_quotaHourly.length;i++){
     var hr=_quotaHourly[i].h||'';
-    // Detect day boundary (when hour label wraps from PM to AM or changes day)
-    var isNewDay=false;
-    if(hr.indexOf('12a')===0||hr==='12AM'){isNewDay=true;}
-    var showLbl=(i%6===0)||i===_quotaHourly.length-1||isNewDay;
-    var dayBorder=isNewDay?';border-left:2px solid #30363d;padding-left:2px':'';
-    h+='<div style="flex:1;text-align:center;font-size:7px;color:'+(showLbl?'#7d8590':'transparent')+';font-family:JetBrains Mono,monospace'+dayBorder+'">'+e(hr)+'</div>';
+    // Show label every N bars depending on count
+    var labelInterval=numBars>80?12:numBars>40?6:numBars>20?4:2;
+    var showLbl=(i%labelInterval===0)||i===_quotaHourly.length-1;
+    // Day boundary detection (date changes in label like "3/10 1PM" vs "3/9 11PM")
+    var dayPart=hr.split(' ')[0]||'';
+    var isNewDay=dayPart!==_prevDay2&&_prevDay2!=='';
+    _prevDay2=dayPart;
+    var dayBorder=isNewDay?';border-left:2px solid #30363d;padding-left:1px':'';
+    h+='<div style="width:'+barW+'px;flex-shrink:0;text-align:center;font-size:7px;color:'+(showLbl||isNewDay?'#7d8590':'transparent')+';font-family:JetBrains Mono,monospace'+dayBorder+';overflow:hidden;text-overflow:clip">'+e(showLbl||isNewDay?hr:'.')+'</div>';
   }
   h+='</div></div>';
 
-  // Legend — only categories with data
+  // Legend
   var byCat=_lastD&&_lastD.quotaByCat?_lastD.quotaByCat:null;
   h+='<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;font-size:10px;font-family:JetBrains Mono,monospace;color:#7d8590">';
   for(var li=0;li<catOrder.length;li++){
     var ck3=catOrder[li];
     var catTotal=byCat?byCat[ck3]||0:0;
     if(!catTotal){for(var hi=0;hi<_quotaHourly.length;hi++){catTotal+=((_quotaHourly[hi].c||{})[ck3])||0;}}
-    if(catTotal>0)h+='<span><span style="color:'+catColors[ck3]+'">'+'\u25a0'+'</span> '+catLabels[ck3]+': '+catTotal.toLocaleString()+'</span>';
+    if(catTotal>0)h+='<span><span style="color:'+catColors[ck3]+'">\u25a0</span> '+catLabels[ck3]+': '+catTotal.toLocaleString()+'</span>';
   }
   h+='</div>';
 
@@ -1105,7 +1136,6 @@ function _renderQuotaChart(){
   el.innerHTML=h;
   el.style.display='block';
 }
-
 
 // ═══ API COST CHART ═══
 var _apiCostHourly=[],_apiCostTotal=0,_apiChartPinned=false;
