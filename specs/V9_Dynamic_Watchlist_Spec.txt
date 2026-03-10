@@ -1,0 +1,190 @@
+V9 DYNAMIC WATCHLIST + QUOTA OPTIMIZATION — BUILD SPEC
+=====================================================
+March 4, 2026 · Scanner v90.9.1 → v90.10 · Dashboard v11.16 → v11.17
+
+═══════════════════════════════════════════════════════
+1. SCANNER EDITS (v90.10)
+═══════════════════════════════════════════════════════
+
+EDIT A: Full scan interval 30min → 60min
+  File: PHASE_CONFIG.CORE_SESSION
+  Change: fullInterval: 6 → 12
+  Lines: 1
+  Savings: ~2,120 fetches/day
+
+EDIT B: Smart AH bars — skip unless catalyst
+  File: PHASE_CONFIG.AFTER_HOURS + getRefreshMode()
+  Change: AH bars only for tickers flagged as:
+    - Has earnings today/tomorrow (from earningsMap)
+    - Has open position (from My Positions tab)
+    - Manual "watch AH" flag in Config
+  Default: threshold 99 stays (no bars for generic tickers)
+  Exception list read from ScriptProperty 'AH_WATCH_TICKERS'
+  Lines: ~15
+  Savings: ~750 fetches/day (keep ~210 for positions + earnings)
+
+EDIT C: Dynamic low-signal deprioritization (replaces static trim)
+  File: getRefreshMode() partial filter
+  Change: In addition to confluence threshold, skip bars for tickers that:
+    - Have NEVER reached confluence ≥ 16 in the last 5 trading days
+    - Are NOT in PM_WATCHLIST_SECTIONS
+    - Are NOT in hot sector (see Edit E)
+  Implementation: Store 'CONF_PEAK_5D' as ScriptProperty
+    Key = ticker, Value = max confluence seen in last 5 days
+    Updated on each full scan. Cleared/rotated daily at EOD.
+    On partial cycles: if CONF_PEAK_5D[ticker] < 16 → skip bars
+  Lines: ~40
+  Savings: ~1,000-2,000 fetches/day (variable — more on quiet days)
+  This is DYNAMIC — tickers auto-deprioritize when cold, auto-restore when hot
+
+EDIT D: Dynamic Watchlist tab + populateDynamic()
+  New tab: "Dynamic" in spreadsheet
+  Columns: A=Symbol, B=Source, C=AddedDate, D=Reason, E=LastConf, F=Grade
+  Max: 75 tickers
+
+  populateDynamic() runs at 6:30am (pre-market trigger):
+    Source 1 — Gap scan:
+      Call tsQuotes() on S&P 500 + Russell 1000 components (~1,000 tickers)
+      Cost: 1 UrlFetch (batch quote call)
+      Filter: |gap| ≥ 3% AND pre-market volume indicates RVOL ≥ 2
+      Exclude: tickers already in Config watchlist
+      Tag: source='GAP', reason='Gap +X.X%, RVOL X.X'
+
+    Source 2 — Earnings:
+      Read earningsMap (already built from Finnhub)
+      Filter: reporting today or tomorrow, top-20 revenue OR T1/T2 match
+      Exclude: tickers already in Config
+      Tag: source='EARNINGS', reason='Reports [date] [BMO/AMC]'
+
+    Source 3 — Arete email:
+      Read ARETE_GMAIL_CACHE from ScriptProperties
+      Parse for ticker symbols (regex: $TICKER or standalone 1-5 char caps)
+      Filter: not already in Config
+      Tag: source='ARETE', reason='Mentioned in [date] email'
+
+    Source 4 — Intraday RVOL alerts (runs during CORE, not pre-market):
+      On each full scan, check the broad quote batch for:
+        RVOL ≥ 3 AND |change| ≥ 3% AND not in Config AND not already in Dynamic
+      Tag: source='RVOL_ALERT', reason='RVOL X.X, +X.X%'
+      Max 10 intraday adds per day
+
+  Merge into getWatchlist():
+    getWatchlist() currently reads Config tab only
+    Add: also read Dynamic tab, merge into watchlistItems[]
+    Dynamic tickers get section = 'DYNAMIC'
+    They participate in normal refresh cycle (quotes free, bars per phase rules)
+
+  EOD cleanup (runs at 2:05pm via EOD trigger):
+    Remove Dynamic tickers that:
+      - Have no open position
+      - Were not manually pinned
+    Keep: tickers with open positions, tickers flagged 'KEEP'
+
+  Lines: ~120
+
+EDIT E: Hot Sector Boost
+  File: getRefreshMode() partial filter
+  Change: Check sector ETF performance from Market tab:
+    If sector ETF |change| ≥ 1.5% AND RVOL ≥ 1.5:
+      → Drop confluence threshold to 15 for all tickers in that sector
+      → These tickers get bars on every partial cycle
+  Implementation:
+    Read sector ETF data from quoteMap (already fetched)
+    Build hotSectors set: ['Semis', 'Energy', etc.]
+    In partial filter: if _SEC[ticker] is in hotSectors → include
+  Lines: ~25
+  Cost: 0 extra fetches (uses existing quotes)
+
+EDIT F: Arete email in dashboard state
+  File: getDashboardData()
+  Change: Add raw Arete email text to state object:
+    state.areteEmail = props.getProperty('ARETE_GMAIL_CACHE') || '';
+    state.areteEmailTime = props.getProperty('ARETE_GMAIL_CACHE_TIME') || '';
+  Lines: 2
+  Cost: 0 (reads from cache, no fetch)
+
+═══════════════════════════════════════════════════════
+2. DASHBOARD EDITS (v11.17)
+═══════════════════════════════════════════════════════
+
+EDIT G: Arete Email section
+  New section: "📧 Arete Morning Call" between Story and Breadth
+  Reads state.areteEmail, renders in a styled card
+  Shows: subject line, key tickers (highlighted/linked), thesis excerpts
+  Different styling for daily vs Thursday vs weekend emails
+  Collapsible (like other sections)
+  Dynamic tickers sourced from Arete get ⚡ARETE badge
+
+EDIT H: Dynamic ticker badge
+  In Trade Candidates and ticker cards:
+    If ticker's section === 'DYNAMIC':
+      Show ⚡ badge with source tooltip (GAP/EARNINGS/ARETE/RVOL_ALERT)
+    Visually distinguishes transient vs structural tickers
+
+EDIT I: Hot Sector indicator on Active Setups bar
+  When hot sectors are detected:
+    Show "🔥 Semis" or "🔥 Energy" pill in the Active Setups bar
+    Indicates the system is boosting that sector's refresh priority
+
+═══════════════════════════════════════════════════════
+3. BUDGET PROJECTION
+═══════════════════════════════════════════════════════
+
+CURRENT:                          ~15,118 / 20,000
+
+SAVINGS:
+  Edit A (60-min full scans):     -2,120
+  Edit B (smart AH):                -750
+  Edit C (dynamic deprioritize):  -1,500 (avg)
+                                  ______
+  Total savings:                  -4,370
+
+NEW COSTS:
+  Edit D (Dynamic 75 tickers):    +1,800 (avg — not all get bars every cycle)
+  Edit D Source 1 (gap scan):       +1 (single batch quote call at 6:30am)
+  Edit E (hot sector boost):      +300 (avg — only on rotation days)
+                                  ______
+  Total new costs:                +2,101
+
+NET:
+  New total:                      ~12,849 / 20,000
+  Headroom:                        7,151 (36%)
+  Utilization:                     64%
+
+═══════════════════════════════════════════════════════
+4. BUILD ORDER
+═══════════════════════════════════════════════════════
+
+Step 1: Edit A + B (phase config changes) — immediate savings
+Step 2: Edit C (dynamic deprioritize) — requires CONF_PEAK_5D tracking
+Step 3: Edit D (Dynamic tab + populateDynamic) — biggest piece
+Step 4: Edit E (hot sector boost) — reads existing data
+Step 5: Edit F (Arete in state) — 2 lines
+Step 6: Dashboard Edit G (Arete section) — display only
+Step 7: Dashboard Edit H + I (badges) — display only
+
+Steps 1-2 can ship together as v90.10.0
+Steps 3-5 ship as v90.10.1
+Steps 6-7 ship as dashboard v11.17.0
+
+═══════════════════════════════════════════════════════
+5. ARETE EMAIL PARSING NOTES
+═══════════════════════════════════════════════════════
+
+The Gmail parser (getAreteFromGmail_) works but:
+  - Only searches 'from:arete newer_than:2d' — may need adjustment
+    if Arete email sender address changed
+  - Truncates to 2000 chars — weekend emails may be longer
+  - Only pulls plaintext body — HTML formatting lost
+  - Caches for 2 hours — won't pick up mid-day updates
+
+For dashboard display:
+  - Parse subject for email type (daily, Thursday research, weekend)
+  - Extract ticker mentions ($NVDA or standalone NVDA patterns)
+  - Highlight tickers that are in Config or Dynamic with links
+  - Show full text in a collapsible card (don't truncate for display)
+  
+For Dynamic sourcing:
+  - Regex extract tickers: /\$([A-Z]{1,5})\b/g and /\b([A-Z]{2,5})\b/g
+  - Cross-reference against known ticker universe to filter false positives
+  - Only add tickers not already in Config
