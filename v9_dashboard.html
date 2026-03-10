@@ -2682,7 +2682,7 @@ function rWatching(d){
   var mw=d.myWatching||[];
   if(!mw.length){$('sWatching').innerHTML='';return;}
   var isCol=true;try{var _v=localStorage.getItem('sec_col_watch');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> \U0001f440 Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span>'+sortPills('watch')+'</h2>';
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> 👀 Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span>'+sortPills('watch')+'</h2>';
   h+='<div id="secBody_watch" style="'+(isCol?'display:none':'')+'">';
   // Build Opus map
   var opusMap={};
