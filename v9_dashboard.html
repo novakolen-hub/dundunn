@@ -1613,51 +1613,132 @@ function rBrief(d){$('sBrief').innerHTML='';return;
 function rAreteEmails(d){
   var el=$('sAreteEmails');if(!el)return;
   var emails=d.areteEmails||[];
-  if(!emails.length){el.innerHTML='';return;}
+  var analysis=d.areteAnalysis||null;
+  var alignment=d.areteAlignment||null;
+  var retroHist=d.areteRetroHist||[];
+
+  if(!emails.length&&!analysis){el.innerHTML='';return;}
 
   var isCol=false;try{isCol=localStorage.getItem('sec_col_areteemails')==='1';}catch(e){}
-  var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleSec(\'areteemails\')"><span id="secArrow_areteemails" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 📧 Arete Emails <span class="dim" style="font-size:10px;font-weight:400">Alpha Chasers</span> <span class="dim" style="font-size:11px;font-weight:400">('+emails.length+' this week)</span></h2>';
+  var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleSec(\'areteemails\')"><span id="secArrow_areteemails" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> \ud83d\udce7 Arete Intel <span class="dim" style="font-size:10px;font-weight:400">Alpha Chasers</span></h2>';
   h+='<div id="secBody_areteemails" style="'+(isCol?'display:none':'')+'">';
 
-  // Group by date
-  var byDate={};var dateOrder=[];
-  for(var i=0;i<emails.length;i++){
-    var em=emails[i];
-    var dk=em.date||'unknown';
-    if(!byDate[dk]){byDate[dk]=[];dateOrder.push(dk);}
-    byDate[dk].push(em);
+  // ── ANALYSIS CARD (Claude-extracted summary) ──
+  if(analysis){
+    h+='<div class="info-box" style="border-color:#9e6a03;padding:10px 12px;margin-bottom:8px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#e3b341;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">\ud83c\udfaf Arete Analysis</span>';
+    // Market bias badge
+    var biasCls=analysis.marketBias==='bullish'?'g':analysis.marketBias==='bearish'?'r':'y';
+    h+='<span class="'+biasCls+'" style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600">'+(analysis.marketBias||'neutral').toUpperCase()+'</span>';
+    h+='</div>';
+    // Summary
+    if(analysis.summary)h+='<p style="font-size:12px;color:#e6edf3;line-height:1.5;margin-bottom:8px">'+e(analysis.summary)+'</p>';
+    // Sector themes
+    if(analysis.sectorThemes&&analysis.sectorThemes.length){
+      h+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">';
+      for(var si=0;si<analysis.sectorThemes.length;si++){
+        h+='<span style="padding:2px 8px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:9px;background:rgba(227,179,65,0.1);border:1px solid rgba(227,179,65,0.2);color:#e3b341">'+e(analysis.sectorThemes[si])+'</span>';
+      }
+      h+='</div>';
+    }
+    // Calls table
+    if(analysis.calls&&analysis.calls.length){
+      h+='<table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th style="text-align:left">Bias</th><th style="text-align:left">Level</th><th style="text-align:right">Scanner</th></tr>';
+      for(var ci=0;ci<analysis.calls.length;ci++){
+        var call=analysis.calls[ci];
+        var tk=(call.ticker||'').toUpperCase();
+        var bias=call.bias||'';
+        var bCls2=bias.toLowerCase().indexOf('long')>=0||bias.toLowerCase().indexOf('bull')>=0?'g':bias.toLowerCase().indexOf('short')>=0||bias.toLowerCase().indexOf('bear')>=0?'r':'dim';
+        // Check alignment status
+        var aStatus='',aStatusCls='dim';
+        if(alignment&&alignment.alignments){
+          for(var ali=0;ali<alignment.alignments.length;ali++){
+            if(alignment.alignments[ali].ticker===tk){
+              aStatus=alignment.alignments[ali].status;
+              aStatusCls=aStatus==='ALIGNED'?'g':aStatus==='PARTIAL'?'y':aStatus==='DIVERGENT'?'r':'dim';
+              break;
+            }
+          }
+        }
+        var statusIcon=aStatus==='ALIGNED'?'\u2705':aStatus==='PARTIAL'?'\u26a0\ufe0f':aStatus==='DIVERGENT'?'\u274c':'';
+        h+='<tr><td><span class="ae-ticker" style="cursor:pointer" onclick="openPT(\''+e(tk)+'\')">'+e(tk)+'</span></td>';
+        h+='<td class="'+bCls2+'">'+e(bias)+'</td>';
+        h+='<td class="dim">'+e(call.level||'')+'</td>';
+        h+='<td style="text-align:right" class="'+aStatusCls+'">'+statusIcon+' '+e(aStatus.toLowerCase().replace('_',' '))+'</td></tr>';
+      }
+      h+='</table>';
+    }
+    // GP alignment
+    if(alignment){
+      var gpMatch=alignment.gpAligned;
+      h+='<div style="margin-top:6px;font-size:10px;font-family:JetBrains Mono,monospace;color:#7d8590">';
+      h+='GP Alignment: <span class="'+(gpMatch?'g':'r')+'" style="font-weight:600">'+(gpMatch?'\u2705 Arete '+e(analysis.marketBias)+' aligns with GP-'+e(alignment.gpLetter):'\u26a0\ufe0f Arete '+e(analysis.marketBias)+' vs GP-'+e(alignment.gpLetter)+' \u2014 proceed with caution')+'</span>';
+      h+='</div>';
+    }
+    h+='</div>';
   }
 
-  for(var di=0;di<dateOrder.length;di++){
-    var dk=dateOrder[di];
-    var dayEmails=byDate[dk];
-    var first=dayEmails[0];
-    var dayLabel=first.day||dk;
-    var isToday=(dk===_azToday());
-    var dayOpen=isToday&&di===0; // auto-expand today
+  // ── RETROSPECTIVE SCOREBOARD ──
+  if(retroHist.length>0){
+    var latest=retroHist[retroHist.length-1];
+    // Rolling stats
+    var totalCorrect=0,totalWrong=0,totalN=0;
+    var last5=retroHist.slice(-5);
+    for(var ri=0;ri<last5.length;ri++){totalCorrect+=last5[ri].correct||0;totalWrong+=last5[ri].wrong||0;totalN+=last5[ri].total||0;}
+    var rollingAcc=totalCorrect+totalWrong>0?Math.round(totalCorrect/(totalCorrect+totalWrong)*100):0;
 
-    for(var ei=0;ei<dayEmails.length;ei++){
-      var em=dayEmails[ei];
-      var uid='ae_'+dk.replace(/-/g,'')+'_'+ei;
-      h+='<div class="ae-day"'+(isToday?' style="border-color:#9e6a03"':'')+'>';
-      h+='<div class="ae-hdr" onclick="var b=document.getElementById(\''+uid+'\');if(b){b.style.display=b.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.ae-arrow\').textContent=b.style.display===\'none\'?\'▶\':\'▼\'}">';
-      h+='<span class="ae-day-label">'+(isToday?'📌 TODAY':'')+(isToday?' · ':'')+e(dayLabel)+' '+e(em.time||'')+'</span>';
-      h+='<span class="ae-subj">'+e(em.subject||'')+'</span>';
-      h+='<span class="ae-arrow">'+(dayOpen?'▼':'▶')+'</span>';
-      h+='</div>';
-      h+='<div class="ae-body" id="'+uid+'" style="'+(dayOpen?'':'display:none')+'">';
-      // Highlight tickers in the body
-      var body=e(em.body||'');
-      body=body.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){
-        return '<span class="ae-ticker" onclick="openPT(\''+tk+'\')">$'+tk+'</span>';
-      });
-      // Also catch standalone tickers (2-5 caps preceded by space/newline)
-      body=body.replace(/(^|[\s,;:(])([A-Z]{2,5})(\s|[,;:)\.]|$)/g,function(m,pre,tk,post){
-        if(_tq[tk])return pre+'<span class="ae-ticker" onclick="openPT(\''+tk+'\')">'+tk+'</span>'+post;
-        return m;
-      });
-      h+=body;
-      h+='</div></div>';
+    h+='<div class="info-box" style="border-color:#30363d;padding:8px 12px;margin-bottom:8px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#7d8590;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">\ud83d\udcca Track Record</span>';
+    var accCls=rollingAcc>=70?'g':rollingAcc>=50?'y':'r';
+    h+='<span class="'+accCls+'" style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700">'+rollingAcc+'% ('+last5.length+'d)</span>';
+    h+='</div>';
+    // Mini bar chart of recent days
+    h+='<div style="display:flex;gap:3px;align-items:flex-end;height:24px;margin-bottom:4px">';
+    for(var rhi=0;rhi<retroHist.length;rhi++){
+      var rr=retroHist[rhi];
+      var acc=rr.correct+rr.wrong>0?rr.correct/(rr.correct+rr.wrong):0;
+      var barH=Math.max(4,acc*24);
+      var barCol=acc>=0.7?'#3fb950':acc>=0.5?'#e3b341':'#f85149';
+      var dt=rr.date||'';
+      h+='<div title="'+e(dt)+': '+Math.round(acc*100)+'% ('+rr.correct+'/'+((rr.correct||0)+(rr.wrong||0))+')" style="flex:1;height:'+barH+'px;background:'+barCol+';border-radius:2px;min-width:4px"></div>';
+    }
+    h+='</div>';
+    // Latest day detail
+    h+='<div style="font-size:10px;color:#7d8590;font-family:JetBrains Mono,monospace">';
+    h+='Last: '+e(latest.date||'')+' \u2014 '+latest.correct+' correct, '+latest.wrong+' wrong, '+latest.neutral+' neutral';
+    h+='</div>';
+    h+='</div>';
+  }
+
+  // ── EMAILS (cleaned, collapsible by date) ──
+  if(emails.length){
+    var byDate={};var dateOrder=[];
+    for(var i=0;i<emails.length;i++){
+      var em=emails[i];var dk=em.date||'unknown';
+      if(!byDate[dk]){byDate[dk]=[];dateOrder.push(dk);}
+      byDate[dk].push(em);
+    }
+    for(var di=0;di<dateOrder.length;di++){
+      var dk=dateOrder[di];var dayEmails=byDate[dk];
+      var first=dayEmails[0];var dayLabel=first.day||dk;
+      var isToday=(dk===_azToday());var dayOpen=isToday&&di===0;
+      for(var ei=0;ei<dayEmails.length;ei++){
+        var em=dayEmails[ei];var uid='ae_'+dk.replace(/-/g,'')+'_'+ei;
+        h+='<div class="ae-day"'+(isToday?' style="border-color:#9e6a03"':'')+'>';
+        h+='<div class="ae-hdr" onclick="var b=document.getElementById(\''+uid+'\');if(b){b.style.display=b.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.ae-arrow\').textContent=b.style.display===\'none\'?\'\u25b6\':\'\u25bc\'}">';
+        h+='<span class="ae-day-label">'+(isToday?'\ud83d\udccc TODAY':'')+(isToday?' \u00b7 ':'')+e(dayLabel)+' '+e(em.time||'')+'</span>';
+        h+='<span class="ae-subj">'+e(em.subject||'')+'</span>';
+        h+='<span class="ae-arrow">'+(dayOpen?'\u25bc':'\u25b6')+'</span>';
+        h+='</div>';
+        h+='<div class="ae-body" id="'+uid+'" style="'+(dayOpen?'':'display:none')+'">';
+        var body=e(em.body||'');
+        body=body.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){return '<span class="ae-ticker" onclick="openPT(\''+tk+'\')">$'+tk+'</span>';});
+        body=body.replace(/(^|[\s,;:(])([A-Z]{2,5})(\s|[,;:)\.]|$)/g,function(m,pre,tk,post){if(_tq[tk])return pre+'<span class="ae-ticker" onclick="openPT(\''+tk+'\')">'+tk+'</span>'+post;return m;});
+        h+=body;
+        h+='</div></div>';
+      }
     }
   }
   h+='</div>';
