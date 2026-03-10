@@ -1,6 +1,6 @@
 // ============================================================
-// V9 CONFLUENCE SCANNER v91.2 — Google Apps Script
-// v91.2: + % EQUITY SIZING + DYNAMIC ET/DST MARKET TIMING
+// V9 CONFLUENCE SCANNER v91.3 — Google Apps Script
+// v91.3: + % EQUITY SIZING + DYNAMIC ET/DST TIMING + NEWS QUOTA FIX + 5-DAY CHART
 //   - Setup detection: independent scoring replaces if/else waterfall.
 //     Each of 13 setups scored: base(10) + RVOL(0-5) + conf(0-5) + signal(0-10).
 //     Best score = primary, second = secondary. Pipe-delimited in setup column.
@@ -5847,15 +5847,16 @@ function getTimerState() {
     phase = 'AH';
   }
   
-  // Hourly quota breakdown for dashboard chart (last 24 hours)
+  // Hourly quota breakdown for dashboard chart (last 120 hours = 5 days)
   var quotaHourly = [];
   var quotaByCat = {quotes:0,bars:0,market:0,bridge:0,claude:0,news:0,positions:0,other:0};
   var CATS = ['quotes','bars','market','bridge','claude','news','positions','other'];
-  for (var qh = 23; qh >= 0; qh--) {
+  for (var qh = 119; qh >= 0; qh--) {
     var bucketTime = new Date(now.getTime() - qh * 3600000);
     var bucketKey = _getQuotaBucketKey(bucketTime);
-    var bucketHour = Utilities.formatDate(bucketTime, SCANNER_TIMEZONE, 'ha');
+    var bucketHour = Utilities.formatDate(bucketTime, SCANNER_TIMEZONE, 'M/d ha');
     var bucketVal = parseInt(props.getProperty(bucketKey) || '0');
+    if (bucketVal === 0 && qh > 24) continue;  // Skip empty old hours to keep payload small
     var cats = {};
     for (var ci = 0; ci < CATS.length; ci++) {
       var cv = parseInt(props.getProperty(bucketKey + '_' + CATS[ci]) || '0');
@@ -5957,7 +5958,7 @@ function getTimerState() {
     var newsCacheTime = parseInt(props.getProperty('NEWS_CACHE_TIME') || '0');
     var newsAge = Date.now() - newsCacheTime;
     
-    if (newsCacheStr && newsAge < 180000) {
+    if (newsCacheStr && newsAge < 1800000) {  // 30-min cache
       // Use cached news (< 5 min old)
       base.news = JSON.parse(newsCacheStr);
     } else {
@@ -6008,26 +6009,17 @@ function getTimerState() {
     var rssAge = Date.now() - rssCacheTime;
     var rssNews = [];
     
-    if (rssCacheStr && rssAge < 600000) {
+    if (rssCacheStr && rssAge < 1800000) {  // 30-min cache
       rssNews = JSON.parse(rssCacheStr);
     } else {
       var rssFeeds = [
         { url: 'https://www.investing.com/rss/news_25.rss', src: 'Investing.com', tag: 'IC', ua: true },
-        { url: 'https://www.investing.com/rss/news_14.rss', src: 'Investing.com', tag: 'IC', ua: true },
         { url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114', src: 'CNBC', tag: 'CN', ua: false },
-        { url: 'https://www.cnbc.com/id/15839069/device/rss/rss.html', src: 'CNBC', tag: 'CN', ua: false },
         { url: 'https://finance.yahoo.com/news/rssindex', src: 'Yahoo Finance', tag: 'YF', ua: false }
       ];
-      // Add per-ticker Yahoo Finance feeds for My Positions
-      for (var pi = 0; pi < posTickers.length; pi++) {
-        rssFeeds.push({
-          url: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=' + posTickers[pi] + '&region=US&lang=en-US',
-          src: 'Yahoo Finance',
-          tag: 'YF',
-          ua: false,
-          ticker: posTickers[pi]
-        });
-      }
+      // Reduced from 5+N feeds to 3 fixed feeds. Saves ~12+ fetches per refresh cycle.
+      // Per-ticker Yahoo feeds REMOVED — burned N fetches per cycle for minimal value.
+      // General Yahoo + CNBC + Investing.com cover market-moving news adequately.
       var rssSrcBlacklist = {'MarketWatch': 1, 'marketwatch': 1};
       for (var fi = 0; fi < rssFeeds.length; fi++) {
         try {
