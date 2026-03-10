@@ -1,0 +1,284 @@
+SMB PLAYBOOK INTEGRATION — SESSION NOTES
+=========================================
+Date: March 2, 2026
+Context: Expanding V9 trading system with SMB Training course playbooks
+Status: In Progress — transcripts processing, playbook cards being built
+
+=========================================
+OBJECTIVE
+=========================================
+
+Integrate SMB Training course material into V9 to:
+1. Give the dashboard/narrative the ability to identify and label specific playbook setups
+2. Expand gameplan logic beyond binary A/B/C/D to include sub-modes with trajectory context
+3. Map each playbook to valid market conditions so the pre-trade scorecard filters appropriately
+4. Turn narrative analysis from informational into directly actionable ("this is a Big Dog Wedge on GP-A, go Tier 5")
+
+=========================================
+SMB COURSES — PRIORITY BATCHES
+=========================================
+
+BATCH 1 (Highest value — fills real gaps):
+  - VWAP Trade (2hr 36min) — sharpens existing VWAP-Hold setup
+  - Opening Drive Trade (3hr 2min) — V9 has no formal entry framework for first 30 min
+  - Gap and Go (1hr 51min) — V9 sees gaps but has zero trading rules for them
+
+BATCH 2 (Reinforces existing setups):
+  - Breakout Trade (58min) — maps to OR-Break, will refine
+  - Return Pullback Trade (2hr 49min) — maps to Pullback-EMA, adds depth
+  - Scalping (1hr 34min) — maps to Hunt/Sniper modes
+
+BATCH 3 (Expands into new territory):
+  - Market Play Trade (4hr 5min) — trading indices off internals, transforms breadth-to-action
+  - Second Day Trade (3hr 20min) — multi-day momentum, totally new for V9
+  - Big Dog Consolidation Trade (4hr 2min) — TRANSCRIPTS PROCESSING
+
+LOWER PRIORITY (niche/less V9-relevant):
+  - Breaking News Trade, Multiple Time Frame Support Trades, Stock Filters,
+    Technical Analysis Trade, Low-Float Stocks Fundamentals, Bounce Trade,
+    IPO Trade, Changing Fundamentals, Dr. S Trade, The Stuffed Trade,
+    Elite Trading 101, Bonus Sessions
+
+RECOMMENDED ADDITIONS (10th and 11th):
+  - The Stuffed Trade — short-side coverage (all 9 primary are long-biased)
+  - Breaking News Trade — catalyst reaction framework
+
+=========================================
+TRANSCRIPT PIPELINE
+=========================================
+
+Tool: OpenAI Whisper (local, medium model)
+Process: MP4 → ffmpeg extract MP3 → Whisper transcribe → .txt next to video
+
+Script: transcribe_smb.ps1 saved in D:\SMB Training\
+  - Recursively finds all MP4s in subfolders
+  - Skips any video that already has a .txt transcript
+  - Extracts audio, transcribes, saves transcript next to video
+  - Re-runnable as new courses are added
+
+Usage:
+  cd "D:\SMB Training"
+  .\transcribe_smb.ps1                                   # ALL courses
+  .\transcribe_smb.ps1 -Course "Big Dog Consolidation"   # One course
+  .\transcribe_smb.ps1 -Model "small"                    # Faster, less accurate
+
+Folder structure:
+  D:\SMB Training\
+    Big Dog Consolidation\
+      1\  Big Dog 1.mp4 → Big Dog 1.mp3 → Big Dog 1.txt
+      2\  ...
+      3\  ...
+    VWAP Trade\
+      1\  ...
+    Opening Drive Trade\
+      1\  ...
+    (etc.)
+
+Status as of session end:
+  - Big Dog 1: TRANSCRIPT COMPLETE (uploaded and analyzed)
+  - Big Dog 2-6: PROCESSING (Whisper running)
+  - Batch 1-3 courses: DOWNLOADED, queued for next transcriber run
+
+=========================================
+PLAYBOOK CARD: BIG DOG CONSOLIDATION TRADE (v1 — from transcript 1 of 6)
+=========================================
+
+Setup Name: Big-Dog-Wedge
+
+WHAT IT IS:
+Tight wedge/consolidation pattern in a stock in play. Price compresses into
+increasingly narrow range (higher lows, lower highs) creating a coiled spring.
+Build into position at bottom of wedge, scale aggressively on breakout with
+volume confirmation. R:R can be 1:10 or better.
+
+ENTRY CRITERIA (all required):
+  1. Stock in Play — news catalyst (new product, earnings beat, drug data,
+     guidance raise). Today's fundamentals meaningfully better than yesterday's.
+  2. Relative Volume >= 3 — confirms institutional participation and liquidity.
+  3. Tight Wedge Pattern — consecutive higher lows and lower highs forming
+     compression. Tighter = bigger coil = bigger breakout.
+  4. Time in Pattern >= 30 min — ideally 45-60+ minutes. Sub-15 minute
+     "wedges" don't count. Longer = more shorts trapped, more longs committed.
+  5. Preferably holding above VWAP — not mandatory (CYCC example was below
+     VWAP on momentum stock) but strongly preferred.
+  6. Daily chart context supports direction — breaking out to new highs or
+     in uptrend. Don't fight the daily.
+  7. SPY context aligned — market strength on your side or at minimum not
+     actively selling off.
+
+ENTRY EXECUTION (Tiered Scaling):
+  - Tier 1: Buy at bottom of wedge when pattern forming. Small starter.
+  - Tier 2: Add as time passes and pattern holds (30 min in, still tight = add).
+  - Tier 3: Add more as it continues to hold (45-60 min).
+  - Tier 4-5: Double up (or more) on breakout above wedge top WITH volume confirmation.
+  - NO volume on breakout? Scale back to Tier 1 immediately.
+
+STOP LOGIC:
+  - Stop is below the bottom of the wedge pattern.
+  - Key advantage: you know EXACTLY where you're wrong.
+  - Price AND time matter: if you love the fundamentals, don't just puke on
+    a wick below — watch if it closes/holds below.
+  - Initial stop at bottom of wedge. Wider stop slightly below if conviction
+    is very high.
+
+TARGET LOGIC:
+  - Capture the meat of the move, NOT bottom-to-top.
+  - Use measured moves — if opening drive was 2 points, expect ~2 points from breakout.
+  - Half off at first resistance / measured move. Trail the rest.
+  - Reasons to sell: hits price target, breaks uptrend, big red candle with volume,
+    gets below VWAP (if was holding above), two consecutive signals against you.
+  - For swings: hold until you get a reason to sell (don't exit just because green).
+
+IDEAL V9 CONDITIONS:
+  - Gameplan A or B — needs market support. Momentum/breakout trade.
+  - Session Phase: Best after open (post-price-discovery). 45-60 min consolidation
+    after opening drive is sweet spot = MO to MM timing.
+  - Works on both sides (long and short variants).
+
+BOUNCE VARIANT (from TPX example):
+  - Stock gaps down hard on bad news, sells off steeply
+  - Goes sideways 1-2 hours (stops making new lows)
+  - Wedge forms at the bottom
+  - Breakout target = back to VWAP
+  - Size smaller (Tier 1-3 max, NOT Tier 5)
+  - Don't pick bottoms — let the wedge form first
+
+WHEN NOT TO TAKE IT:
+  - RVOL < 3 (not in play, no liquidity for size)
+  - Wedge lasted < 15 minutes (not enough compression)
+  - No catalyst / no fundamental change
+  - Fighting the daily chart trend
+  - Volume doesn't confirm breakout (scale back immediately)
+  - GP-C or GP-D breadth (no institutional support) [NOTE: this rule
+    is being revised — see Gameplan Rework section below]
+
+BEHAVIORAL NOTES (from SMB):
+  - Demands aggression. When you see it, trade it BIG.
+  - Win rate may be ~50%. R:R (1:10 possible) makes it work over time.
+  - Build a "book of charts" — screenshot every good wedge daily, review weekends.
+  - Don't sloppy into entries — footprints get you worked out. Clean tiered entries.
+  - The Big Dog trader back-tested variables in Excel on Saturdays. Mathematical
+    edge > gut feel.
+
+=========================================
+GAMEPLAN REWORK — IN PROGRESS
+=========================================
+
+PROBLEM:
+GP-C currently = "Bench mode, sit out." But many trading days have flat breadth
+with real opportunities. Example: March 2, 2026 — GP-C all day, gap down,
+grinding up steadily. Return Pullback and VWAP reclaim setups were available
+but system said sit out.
+
+KEY INSIGHT:
+Not all GP-C days are the same. There's a massive difference between:
+  - C-Chop: Breadth bouncing +1/-1 with no direction. Genuinely nothing to do.
+  - C-Recovery: Breadth was negative, grinding toward zero. Gap down being bought.
+    Names setting up.
+  - C-Compression: Breadth in tight range for hours. Coiling for a move.
+
+PROPOSED FIX:
+GP-C gets sub-modes based on trajectory and context:
+
+  C + Trajectory Improving + Gap Down Recovered:
+    → Allow: VWAP reclaim, Return Pullback, Big Dog bounce variant
+    → Size: Tier 1-3 max (reduced from A/B levels)
+    → In the game, but controlled
+
+  C + Trajectory Flat + No Catalyst:
+    → Genuine Bench. Nothing to do.
+
+  C + Trajectory Fading from Positive:
+    → Defensive only. Watch for short setups / Stuffed Trade.
+
+Breadth score stays the same — what changes is the ACTION MAPPING.
+Instead of binary "C = sit out," it becomes "C = reduced size + specific
+setup types only, filtered by trajectory."
+
+Some setups work fine on C days (VWAP Trade, Return Pullback, Big Dog bounce)
+because they need structure and patience, not momentum. Momentum setups
+(Gap and Go, Opening Drive, aggressive Breakout) stay locked out on GP-C.
+
+DEPENDENCY:
+Need all SMB playbook transcripts analyzed first to correctly map which setups
+require what market conditions. Each playbook card will specify its minimum
+gameplan/trajectory/RVOL requirements, then the matrix gets built from that data.
+
+BUILD ORDER:
+  1. Get all transcripts done (Whisper processing)
+  2. Build all playbook cards (distill each course)
+  3. Map the gameplan matrix (cross-reference playbooks against conditions)
+  4. Redesign GP-C sub-modes (and refine A/B/D)
+  5. Wire into Dashboard + pre-trade scorecard
+
+=========================================
+V9 SETUP TYPES — CURRENT vs EXPANDED
+=========================================
+
+CURRENT (6 + 1 override):
+  1. VWAP-Hold
+  2. OR-Break
+  3. Pullback-EMA
+  4. Momentum
+  5. Failed-Breakdown
+  6. RS-Override
+  (+ Rotation-ETF for sector plays)
+
+EXPANDED (after SMB integration — target 12-15 setup types):
+  1. VWAP-Hold → refined by SMB VWAP Trade
+  2. OR-Break → refined by SMB Breakout Trade
+  3. Pullback-EMA → refined by SMB Return Pullback Trade
+  4. Momentum → kept as-is
+  5. Failed-Breakdown → potentially refined by Stuffed Trade
+  6. RS-Override → kept as-is
+  7. Big-Dog-Wedge (NEW) — tight consolidation breakout with tiered scaling
+  8. Opening-Drive (NEW) — first 30-min momentum capture
+  9. Gap-and-Go (NEW) — gap continuation with volume confirmation
+  10. Second-Day (NEW) — multi-day momentum continuation
+  11. Market-Play (NEW) — index/ETF trades off breadth internals
+  12. Bounce-Reversal (NEW) — Big Dog bounce variant + oversold reversals
+  13. Rotation-ETF → kept as-is
+  (+ potentially: Stuffed-Fade, News-Catalyst from lower priority courses)
+
+Each setup type will have:
+  - Entry criteria checklist
+  - Valid gameplan conditions (A only, A+B, A+B+C-Recovery, etc.)
+  - Valid session phases (MO, MM, PH, etc.)
+  - Minimum RVOL threshold
+  - Position sizing tier range
+  - Stop/target framework
+  - "When NOT to take it" filters
+
+=========================================
+IMPORTANT NOTE: UMU → DASHBOARD TRANSITION
+=========================================
+
+The Market Update system is being superseded by the Trading Dashboard for
+real-time analysis. All playbook identification, setup calling, gameplan
+sub-mode logic, and pre-trade scoring should be designed for the DASHBOARD
+context (live, polling, card-based) rather than the narrative UMU format.
+
+The dashboard already has:
+  - Enriched cards with flags, levels, confluence scores
+  - Per-section sorting (Default/Movers/Bias/Confluence)
+  - Position heat strips
+  - Key levels (VWAP, EMA9, EMA20, Opening Range)
+  - Sparklines
+  - Focus mode with persistent notes
+
+What it needs (from this integration):
+  - Setup type labels on cards ("Big-Dog-Wedge forming" / "Gap-and-Go candidate")
+  - Pre-trade scorecard with traffic light validation
+  - Gameplan sub-mode display (not just A/B/C/D but C-Recovery, C-Chop, etc.)
+  - Playbook-filtered view (show me only cards matching valid setups for current conditions)
+
+=========================================
+NEXT STEPS
+=========================================
+
+1. IMMEDIATE: Let Whisper finish Big Dog 2-6 transcripts
+2. IMMEDIATE: Re-run transcribe_smb.ps1 to pick up Batch 1-3 courses
+3. UPLOAD: All transcripts to Claude as they complete
+4. BUILD: Complete playbook cards for all 9+ courses
+5. DESIGN: Gameplan matrix mapping playbooks to conditions
+6. IMPLEMENT: Wire into dashboard pre-trade scorecard and setup labeling
