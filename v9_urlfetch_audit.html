@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V9 UrlFetch Audit — March 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0f14;--s:#13161e;--s2:#191d28;--b:#262b3a;--t:#c8cdd8;--td:#6e7590;--tw:#e8ecf4;--cy:#26c6da;--g:#00c853;--y:#ffc107;--r:#ef5350}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t);font-family:'Source Serif 4',Georgia,serif;font-size:14px;line-height:1.65}
+.p{max-width:800px;margin:0 auto;padding:28px 20px 60px}
+h1{font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--tw);border-bottom:2px solid var(--b);padding-bottom:12px;margin-bottom:20px}
+h1 span{color:var(--cy)}
+h2{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--cy);margin:28px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--b)}
+.card{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:12px 16px;margin:10px 0}
+.card-g{border-left:3px solid var(--g)}.card-y{border-left:3px solid var(--y)}.card-r{border-left:3px solid var(--r)}.card-cy{border-left:3px solid var(--cy)}
+b{color:var(--tw)}code{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--s2);color:var(--cy);padding:1px 5px;border-radius:3px}
+pre{background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.5;color:#b0b8cc;overflow-x:auto;margin:8px 0}
+.tbl{overflow-x:auto;margin:10px 0;border-radius:8px;border:1px solid var(--b)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--s2);color:var(--cy);font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;padding:8px;text-align:left;border-bottom:2px solid var(--b)}
+td{padding:6px 8px;border-bottom:1px solid var(--b)}
+.g{color:var(--g)}.y{color:var(--y)}.r{color:var(--r)}.dim{color:var(--td)}
+.bar{height:20px;border-radius:4px;background:var(--s2);overflow:hidden;margin:4px 0}
+.bar-fill{height:100%;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="p">
+
+<h1>V9 UrlFetch <span>Audit</span></h1>
+
+<h2>Current Budget (424 tickers · 20K trial limit)</h2>
+
+<div class="tbl"><table>
+<thead><tr><th>Category</th><th>Fetches/Day</th><th>% of Budget</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><b>Bars — FULL scans</b></td><td class="r" style="font-weight:700">5,936</td><td>30%</td><td>424 tickers × 14 full scans (every 30min)</td></tr>
+<tr><td><b>Bars — PARTIAL</b></td><td class="r" style="font-weight:700">7,220</td><td>36%</td><td>~95 tickers × 76 partial cycles (conf ≥ threshold + PM watch)</td></tr>
+<tr><td>Bars — After Hours</td><td>960</td><td>5%</td><td>40 PM watch × 24 AH cycles</td></tr>
+<tr><td>Market tab (1-min)</td><td>420</td><td>2%</td><td>~45 symbols, 1 batch call/min</td></tr>
+<tr><td>Bridge/Pulse</td><td>168</td><td>1%</td><td>2 endpoints × 84 cycles</td></tr>
+<tr><td>Spark + News + Other</td><td>300</td><td>2%</td><td>Spark tab, RSS, earnings</td></tr>
+<tr><td>Quotes (all tickers)</td><td class="g">114</td><td>0.6%</td><td>1 batch call/cycle — essentially FREE</td></tr>
+<tr style="border-top:2px solid var(--b)"><td><b>TOTAL</b></td><td style="font-weight:700">~15,118</td><td>75.6%</td><td><b>Headroom: ~4,882</b></td></tr>
+</tbody>
+</table></div>
+
+<div class="bar"><div class="bar-fill" style="width:75.6%;background:linear-gradient(90deg,var(--g),var(--y))"></div></div>
+<div style="font-size:11px;color:var(--td);text-align:center">75.6% utilized · 4,882 headroom</div>
+
+<div class="card card-r">
+<b>The insight:</b> BARS are 93% of the cost. Quotes are free (1 fetch for all 424 tickers). Everything else combined is only 7%. The optimization target is clear: reduce bar fetches.
+</div>
+
+<h2>Recommended Cuts (net savings: 3,766/day)</h2>
+
+<div class="tbl"><table>
+<thead><tr><th>Option</th><th>Change</th><th>Savings</th><th>Impact</th></tr></thead>
+<tbody>
+<tr><td><b>1. Full scan → 60min</b></td><td>CORE full scans from 11 → 6</td><td class="g">−2,120</td><td>LOW — high-conf tickers already refresh every partial cycle</td></tr>
+<tr><td><b>3. Skip AH bars</b></td><td>No bars after 2pm (quotes still run)</td><td class="g">−960</td><td>LOW — you're done trading at 2pm</td></tr>
+<tr><td><b>4. Trim to 375 tickers</b></td><td>Remove bottom 49 lowest-signal names</td><td class="g">−686</td><td>VERY LOW — these rarely surface setups</td></tr>
+<tr style="border-top:2px solid var(--b)"><td><b>COMBINED</b></td><td></td><td style="font-weight:700;color:var(--g)">−3,766</td><td>New total: ~11,352 · Headroom: 8,648</td></tr>
+</tbody>
+</table></div>
+
+<div class="card card-y">
+<b>Option 2 (raise threshold 22→25) NOT recommended.</b> The Playbook tier (20-24 confluence) is where many real trades live. Losing real-time on those tickers costs you entries. Keep the current threshold.
+</div>
+
+<h2>Dynamic Watchlist — 50 Rotating Tickers</h2>
+
+<div class="card card-cy">
+<b>The pitch:</b> A "Dynamic" tab holding up to 50 tickers that rotate daily. These are the tickers NOT in your 375-ticker Config watchlist but that deserve attention today: In Play gappers, earnings runners, Arete picks, unusual RVOL alerts. They get full bars + confluence + setup detection, same as Config tickers.
+</div>
+
+<pre>
+FETCH COST:
+  Quotes: $0 (added to existing batch call — free)
+  Bars:   50 tickers × eligible partial cycles
+          Estimate: ~2,200 fetches/day
+
+POST-OPTIMIZATION BUDGET:
+  Static watchlist (375 tickers):   11,352
+  Dynamic watchlist (50 tickers):    2,200
+                                   ______
+  TOTAL:                           13,552 / 20,000
+  Headroom:                         6,448 (32%)
+  Utilization:                      67.8%
+</pre>
+
+<div class="bar"><div class="bar-fill" style="width:67.8%;background:linear-gradient(90deg,var(--g) 56%,var(--cy))"></div></div>
+<div style="font-size:11px;color:var(--td);text-align:center">67.8% utilized · 6,448 headroom · room for spikes</div>
+
+<h2>Dynamic Watchlist — How It Works</h2>
+
+<pre>
+SOURCES (auto-populated each morning):
+  1. In Play Today gappers (pre-market scan, 3%+ gap, RVOL ≥2)
+  2. Earnings this week (top revenue not already in Config)
+  3. Arete daily email picks (new tickers from morning email)
+  4. Manual adds via dashboard (type-to-add input)
+
+LIFECYCLE:
+  6:30am  Scanner runs pre-market pass
+          → identifies In Play candidates from streaming/gap scan
+          → pulls Arete email tickers
+          → writes up to 50 tickers to Dynamic tab
+
+  7:30am+ Dynamic tickers join the normal refresh cycle
+          → get quotes (free), bars (on partial if conf ≥ threshold)
+          → calcConfluence runs, setup detection runs
+          → appear in tickerQuotes, Trade Candidates, card labels
+
+  2:00pm  Trading day ends
+          → Dynamic tickers with open positions → stay
+          → Everything else → cleared for next day
+
+CONFIG TAB STAYS CLEAN:
+  Your 375 core tickers don't change.
+  Dynamic is a separate parallel universe that adds capacity.
+
+DASHBOARD:
+  Trade Candidates merges both sources seamlessly.
+  Dynamic tickers show a "⚡" badge so you know they're transient.
+</pre>
+
+<h2>What to Trim from Config (424 → 375)</h2>
+
+<div class="card card-cy">
+<b>Methodology:</b> Look at the last 30 days of confluence data. Tickers that NEVER reached confluence ≥18 and aren't in any active position or watchlist are candidates for removal. These are the names taking up bar fetches every full scan but never surfacing actionable setups.
+</div>
+
+<p>Typical trim candidates: low-float names that rarely move with the market, regional ETFs you don't trade, duplicate sector coverage (do you need both XLF AND individual bank stocks?), tickers added speculatively that never triggered.</p>
+
+<p>You don't lose coverage by trimming — any ticker that suddenly matters (earnings gap, news catalyst) enters through the Dynamic watchlist automatically. The Config list is your <b>structural universe</b>. Dynamic is your <b>opportunity scanner</b>.</p>
+
+<h2>Implementation Roadmap</h2>
+
+<div class="tbl"><table>
+<thead><tr><th>Step</th><th>What</th><th>Lines</th><th>Risk</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Change CORE fullInterval from 6 → 12 (60-min full scans)</td><td>1 line</td><td>None</td></tr>
+<tr><td>2</td><td>Skip bars in AFTER_HOURS (threshold: 99 already set, just skip PM watch too)</td><td>~5 lines</td><td>None</td></tr>
+<tr><td>3</td><td>Trim Config watchlist (manual — review bottom 49 tickers)</td><td>Config tab edit</td><td>None</td></tr>
+<tr><td>4</td><td>Create Dynamic tab + populateDynamic() function</td><td>~80 lines</td><td>Low</td></tr>
+<tr><td>5</td><td>Wire Dynamic tickers into getWatchlist() merge</td><td>~20 lines</td><td>Low</td></tr>
+<tr><td>6</td><td>Dashboard: show ⚡ badge on dynamic tickers</td><td>~10 lines</td><td>None</td></tr>
+</tbody>
+</table></div>
+
+<div style="margin-top:40px;border-top:1px solid var(--b);padding-top:12px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--td)">
+V9 Trading System · UrlFetch Audit · March 4, 2026
+</div>
+
+</div>
+</body>
+</html>
