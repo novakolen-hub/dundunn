@@ -1,6 +1,6 @@
 // ============================================================
-// V9 CONFLUENCE SCANNER v91.3 — Google Apps Script
-// v91.3: + % EQUITY SIZING + DYNAMIC ET/DST TIMING + NEWS QUOTA FIX + 5-DAY CHART
+// V9 CONFLUENCE SCANNER v91.4 — Google Apps Script
+// v91.4: + BREADTH ALERT ENGINE (immediate +/-1.5, sustained +/-2.5, auto-attribution)
 //   - Setup detection: independent scoring replaces if/else waterfall.
 //     Each of 13 setups scored: base(10) + RVOL(0-5) + conf(0-5) + signal(0-10).
 //     Best score = primary, second = secondary. Pipe-delimited in setup column.
@@ -3615,7 +3615,147 @@ function updateSheet() {
     histProps.setProperty('GP_TRAJECTORY', JSON.stringify(trajResult));
     histProps.setProperty('GP_SUB_MODE', JSON.stringify(subModeResult));
     Logger.log('GP Sub-Mode: ' + subModeResult.subMode + ' (' + trajResult.trajectory + ', delta=' + trajResult.delta + ')');
+    
+    // ── BREADTH ALERT ENGINE ──
+    try {
+      _checkBreadthAlerts(hist, totalBreadth, breadth, sectors, sectorQuotes, breadthQuotes);
+    } catch(alertErr) {
+      Logger.log('BreadthAlert error: ' + alertErr.message);
+    }
+    
   } catch(e) {}
+}
+
+// ════════════════════════════════════════════════════════
+// BREADTH ALERT ENGINE
+// ════════════════════════════════════════════════════════
+var BREADTH_ALERT_IMMEDIATE = 1.5;
+var BREADTH_ALERT_SUSTAINED = 2.5;
+var BREADTH_ALERT_COOLDOWN = 900000;
+
+function _checkBreadthAlerts(hist, currentScore, breadth, sectors, sectorQuotes, breadthQuotes) {
+  if (!hist || hist.length < 2) return;
+  var props = PropertiesService.getScriptProperties();
+  var lastAlertTime = parseInt(props.getProperty('BREADTH_ALERT_LAST') || '0');
+  if (Date.now() - lastAlertTime < BREADTH_ALERT_COOLDOWN) return;
+  
+  var prev = hist[hist.length - 2];
+  var immDelta = currentScore - prev.v;
+  var sustDelta = 0;
+  if (hist.length >= 4) sustDelta = currentScore - hist[hist.length - 4].v;
+  
+  var triggered = false, alertType = '', delta = 0;
+  if (Math.abs(immDelta) >= BREADTH_ALERT_IMMEDIATE) { triggered = true; alertType = 'IMMEDIATE'; delta = immDelta; }
+  else if (Math.abs(sustDelta) >= BREADTH_ALERT_SUSTAINED) { triggered = true; alertType = 'SUSTAINED'; delta = sustDelta; }
+  if (!triggered) return;
+  
+  var direction = delta > 0 ? 'SURGE' : 'DROP';
+  var causes = [];
+  
+  // 1. Sector flips and big movers
+  var prevSectorData = null;
+  try { var ps = props.getProperty('PREV_SECTOR_STATE'); if (ps) prevSectorData = JSON.parse(ps); } catch(e) {}
+  if (sectors.sectorData && prevSectorData) {
+    for (var si = 0; si < sectors.sectorData.length; si++) {
+      var sd = sectors.sectorData[si]; var prevSd = null;
+      for (var pi = 0; pi < prevSectorData.length; pi++) { if (prevSectorData[pi].sym === sd.sym) { prevSd = prevSectorData[pi]; break; } }
+      if (prevSd) {
+        var chgNow = parseFloat(sd.chg) || 0, chgPrev = parseFloat(prevSd.chg) || 0;
+        if (Math.abs(chgNow - chgPrev) >= 0.3) causes.push({ type: 'SECTOR', sym: sd.sym, delta: chgNow - chgPrev, now: chgNow });
+        if ((chgPrev > 0 && chgNow < 0) || (chgPrev < 0 && chgNow > 0)) causes.push({ type: 'SECTOR_FLIP', sym: sd.sym, from: chgPrev, to: chgNow });
+      }
+    }
+  }
+  if (sectors.sectorData) { props.setProperty('PREV_SECTOR_STATE', JSON.stringify(sectors.sectorData.map(function(sd) { return { sym: sd.sym, chg: sd.chg }; }))); }
+  
+  // 2. VIX
+  var prevVix = parseFloat(props.getProperty('PREV_VIX') || '0'), curVix = breadth.vix || 0;
+  if (prevVix > 0 && Math.abs(curVix - prevVix) >= 0.5) causes.push({ type: 'VIX', from: prevVix, to: curVix, delta: curVix - prevVix });
+  props.setProperty('PREV_VIX', String(curVix));
+  
+  // 3. Internals
+  var prevInternals = null;
+  try { var pi2 = props.getProperty('PREV_INTERNALS'); if (pi2) prevInternals = JSON.parse(pi2); } catch(e) {}
+  var internals = { tick: breadth.tick, add: breadth.add, adqd: breadth.adqd, vold: breadth.vold, volqd: breadth.volqd };
+  if (prevInternals) {
+    var intNames = { tick: '$TICK', add: '$ADD', adqd: '$ADQD', vold: '$VOLD', volqd: '$VOLQD' };
+    for (var k in internals) {
+      var cur = parseFloat(internals[k]) || 0, prv = parseFloat(prevInternals[k]) || 0;
+      var pctC = prv !== 0 ? ((cur - prv) / Math.abs(prv) * 100) : 0;
+      if (Math.abs(pctC) >= 20) causes.push({ type: 'INTERNAL', name: intNames[k], from: prv, to: cur, pctChg: pctC });
+    }
+  }
+  props.setProperty('PREV_INTERNALS', JSON.stringify(internals));
+  
+  // 4. Growth/Defensive shift
+  var prevGrowth = parseInt(props.getProperty('PREV_GROWTH_GREEN') || '-1');
+  var prevDef = parseInt(props.getProperty('PREV_DEF_GREEN') || '-1');
+  if (prevGrowth >= 0) {
+    if (Math.abs(sectors.growthGreen - prevGrowth) >= 2) causes.push({ type: 'GROWTH_SHIFT', from: prevGrowth, to: sectors.growthGreen });
+    if (Math.abs(sectors.defGreen - prevDef) >= 2) causes.push({ type: 'DEF_SHIFT', from: prevDef, to: sectors.defGreen });
+  }
+  props.setProperty('PREV_GROWTH_GREEN', String(sectors.growthGreen));
+  props.setProperty('PREV_DEF_GREEN', String(sectors.defGreen));
+  
+  // 5. Top movers
+  var topMovers = [];
+  if (sectorQuotes) {
+    for (var qi = 0; qi < sectorQuotes.length; qi++) {
+      var pct = parseFloat(sectorQuotes[qi].NetChangePct || 0);
+      if (Math.abs(pct) >= 1.5) topMovers.push({ sym: sectorQuotes[qi].Symbol, chg: pct });
+    }
+  }
+  topMovers.sort(function(a, b) { return Math.abs(b.chg) - Math.abs(a.chg); });
+  if (topMovers.length > 3) topMovers = topMovers.slice(0, 3);
+  
+  // Build alert
+  var alert = {
+    type: alertType, direction: direction,
+    delta: Math.round(delta * 10) / 10, score: Math.round(currentScore * 10) / 10,
+    prevScore: Math.round((currentScore - delta) * 10) / 10,
+    timestamp: Date.now(),
+    timeAZ: Utilities.formatDate(new Date(), SCANNER_TIMEZONE, 'h:mm a'),
+    causes: causes, topMovers: topMovers, summary: '', recentNews: []
+  };
+  
+  // Summary text
+  var sum = direction + ' ' + (delta > 0 ? '+' : '') + alert.delta + ' to ' + alert.score + ' (' + alertType + '). ';
+  var parts = [];
+  for (var ci = 0; ci < causes.length; ci++) {
+    var c = causes[ci];
+    if (c.type === 'SECTOR_FLIP') parts.push(c.sym + ' flipped ' + (c.to > 0 ? 'green' : 'red'));
+    else if (c.type === 'SECTOR') parts.push(c.sym + ' ' + (c.delta > 0 ? '+' : '') + c.delta.toFixed(1) + '%');
+    else if (c.type === 'VIX') parts.push('VIX ' + (c.delta > 0 ? '+' : '') + c.delta.toFixed(1) + ' to ' + c.to.toFixed(1));
+    else if (c.type === 'INTERNAL') parts.push(c.name + ' ' + (c.pctChg > 0 ? '+' : '') + c.pctChg.toFixed(0) + '%');
+    else if (c.type === 'GROWTH_SHIFT') parts.push('Growth ' + c.from + ' to ' + c.to + '/8');
+    else if (c.type === 'DEF_SHIFT') parts.push('Defensive ' + c.from + ' to ' + c.to + '/5');
+  }
+  if (topMovers.length > 0) parts.push('Movers: ' + topMovers.map(function(m) { return m.sym + ' ' + (m.chg > 0 ? '+' : '') + m.chg.toFixed(1) + '%'; }).join(', '));
+  alert.summary = sum + parts.join(' | ');
+  
+  // Optional: 1 news fetch
+  try {
+    var fhKey = getFinnhubKey();
+    if (fhKey) {
+      var newsResp = trackedFetch('https://finnhub.io/api/v1/news?category=general&token=' + fhKey, { muteHttpExceptions: true }, 'breadth-alert-news');
+      if (newsResp.getResponseCode() === 200) {
+        var newsItems = JSON.parse(newsResp.getContentText());
+        var cutoff = Math.floor(Date.now() / 1000) - 1800;
+        for (var ni = 0; ni < newsItems.length && alert.recentNews.length < 3; ni++) {
+          if (newsItems[ni].datetime >= cutoff && newsItems[ni].headline) alert.recentNews.push({ headline: newsItems[ni].headline, source: newsItems[ni].source || '' });
+        }
+      }
+    }
+  } catch(ne) {}
+  
+  // Store
+  var alerts = [];
+  try { var ar = props.getProperty('BREADTH_ALERTS'); if (ar) alerts = JSON.parse(ar); } catch(e) {}
+  alerts.push(alert);
+  if (alerts.length > 20) alerts = alerts.slice(alerts.length - 20);
+  props.setProperty('BREADTH_ALERTS', JSON.stringify(alerts));
+  props.setProperty('BREADTH_ALERT_LAST', String(Date.now()));
+  Logger.log('BREADTH ALERT: ' + alert.summary);
 }
 
 function formatMarketCap(mc) {
@@ -5883,7 +6023,8 @@ function getTimerState() {
     }
   } catch(ache) {}
 
-  var base = { enabled: enabled, fullEnabled: fullEnabled, marketEnabled: isMarketRefreshEnabled(), quotaCount: quotaCount, quotaHourly: quotaHourly, quotaByCat: quotaByCat, quotaLog: quotaLog, apiCostHourly: apiCostHourly, apiCostTotal: apiCostTotal, phase: phase, fullScanIn: fullScanIn };
+  var breadthAlertsRaw = props.getProperty('BREADTH_ALERTS') || '[]'; var breadthAlerts = []; try { breadthAlerts = JSON.parse(breadthAlertsRaw); } catch(e) {}
+  var base = { enabled: enabled, fullEnabled: fullEnabled, marketEnabled: isMarketRefreshEnabled(), quotaCount: quotaCount, quotaHourly: quotaHourly, quotaByCat: quotaByCat, quotaLog: quotaLog, apiCostHourly: apiCostHourly, apiCostTotal: apiCostTotal, phase: phase, fullScanIn: fullScanIn, breadthAlerts: breadthAlerts };
   
   if (!ws) { base.updated = Date.now().toString(); base.gp = ''; base.gpLetter = 'C'; return base; }
   
