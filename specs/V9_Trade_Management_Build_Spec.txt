@@ -1,0 +1,486 @@
+V9 TRADE MANAGEMENT SYSTEM — BUILD SPECIFICATION
+====================================================
+Created: Feb 25, 2026
+Context: Derived from conversation about expanding V9 from
+         pure day-trading system to full portfolio management
+         with trade capture, scaling, and performance analytics.
+
+====================================================
+CURRENT STATE (What's Built & Working)
+====================================================
+
+1. V9 CONFLUENCE SCANNER (v90.1)
+   - Google Apps Script in Google Sheets
+   - Market tab: breadth scoring, sectors, ratios, commodities, inverse ETFs
+   - Institutional Pulse module: fetches from Python bridge, writes to Market tab
+   - Claude narrative (Opus → Sonnet fallback) for market context
+   - Dashboard JSON endpoint via doGet(?mode=dashboard)
+   - 1-minute auto-refresh during market hours (PHASE_CONFIG gated)
+   - Multi-account position tracking (My Positions tab)
+   - Economic calendar, earnings, RSS news feeds
+   - Breadth/GP history for charts
+
+2. PYTHON BRIDGE (v4.0) — v9_pulse_bridge_v4.py
+   - Flask app running locally with ngrok tunnel
+   - Static domain: ecclesiastically-ratio-lauran.ngrok-free.dev
+   - TastyTrade OAuth2: IVR, IV%, IV 5-day change, per-expiration IV curve
+   - Yahoo Finance: VIX level + VIX term structure (VIX1D, VIX9D, VIX3M, VIX6M, VVIX)
+   - Term structure state detection: CONTANGO / FLAT / BACKWARDATION / INVERTED
+   - VVIX warning levels
+   - SPY expected daily/weekly move (IV-derived)
+   - Fear & Greed (alternative.me)
+   - NAAIM exposure (naaim.org scrape)
+   - SPY Put/Call ratio (yfinance)
+   - 5-minute cache TTL, background refresh thread
+   - Endpoints: /pulse, /pulse/refresh, /health
+
+3. DASHBOARD (v10) — v9_dashboard_10.html
+   - Dark-mode HTML, mobile-optimized
+   - Sections: GP banner, breadth, session, sectors, story, inverse,
+     econ calendar, earnings, INSTITUTIONAL PULSE, news, book,
+     arete book, watching, setups, portfolio risk, ratios, coaching
+   - Institutional Pulse section includes:
+     * Vol Regime gauges (VIX, SPY/QQQ/IWM IVR) with color bars
+     * IV 5-Day Change arrows (expanding/contracting)
+     * VIX Term Structure mini bar chart + ratios + state badge
+     * VVIX reading
+     * Expected Move (daily/weekly ±$ and ±%)
+     * Sentiment (Fear & Greed gauge, NAAIM, Put/Call)
+     * Combined Read + → TODAY actionable implication
+     * 📖 Learn coaching blocks with V9 Connection on each subsection
+   - Polls scanner JSON every 60 seconds
+   - Deployed on GitHub Pages: novakolen-hub/dundunn
+
+4. BROKER APIs (Already Authenticated)
+   - TradeStation: OAuth2 auth code flow, API key registered
+   - TastyTrade: OAuth2 refresh token (used by bridge)
+   - Alpaca: API key + secret (paper trading)
+
+5. OTHER INTEGRATIONS
+   - Arete Research: daily intelligence via email
+   - Notion: journal updates
+   - TradesViz: trade logging (Day Plan v1.1 + Trade Plan templates)
+   - Google Drive: Watchlist Doc (ID: 179cetlnDpSpApxSHQ7eIeIf0XFWapCV6equz7dz04OU)
+   - 440-ticker slug mapping (ic_slugs.json) for Investing.com links
+
+====================================================
+WHAT WE'RE BUILDING NEXT
+====================================================
+
+TRADE MANAGEMENT SYSTEM — Everything in Google Sheets
+Two new tabs + bridge expansion + dashboard integration
+
+------------------------------------------------------
+A. EXECUTIONS TAB (Raw Fills — Auto-Synced)
+------------------------------------------------------
+
+One row per broker fill. Fully automated, no manual entry.
+
+Source: TradeStation API + Alpaca API (polled every 1-5 min during market hours)
+
+Fields per row:
+  - Exec ID (broker's execution ID, dedup key)
+  - Trade # (parent trade ID, assigned by grouping logic)
+  - Timestamp (fill time, AZ timezone)
+  - Account (TS-DT, TS-SW, ALPACA-PAPER, etc.)
+  - Symbol
+  - Action (BUY / SELL / SHORT / COVER)
+  - Quantity
+  - Fill Price
+  - Commission
+  - Running Qty (calculated: net position after this fill)
+  - Order Type (MARKET / LIMIT / STOP)
+  - Source (tradestation / alpaca)
+
+Sync logic:
+  - Poll TradeStation GET /v3/brokerage/accounts/{id}/orders
+    (filter: filled orders since last check)
+  - Poll Alpaca GET /v2/orders?status=filled&after={last_check}
+  - Dedup by execution ID to prevent double-logging
+  - Store last sync timestamp in Script Properties
+
+------------------------------------------------------
+B. TRADES TAB (Parent Trades — Grouped & Enriched)
+------------------------------------------------------
+
+One row per trade idea. Combines entry/scaling/exit into single record.
+
+Fields per row:
+
+IDENTIFICATION:
+  - Trade # (auto-increment)
+  - Symbol
+  - Account
+  - Side (LONG / SHORT)
+  - Type (DT / SW / CORE / PAPER)
+  - Status (PLANNED / OPEN / CLOSED / CANCELLED)
+
+ENTRY:
+  - Entry Time (first fill)
+  - Entry Price (avg weighted across scale-ins)
+  - Total Shares (max position size reached)
+  - Position $ Size
+  - Entry Legs (count of buy fills)
+
+EXIT:
+  - Exit Time (final fill that closes position)
+  - Avg Exit Price (weighted across scale-outs)
+  - Exit Legs (count of sell fills)
+
+P&L:
+  - Gross P&L ($)
+  - Net P&L ($ after commissions)
+  - P&L %
+  - R-Multiple (P&L / initial risk)
+  - Max Favorable Excursion (MFE — best unrealized P&L while open)
+  - Max Adverse Excursion (MAE — worst unrealized P&L while open)
+
+PLAN (from pre-trade form OR tagged at EOD):
+  - Setup Type (VWAP-Hold, OR-Break, Pullback-EMA, Momentum, Failed-BD, RS-Override, Rotation-ETF)
+  - Planned Stop
+  - Planned Target
+  - Planned Size (from auto-calculator)
+  - Dollar Risk (shares × |entry - stop|)
+  - Risk % of Account
+  - Scale-Out Plan (e.g., "50% at 1R, trail rest")
+  - Catalyst/Thesis (one line)
+
+MARKET CONTEXT (auto-snapshotted at entry time):
+  - Breadth Score
+  - Gameplan (A/B/C/D)
+  - Session Phase (MO/MM/PH/MC)
+  - VIX
+  - VIX Regime
+  - Term Structure State (CONTANGO/BACKWARDATION/INVERTED)
+  - VIX/VIX3M Ratio
+  - VVIX
+  - SPY IVR
+  - Ticker IVR (from TastyTrade if available)
+  - Ticker Beta
+  - Expected Move (SPY daily ±$)
+  - F&G Score
+  - NAAIM Exposure
+  - Sector Leader
+  - Sector of Symbol
+
+REVIEW (tagged at EOD):
+  - Was Planned? (Y/N)
+  - Self-Grade (A/B/C/D)
+  - Followed System? (Y/N)
+  - Notes
+  - Lessons
+
+TIMING:
+  - Hold Duration (calculated)
+  - Days Held (for swings)
+
+------------------------------------------------------
+C. PRE-TRADE FORM / SCORECARD
+------------------------------------------------------
+
+Triggered from dashboard sidebar or scanner menu.
+User inputs 4-5 fields, system auto-fills everything else.
+
+USER INPUTS:
+  1. Symbol (dropdown from watchlist + type-ahead)
+  2. Side (Long / Short)
+  3. Setup Type (dropdown: VWAP-Hold, OR-Break, Pullback-EMA,
+     Momentum, Failed-BD, RS-Override, Rotation-ETF)
+  4. Planned Stop (price)
+  5. Planned Target (price) — optional, system suggests
+
+SYSTEM AUTO-CALCULATES & DISPLAYS:
+
+Position Sizing:
+  - Current Gameplan → base size ($15-20K / $8-12K / etc.)
+  - Ticker IVR adjustment (high IVR = reduce size)
+  - Ticker Beta adjustment (high beta = reduce size)
+  - Final position size ($)
+  - Shares = size ÷ current price
+  - Dollar risk = shares × |entry - stop|
+  - Risk as % of account
+
+Expected Move Context:
+  - SPY expected daily move (±$ and ±%)
+  - Ticker expected daily move (SPY EM × beta)
+  - Target distance vs expected move ratio
+  - Stop distance vs expected move ratio
+
+R-Multiple Targets:
+  - 1R price level
+  - 2R price level
+  - 3R price level
+  - Suggested scale plan based on setup type defaults
+
+TRAFFIC LIGHT SCORECARD:
+  🟢🟡🔴 Breadth confirms for this side?
+  🟢🟡🔴 Setup matches current session phase?
+  🟢🟡🔴 IVR supports target distance?
+  🟢🟡🔴 Term structure safe? (inverted = red)
+  🟢🟡🔴 Not adding correlated exposure? (check existing book)
+  🟢🟡🔴 Within daily loss limit?
+  🟢🟡🔴 Sector concentration check?
+  🟢🟡🔴 Risk per trade within limits?
+
+User sees everything, confirms "ENTER" → creates PLANNED row on Trades tab
+When broker fill syncs → matches to planned row, updates to OPEN
+
+If user skips form → broker sync creates UNTAGGED row → tagged at EOD
+
+------------------------------------------------------
+D. SCALING LOGIC
+------------------------------------------------------
+
+Grouping rules (Executions → Trades):
+
+1. New BUY with no open position in symbol+account = new parent Trade
+2. Additional BUY on existing open long = scale-in leg (same parent)
+3. SELL against open long = scale-out leg (same parent)
+4. When running qty reaches 0 = Trade CLOSED
+5. If running qty crosses zero (flip) = close old Trade, open new one
+6. Multiple accounts keep separate parents even for same symbol
+
+Trades tab shows summary:
+  - "NVDA — Long 100/200 remaining (50% scaled)"
+  - "Entry avg: $135.50 | First target hit: $137 (+$150 banked)"
+  - "Remaining stop: $134.20 | Current: $138.20 | R on remaining: +2.1R"
+  - "Risk-free: ✓" (when banked P&L > remaining risk)
+
+------------------------------------------------------
+E. DASHBOARD INTEGRATION
+------------------------------------------------------
+
+Open trades from Trades tab render in the Book section:
+  - Live P&L (current price from existing quote feeds)
+  - Current R-multiple
+  - Distance from stop ($ and %)
+  - Distance from target
+  - Time held
+  - Scale status (e.g., "50% scaled at 1R")
+  - Risk-free indicator
+  - Scorecard summary (how many checks were green at entry)
+
+Portfolio Risk View:
+  - Total open dollar risk across all positions
+  - Correlation-adjusted risk (using TT beta/corr data)
+  - Sector concentration pie/bar
+  - Daily P&L running total
+  - Distance from daily loss limit
+
+------------------------------------------------------
+F. EOD REVIEW FLOW
+------------------------------------------------------
+
+At market close, dashboard shows "Review Today's Trades" prompt.
+Lists all trades taken today, highlighting untagged ones.
+
+Per trade, user taps:
+  - Setup Type (if untagged)
+  - Was Planned? (Y/N)
+  - Self-Grade (A/B/C/D)
+  - Followed System? (Y/N)
+  - One-line note (optional)
+
+5-minute process. Saves back to Trades tab.
+
+------------------------------------------------------
+G. PERFORMANCE ANALYTICS (Future Phase)
+------------------------------------------------------
+
+Once 50-100+ trades accumulated, query Trades tab for:
+  - Win rate by Gameplan (A/B/C/D)
+  - Avg R-multiple by Setup Type
+  - P&L by Session Phase (morning vs afternoon)
+  - Performance by Sector
+  - Win rate by Term Structure state
+  - Win rate when IVR was high vs low
+  - Revenge trading detection (re-entry within 5 min of stop-out)
+  - Plan vs Actual comparison (did you follow your scale plan?)
+  - Drawdown patterns
+  - Best/worst days and what conditions drove them
+
+Claude can query this data to provide personalized coaching:
+  "You've taken OR-Break 12 times on GP-A mornings: 9-3 with avg +1.8R.
+   You've taken it 8 times on GP-B afternoons: 2-6 with avg -0.4R.
+   This is a B afternoon. Consider passing."
+
+------------------------------------------------------
+H. MONTHLY SYSTEM AUDIT (Future Phase)
+------------------------------------------------------
+
+Claude reviews full month of trades with context and recommends:
+  - Rule changes backed by data
+  - Setup restrictions by condition
+  - Position sizing adjustments
+  - New patterns discovered
+  - Behavioral observations
+
+====================================================
+BROADER SYSTEM EVOLUTION (Discussed, Not Yet Scoped)
+====================================================
+
+1. SECTOR ROTATION EXPANSION
+   - Ranked sector list (all 11 GICS sectors) updated intraday
+   - When primary sector (tech) is below #5, surface top 3 sectors
+   - Rotation candidates: sector ETFs (XLU, XLE, XLF, etc.)
+     plus top 2-3 liquid single names per sector
+   - New setup type: "Rotation-ETF" for non-tech plays
+   - Separate rotation gameplan for C-days with sector leadership
+
+2. SWING/CORE MANAGEMENT
+   - Swing position health dashboard per ticker:
+     current P&L, distance from stop, days held, aVWAP vs price,
+     relative strength vs sector, upcoming catalysts
+   - Rebalancing alerts (target allocation vs actual drift)
+   - Concentration limits (max % per name, max % per sector)
+   - Exit management rules: time-based, trailing ATR, R-based scaling
+
+3. PORTFOLIO RISK MONITORING
+   - Total portfolio heat (sum of dollar risk across all positions)
+   - Correlation-adjusted exposure
+   - Account-level risk as % of equity
+   - Daily loss limit enforcement
+
+4. OPTIONS DATA PER TICKER
+   - TastyTrade IVR/IV% for watchlist tickers (not just SPY/QQQ/IWM)
+   - Per-ticker expected move for target/stop calibration
+   - IV regime flag on each setup candidate
+
+5. AUTOMATED DAILY WORKFLOW
+   - Morning auto-brief: overnight futures, econ calendar,
+     earnings, sector rotation, open swing status, top watchlist setups
+   - EOD auto-journal: pull day's trades, match to breadth log,
+     calculate R-multiples, draft Notion journal entry
+
+====================================================
+TECHNICAL ARCHITECTURE
+====================================================
+
+All in Google Sheets + Apps Script + Python Bridge:
+
+SHEETS TABS:
+  - Market (existing — breadth, sectors, pulse)
+  - My Positions (existing — live positions)
+  - Watchlist (existing)
+  - Dashboard (existing — cached for doGet)
+  - Executions (NEW — raw broker fills)
+  - Trades (NEW — parent trade records)
+  - Performance (NEW — analytics/summary, future phase)
+
+BRIDGE ADDITIONS (v9_pulse_bridge_v5.py):
+  - /trades/tradestation — poll TS filled orders
+  - /trades/alpaca — poll Alpaca filled orders
+  - /trades/sync — combined sync endpoint
+  - Uses existing TS + Alpaca auth
+  - Returns new fills since last sync timestamp
+
+SCANNER ADDITIONS (v90.2+):
+  - syncTrades() — called on 1-min trigger alongside updateMarketTab
+  - logExecution(fill) — writes to Executions tab
+  - groupToTrade(exec) — creates/updates parent Trade row
+  - snapshotContext() — captures market state at fill time
+  - getTradesForDashboard() — includes open trades in getDashboardData()
+
+DASHBOARD ADDITIONS (v11+):
+  - Pre-trade form sidebar/modal
+  - Trade scorecard with traffic lights
+  - Position sizing auto-calculator
+  - Open trades management view
+  - EOD review interface
+  - Portfolio risk summary
+
+====================================================
+BUILD ORDER (Priority Sequence)
+====================================================
+
+Phase 0: Foundation Prerequisites
+  0a. Bridge: Account balance endpoints (TS + Alpaca equity snapshots)
+  0b. Scanner: Accounts config (daily loss limit, risk % caps, equity cache)
+
+Phase 1: Trade Capture Foundation
+  1. Bridge: TradeStation order sync endpoint
+  2. Bridge: Alpaca order sync endpoint
+  3. Scanner: Executions tab + syncTrades() function
+  4. Scanner: Trades tab + grouping logic
+  5. Scanner: Market context snapshot on fill
+
+Phase 2: Pre-Trade Form
+  6. Dashboard: Pre-trade form with auto-sizing
+  7. Dashboard: Traffic light scorecard
+  8. Scanner: logPlannedTrade() + matching logic
+
+Phase 3: Dashboard Integration
+  9. Dashboard: Open trades in Book section with live P&L
+  10. Dashboard: Portfolio risk view
+  11. Dashboard: EOD review interface
+
+Phase 4: Analytics
+  12. Performance queries against Trades tab
+  13. Claude coaching from trade history
+  14. Monthly system audit
+
+====================================================
+ACCOUNT EQUITY & DAILY LOSS LIMIT
+====================================================
+
+ACCOUNT EQUITY TRACKING:
+  - Pull beginning-of-day equity from TradeStation + Alpaca APIs
+  - Store in Script Properties or small "Accounts" config tab
+  - Fields: Account ID, Account Label, BOD Equity, Current Equity,
+    Daily P&L, Daily P&L %, Last Updated
+  - Refreshed on first updateMarketTab trigger each day
+  - Required for: position sizing (% of equity), risk % checks,
+    daily loss limit enforcement
+
+DAILY LOSS LIMIT:
+  - Configurable per account (e.g., DT = -$500, SW = -$1000)
+  - Tracked intraday: sum of closed trade P&L + open unrealized P&L
+  - Thresholds:
+    * Green: daily P&L above -50% of limit
+    * Yellow: daily P&L between -50% and -100% of limit
+    * Red: daily P&L at or beyond limit
+  - When red: pre-trade form shows hard warning, scorecard red
+  - Dashboard banner shows running daily P&L at all times
+  - EOD: log final daily P&L to a "Daily Results" row for
+    long-term tracking (equity curve data)
+
+====================================================
+DATA RETENTION & ARCHIVING
+====================================================
+
+At 5-10 trades/day with 3-5 executions each:
+  - Executions tab: ~15-50 rows/day = ~5,000-12,000 rows/year
+  - Trades tab: ~5-10 rows/day = ~1,200-2,500 rows/year
+
+Google Sheets handles up to ~100K rows before performance degrades.
+Trades tab is fine for years. Executions tab needs management.
+
+ARCHIVING STRATEGY:
+  - Quarterly: move Executions older than 90 days to "Exec Archive" tab
+  - Keep Trades tab intact (it's the queryable performance database)
+  - Archive function: moveOldExecutions() — manual or scheduled
+  - Archived data still accessible for deep analysis, just not
+    in the active sync/lookup path
+  - Daily Results row (1 per day) lives in its own tab — never archived,
+    this becomes the equity curve dataset
+
+====================================================
+FILES REFERENCE
+====================================================
+
+Current versions (as of this spec):
+  - v9_pulse_bridge_v4.py (Desktop Python)
+  - V9_Confluence_Scanner_v90_1.txt (Apps Script)
+  - v9_dashboard_10.html (GitHub Pages)
+  - Trading_System_V9_4.txt (Master system doc)
+
+Broker auth:
+  - TradeStation: OAuth2, API key registered, auth code flow
+  - TastyTrade: OAuth2 refresh token in bridge config
+  - Alpaca: API key + secret
+
+Infrastructure:
+  - ngrok static domain: ecclesiastically-ratio-lauran.ngrok-free.dev
+  - GitHub repo: novakolen-hub/dundunn
+  - Scanner timezone: America/Phoenix (no DST)
+  - Market hours: 7:30am-2pm AZ
