@@ -7690,14 +7690,8 @@ function getAreteFromGmail_() {
   
   try {
     // Pull up to 7 emails from this week — Arete sends from ccsend.com, shows as Alpha Chasers
-    // Search for Arete emails — handles both direct and forwarded
-    // Primary: subject-based (works for forwarded "Fwd: PRIVATE PREMARKET..." etc)
-    // Arete sends: "PRIVATE PREMARKET", "Alpha Chasers", weekend recaps
-    var threads = GmailApp.search('{subject:"premarket" subject:"alpha chasers"} newer_than:7d', 0, 10);
-    if (threads.length === 0) {
-      // Fallback: body mentions arete
-      threads = GmailApp.search('"arete" newer_than:7d', 0, 10);
-    }
+    // Search for Arete emails — forwarded body always contains arete@aretetrading.ccsend.com
+    var threads = GmailApp.search('aretetrading.ccsend.com newer_than:7d', 0, 10);
     if (threads.length === 0) return null;
     
     var weekEmails = [];
@@ -9780,11 +9774,8 @@ function testAreteEmails() {
     Logger.log('Testing Arete email search...');
     
     // Test 1: Direct search
-    var threads1 = GmailApp.search('{subject:"premarket" subject:"alpha chasers"} newer_than:7d', 0, 10);
-    Logger.log('Search 1 (subject premarket/alpha chasers): ' + threads1.length + ' threads');
-    
-    var threads2 = GmailApp.search('"arete" newer_than:7d', 0, 10);
-    Logger.log('Search 2 (body arete): ' + threads2.length + ' threads');
+    var threads1 = GmailApp.search('aretetrading.ccsend.com newer_than:7d', 0, 10);
+    Logger.log('Search (aretetrading.ccsend.com): ' + threads1.length + ' threads');
     
     for (var ti = 0; ti < Math.min(threads1.length, 5); ti++) {
       var msg = threads1[ti].getMessages()[0];
