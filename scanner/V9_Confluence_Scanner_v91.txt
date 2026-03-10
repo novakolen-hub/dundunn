@@ -4463,6 +4463,9 @@ function onOpen() {
     .addItem('🏁 Run EOD', 'runEODManual')
     .addItem('⏰ Install EOD Trigger', 'installEODTrigger')
     .addItem('📊 Refresh Account Equity', 'refreshAccountEquityManual')
+    .addSeparator()
+    .addItem('🔍 Test Arete Emails', 'testAreteEmails')
+    .addItem('🔍 Test Bridge Connection', 'testPulseConnection')
     .addToUi();
 }
 
