@@ -1190,6 +1190,59 @@ function _renderQuotaChart(){
   el.style.display='block';
 }
 
+
+// ═══ API COST CHART ═══
+var _apiCostHourly=[],_apiCostTotal=0,_apiChartPinned=false;
+function showApiChart(){_renderApiChart();}
+function hideApiChart(){_apiChartPinned=false;$('apiPopup').style.display='none';}
+function toggleApiChart(){_apiChartPinned=!_apiChartPinned;if(_apiChartPinned)_renderApiChart();else $('apiPopup').style.display='none';}
+
+function _renderApiChart(){
+  var el=$('apiPopup');if(!el)return;
+  var hourly=_apiCostHourly;
+  if(!hourly||!hourly.length){
+    el.innerHTML='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center"><div class="qc-title" style="margin:0">Claude API Cost</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideApiChart()">✕</span></div><div class="qc-total" style="margin-top:8px"><span style="color:#ab47bc">$'+_apiCostTotal.toFixed(2)+'</span> session total</div><div class="dim" style="font-size:10px;margin-top:4px">Hourly data populates as Claude API runs</div></div>';
+    el.style.display='block';return;
+  }
+  var max=0.001;for(var i=0;i<hourly.length;i++){if(hourly[i].cost>max)max=hourly[i].cost;}
+
+  var h='<div class="qc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div class="qc-title" style="margin:0">Claude API · 24h Cost Breakdown</div><span style="cursor:pointer;color:#6e7590;font-size:14px;padding:0 4px" onclick="event.stopPropagation();hideApiChart()">✕</span></div>';
+  h+='<div style="overflow-x:auto;overflow-y:hidden;background:#0d1117;border:1px solid #1c2333;border-radius:6px;padding:10px 8px"><div style="display:flex;align-items:flex-end;gap:2px;height:160px;min-width:'+Math.max(600,_quotaHourly.length*8)+'px">';
+  for(var i=0;i<hourly.length;i++){
+    var d=hourly[i];
+    var tok=d.tok||{};
+    var tip=e(d.h)+': $'+d.cost.toFixed(4);
+    if(tok.calls)tip+='\n'+tok.calls+' call'+(tok.calls>1?'s':'');
+    if(tok['in'])tip+='\n'+tok['in'].toLocaleString()+' in / '+(tok['out']||0).toLocaleString()+' out';
+    h+='<div class="qc-col" style="flex:1;height:100%;display:flex;flex-direction:column-reverse;min-width:0;position:relative" title="'+tip.replace(/"/g,'&quot;').replace(/\n/g,'&#10;')+'">';
+    if(d.cost===0){
+      h+='<div style="flex:1;border:1px dashed #30363d;border-radius:2px"></div>';
+    } else {
+      var pct=d.cost/max*100;
+      var col=d.cost>0.05?'#f85149':d.cost>0.02?'#e3b341':'#ab47bc';
+      h+='<div style="height:'+Math.max(pct,4)+'%;background:'+col+';border-radius:2px 2px 0 0;width:100%"></div>';
+    }
+    // Hover tooltip
+    var tipHtml2='<div class="qc-tip"><div class="qc-tip-h">'+e(d.h)+': $'+d.cost.toFixed(4)+'</div>';
+    if(tok.calls)tipHtml2+='<div>'+tok.calls+' call'+(tok.calls>1?'s':'')+'</div>';
+    if(tok["in"])tipHtml2+='<div>'+tok["in"].toLocaleString()+' in / '+(tok["out"]||0).toLocaleString()+' out</div>';
+    if(d.cost===0)tipHtml2+='<div class="dim">No API calls</div>';
+    tipHtml2+='</div>';
+    h+=tipHtml2;
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='<div style="display:flex;gap:3px;padding:3px 8px 0 8px">';
+  for(var i=0;i<hourly.length;i++){var show=(i%4===0)||i===hourly.length-1;h+='<div style="flex:1;text-align:center;font-size:8px;color:'+(show?'#7d8590':'transparent')+';font-family:JetBrains Mono,monospace">'+e(hourly[i].h||'')+'</div>';}
+  h+='</div>';
+  var totalCalls=0,totalIn=0,totalOut=0,totalCost=0;
+  for(var i=0;i<hourly.length;i++){var t=hourly[i].tok||{};totalCalls+=(t.calls||0);totalIn+=(t['in']||0);totalOut+=(t['out']||0);totalCost+=hourly[i].cost;}
+  h+='<div style="margin-top:8px;font-family:JetBrains Mono,monospace;font-size:11px"><span style="color:#ab47bc">$'+totalCost.toFixed(4)+'</span> <span style="color:#7d8590">total · '+totalCalls+' calls · '+(totalIn/1000).toFixed(1)+'K in / '+(totalOut/1000).toFixed(1)+'K out</span></div>';
+  h+='</div>';
+  el.innerHTML=h;
+  el.style.display='block';
+}
+
 var readUrls=(function(){try{var s=localStorage.getItem('v9_read_urls');return s?new Set(JSON.parse(s)):new Set();}catch(e){return new Set();}})();
 function saveReadUrls(){try{localStorage.setItem('v9_read_urls',JSON.stringify(Array.from(readUrls)));}catch(e){}}
 function initNewsRead(){
