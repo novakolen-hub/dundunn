@@ -8106,6 +8106,42 @@ function getDashboardData() {
       try { var _aa = props.getProperty('ARETE_ANALYSIS_TODAY'); if (_aa) state.areteAnalysis = JSON.parse(_aa); } catch(e) {}
       try { var _al = props.getProperty('ARETE_ALIGNMENT'); if (_al) state.areteAlignment = JSON.parse(_al); } catch(e) {}
       try { var _ar = props.getProperty('ARETE_RETRO_HIST'); if (_ar) state.areteRetroHist = JSON.parse(_ar); } catch(e) {}
+      // Arete YouTube — RSS feed, cached 4 hours
+      try {
+        var ytCacheTime = parseInt(props.getProperty('ARETE_YT_CACHE_TIME') || '0');
+        if (Date.now() - ytCacheTime > 14400000 || !props.getProperty('ARETE_YT_CACHE')) {
+          var ytResp = trackedFetch('https://www.youtube.com/feeds/videos.xml?channel_id=UCTeFsS-bP0XEt3NBMjfW2cA', { muteHttpExceptions: true }, 'arete-youtube');
+          if (ytResp.getResponseCode() === 200) {
+            var ytXml = ytResp.getContentText();
+            var ytDoc = XmlService.parse(ytXml);
+            var ns = XmlService.getNamespace('http://www.w3.org/2005/Atom');
+            var mediaNs = XmlService.getNamespace('media', 'http://search.yahoo.com/mrss/');
+            var ytNs = XmlService.getNamespace('yt', 'http://www.youtube.com/xml/schemas/2015');
+            var entries = ytDoc.getRootElement().getChildren('entry', ns);
+            var vids = [];
+            for (var yi = 0; yi < Math.min(entries.length, 8); yi++) {
+              var entry = entries[yi];
+              var vidIdEl = entry.getChild('videoId', ytNs);
+              var vidId = vidIdEl ? vidIdEl.getText() : '';
+              var title = entry.getChildText('title', ns) || '';
+              var pubDate = entry.getChildText('published', ns) || '';
+              var mediaGroup = entry.getChild('group', mediaNs);
+              var thumb = '';
+              if (mediaGroup) {
+                var thumbEl = mediaGroup.getChild('thumbnail', mediaNs);
+                if (thumbEl) thumb = thumbEl.getAttribute('url').getValue();
+              }
+              var dateStr = '';
+              try { dateStr = Utilities.formatDate(new Date(pubDate), SCANNER_TIMEZONE, 'MMM d, h:mm a'); } catch(de) { dateStr = pubDate.substring(0, 10); }
+              vids.push({ id: vidId, title: title, date: dateStr, thumb: thumb });
+            }
+            props.setProperty('ARETE_YT_CACHE', JSON.stringify(vids));
+            props.setProperty('ARETE_YT_CACHE_TIME', String(Date.now()));
+          }
+        }
+        var ytCached = props.getProperty('ARETE_YT_CACHE');
+        if (ytCached) state.areteYouTube = JSON.parse(ytCached);
+      } catch(ytErr) { Logger.log('Arete YT: ' + ytErr.message); }
       Logger.log('Arete emails: sending ' + state.areteEmails.length + ' to dashboard');
     } else {
       state.areteEmails = [];
