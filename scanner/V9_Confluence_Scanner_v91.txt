@@ -7687,6 +7687,289 @@ function writeDashboard_(ss, timestamp, session, gameplan, narrative, props) {
 
 // ── Gmail Arete Email Pull (full week, stored by day) ──
 
+// ════════════════════════════════════════════════════════
+// ARETE EMAIL PROCESSING
+// ════════════════════════════════════════════════════════
+
+// Clean up raw email body — strip forwarding headers, tracking junk, footers
+function _cleanAreteBody(raw) {
+  if (!raw) return '';
+  var body = raw;
+  
+  // Remove forwarding header block
+  body = body.replace(/^-+\s*Forwarded message\s*-+[\s\S]*?(?=\n\n)/i, '');
+  
+  // Remove tracking URLs (Constant Contact r20.rs6.net links)
+  body = body.replace(/https?:\/\/r20\.rs6\.net\/[^\s)\]>]*/g, '');
+  body = body.replace(/https?:\/\/[^\s]*?ccsend\.com[^\s)\]>]*/g, '');
+  body = body.replace(/https?:\/\/[^\s]*?constantcontact\.com[^\s)\]>]*/g, '');
+  
+  // Remove unsubscribe/footer section (everything after these markers)
+  var footerMarkers = ['unsubscribe', 'update your preferences', 'view this email in', 'powered by', 'constant contact', 'sent by', 'manage your preferences', 'forward this email', 'safe unsubscribe'];
+  for (var fi = 0; fi < footerMarkers.length; fi++) {
+    var idx = body.toLowerCase().indexOf(footerMarkers[fi]);
+    if (idx > 0 && idx > body.length * 0.4) { // Only cut if it's in the bottom half
+      body = body.substring(0, idx).trim();
+      break;
+    }
+  }
+  
+  // Remove social media lines
+  body = body.replace(/^\s*(facebook|twitter|instagram|linkedin|youtube)\s*$/gim, '');
+  body = body.replace(/^\s*(follow us|connect with us|share this)[^\n]*$/gim, '');
+  
+  // Remove image alt text artifacts
+  body = body.replace(/^\s*\[.*?\]\s*$/gm, '');
+  
+  // Collapse 3+ blank lines to 2
+  body = body.replace(/\n{3,}/g, '\n\n');
+  
+  // Trim leading/trailing whitespace
+  body = body.trim();
+  
+  return body;
+}
+
+// Extract structured data from Arete email using Claude
+// Returns: { tickers:[], keyLevels:[], sectorThemes:[], bias:'', summary:'', rawCalls:[] }
+function _analyzeAreteEmail(subject, cleanBody) {
+  var key = PropertiesService.getScriptProperties().getProperty(ANTHROPIC_KEY_PROP);
+  if (!key || !cleanBody || cleanBody.length < 50) return null;
+  
+  var prompt = 'Analyze this Arete Trading email and extract structured data. Return ONLY valid JSON, no markdown, no explanation.\n\n'
+    + 'Email subject: ' + subject + '\n\n'
+    + 'Email body:\n' + cleanBody.substring(0, 4000) + '\n\n'
+    + 'Return this exact JSON structure:\n'
+    + '{\n'
+    + '  "tickers": ["NVDA","AMD",...],  // all stock tickers mentioned\n'
+    + '  "calls": [  // specific trade ideas or directional calls\n'
+    + '    {"ticker":"NVDA","bias":"long","level":"above 140","note":"watching for breakout"}\n'
+    + '  ],\n'
+    + '  "keyLevels": [  // specific price levels mentioned\n'
+    + '    {"ticker":"SPY","level":680,"type":"resistance","note":"key overhead"}\n'
+    + '  ],\n'
+    + '  "sectorThemes": ["AI spending","semiconductor rotation"],  // macro themes\n'
+    + '  "marketBias": "bullish|bearish|neutral|mixed",  // overall tone\n'
+    + '  "summary": "2-3 sentence summary of the key message"\n'
+    + '}';
+  
+  try {
+    var resp = trackedFetch('https://api.anthropic.com/v1/messages', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01'
+      },
+      payload: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      }),
+      muteHttpExceptions: true
+    }, 'arete-analysis');
+    
+    if (resp.getResponseCode() === 200) {
+      var data = JSON.parse(resp.getContentText());
+      var text = '';
+      for (var ci = 0; ci < data.content.length; ci++) {
+        if (data.content[ci].type === 'text') text += data.content[ci].text;
+      }
+      // Strip markdown fences if present
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(text);
+    }
+  } catch(e) {
+    Logger.log('Arete analysis error: ' + e.message);
+  }
+  return null;
+}
+
+// Compare Arete calls against live scanner data
+// Returns alignment report: which calls match current data, which diverge
+function _checkAreteAlignment(analysis) {
+  if (!analysis || !analysis.calls || !analysis.calls.length) return null;
+  
+  var props = PropertiesService.getScriptProperties();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName('Watchlist');
+  if (!ws) return null;
+  
+  // Read current scanner data
+  var lastRow = ws.getLastRow();
+  if (lastRow < 2) return null;
+  var headers = ws.getRange(1, 1, 1, ws.getLastColumn()).getValues()[0];
+  var symCol = 0, confCol = -1, setupCol = -1, lastCol = -1, chgCol = -1, vwapCol = -1;
+  for (var hi = 0; hi < headers.length; hi++) {
+    var hdr = String(headers[hi]).toLowerCase();
+    if (hdr === 'symbol' || hdr === 'ticker') symCol = hi;
+    if (hdr === 'confluence' || hdr === 'conf') confCol = hi;
+    if (hdr === 'setup') setupCol = hi;
+    if (hdr === 'last') lastCol = hi;
+    if (hdr.indexOf('chg') >= 0 && chgCol < 0) chgCol = hi;
+  }
+  
+  var data = ws.getRange(2, 1, lastRow - 1, ws.getLastColumn()).getValues();
+  var scannerMap = {};
+  for (var ri = 0; ri < data.length; ri++) {
+    var sym = String(data[ri][symCol]).trim().toUpperCase();
+    if (sym) {
+      scannerMap[sym] = {
+        conf: confCol >= 0 ? parseFloat(data[ri][confCol]) || 0 : 0,
+        setup: setupCol >= 0 ? String(data[ri][setupCol]) : '',
+        last: lastCol >= 0 ? parseFloat(data[ri][lastCol]) || 0 : 0,
+        chg: chgCol >= 0 ? parseFloat(String(data[ri][chgCol]).replace('%','')) || 0 : 0
+      };
+    }
+  }
+  
+  // Get current breadth/GP
+  var gpSub = null;
+  try { var gps = props.getProperty('GP_SUB_MODE'); if (gps) gpSub = JSON.parse(gps); } catch(e) {}
+  var gpLetter = gpSub ? gpSub.subMode.charAt(0) : 'C';
+  var breadthScore = 0;
+  try {
+    var mktSheet = ss.getSheetByName('Market');
+    if (mktSheet) breadthScore = parseFloat(mktSheet.getRange('B2').getValue()) || 0;
+  } catch(e) {}
+  
+  var alignments = [];
+  for (var ai = 0; ai < analysis.calls.length; ai++) {
+    var call = analysis.calls[ai];
+    var tk = (call.ticker || '').toUpperCase();
+    var sd = scannerMap[tk];
+    var a = {
+      ticker: tk,
+      areteBias: call.bias || '',
+      areteLevel: call.level || '',
+      areteNote: call.note || '',
+      inScanner: !!sd,
+      status: 'UNKNOWN'
+    };
+    
+    if (sd) {
+      a.scannerConf = sd.conf;
+      a.scannerSetup = sd.setup;
+      a.scannerLast = sd.last;
+      a.scannerChg = sd.chg;
+      
+      // Check alignment
+      var isBullishCall = (call.bias || '').toLowerCase().indexOf('long') >= 0 || (call.bias || '').toLowerCase().indexOf('bull') >= 0;
+      var isBearishCall = (call.bias || '').toLowerCase().indexOf('short') >= 0 || (call.bias || '').toLowerCase().indexOf('bear') >= 0;
+      var scannerPositive = sd.chg > 0;
+      var hasSetup = sd.setup && sd.setup.length > 1;
+      var highConf = sd.conf >= 20;
+      
+      if (isBullishCall && scannerPositive && highConf) a.status = 'ALIGNED';
+      else if (isBullishCall && scannerPositive) a.status = 'PARTIAL';
+      else if (isBearishCall && !scannerPositive) a.status = 'ALIGNED';
+      else if (isBullishCall && !scannerPositive) a.status = 'DIVERGENT';
+      else if (isBearishCall && scannerPositive) a.status = 'DIVERGENT';
+      else a.status = 'NEUTRAL';
+    } else {
+      a.status = 'NOT_TRACKED';
+    }
+    alignments.push(a);
+  }
+  
+  return {
+    gpLetter: gpLetter,
+    breadthScore: breadthScore,
+    marketBias: analysis.marketBias,
+    gpAligned: (analysis.marketBias === 'bullish' && gpLetter <= 'B') || 
+               (analysis.marketBias === 'bearish' && gpLetter >= 'C') ||
+               analysis.marketBias === 'neutral',
+    alignments: alignments,
+    timestamp: Utilities.formatDate(new Date(), SCANNER_TIMEZONE, 'yyyy-MM-dd HH:mm')
+  };
+}
+
+// EOD Retrospective — compare morning Arete calls to actual results
+function _areteRetrospective() {
+  var props = PropertiesService.getScriptProperties();
+  var analysisRaw = props.getProperty('ARETE_ANALYSIS_TODAY');
+  if (!analysisRaw) return null;
+  
+  var analysis = JSON.parse(analysisRaw);
+  if (!analysis.calls || !analysis.calls.length) return null;
+  
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ws = ss.getSheetByName('Watchlist');
+  if (!ws) return null;
+  
+  var headers = ws.getRange(1, 1, 1, ws.getLastColumn()).getValues()[0];
+  var symCol = 0, lastCol = -1, chgCol = -1;
+  for (var hi = 0; hi < headers.length; hi++) {
+    var hdr = String(headers[hi]).toLowerCase();
+    if (hdr === 'symbol' || hdr === 'ticker') symCol = hi;
+    if (hdr === 'last') lastCol = hi;
+    if (hdr.indexOf('chg') >= 0 && chgCol < 0) chgCol = hi;
+  }
+  
+  var data = ws.getRange(2, 1, ws.getLastRow() - 1, ws.getLastColumn()).getValues();
+  var results = [];
+  var correct = 0, wrong = 0, neutral = 0;
+  
+  for (var ci = 0; ci < analysis.calls.length; ci++) {
+    var call = analysis.calls[ci];
+    var tk = (call.ticker || '').toUpperCase();
+    var found = false;
+    
+    for (var ri = 0; ri < data.length; ri++) {
+      if (String(data[ri][symCol]).trim().toUpperCase() === tk) {
+        var eodChg = chgCol >= 0 ? parseFloat(String(data[ri][chgCol]).replace('%','')) || 0 : 0;
+        var eodLast = lastCol >= 0 ? parseFloat(data[ri][lastCol]) || 0 : 0;
+        
+        var isBull = (call.bias || '').toLowerCase().indexOf('long') >= 0 || (call.bias || '').toLowerCase().indexOf('bull') >= 0;
+        var isBear = (call.bias || '').toLowerCase().indexOf('short') >= 0 || (call.bias || '').toLowerCase().indexOf('bear') >= 0;
+        
+        var outcome = 'NEUTRAL';
+        if (isBull && eodChg > 0.5) { outcome = 'CORRECT'; correct++; }
+        else if (isBull && eodChg < -0.5) { outcome = 'WRONG'; wrong++; }
+        else if (isBear && eodChg < -0.5) { outcome = 'CORRECT'; correct++; }
+        else if (isBear && eodChg > 0.5) { outcome = 'WRONG'; wrong++; }
+        else { neutral++; }
+        
+        results.push({
+          ticker: tk,
+          bias: call.bias,
+          level: call.level,
+          eodPrice: eodLast,
+          eodChg: eodChg,
+          outcome: outcome
+        });
+        found = true;
+        break;
+      }
+    }
+    if (!found) results.push({ ticker: tk, bias: call.bias, outcome: 'NOT_TRACKED' });
+  }
+  
+  var total = correct + wrong + neutral;
+  var retro = {
+    date: Utilities.formatDate(new Date(), SCANNER_TIMEZONE, 'yyyy-MM-dd'),
+    calls: results,
+    correct: correct,
+    wrong: wrong,
+    neutral: neutral,
+    total: total,
+    accuracy: total > 0 ? Math.round(correct / (correct + wrong) * 100) : 0,
+    marketBias: analysis.marketBias,
+    summary: ''
+  };
+  retro.summary = 'Arete accuracy: ' + correct + '/' + (correct + wrong) + ' directional calls correct (' + retro.accuracy + '%). ' + neutral + ' neutral/inconclusive.';
+  
+  // Store retrospective history
+  var retroHistRaw = props.getProperty('ARETE_RETRO_HIST') || '[]';
+  var retroHist = [];
+  try { retroHist = JSON.parse(retroHistRaw); } catch(e) {}
+  retroHist.push(retro);
+  if (retroHist.length > 30) retroHist = retroHist.slice(retroHist.length - 30);
+  props.setProperty('ARETE_RETRO_HIST', JSON.stringify(retroHist));
+  
+  return retro;
+}
+
 function getAreteFromGmail_() {
   var props = PropertiesService.getScriptProperties();
   
@@ -7719,13 +8002,14 @@ function getAreteFromGmail_() {
         var dayName = Utilities.formatDate(date, SCANNER_TIMEZONE, 'EEEE');
         var timeStr = Utilities.formatDate(date, SCANNER_TIMEZONE, 'h:mm a');
         
+        var cleanBody = _cleanAreteBody(body);
         weekEmails.push({
           date: dateStr,
           day: dayName,
           time: timeStr,
           subject: subject,
-          body: body, // full body — no truncation for dashboard
-          bodyTrunc: body.length > 2000 ? body.substring(0, 2000) + '\n... [truncated]' : body
+          body: cleanBody,
+          bodyTrunc: cleanBody.length > 2000 ? cleanBody.substring(0, 2000) + '\n... [truncated]' : cleanBody
         });
       }
     }
@@ -7748,6 +8032,27 @@ function getAreteFromGmail_() {
     // Most recent email for Opus prompt (backward compat)
     if (deduped.length > 0) {
       latestText = 'Subject: ' + deduped[0].subject + '\n\n' + deduped[0].bodyTrunc;
+      
+      // Analyze most recent email with Claude (if not already analyzed today)
+      var azToday2 = Utilities.formatDate(new Date(), SCANNER_TIMEZONE, 'yyyy-MM-dd');
+      var lastAnalysisDate = props.getProperty('ARETE_ANALYSIS_DATE') || '';
+      if (lastAnalysisDate !== azToday2) {
+        try {
+          var analysis = _analyzeAreteEmail(deduped[0].subject, deduped[0].body);
+          if (analysis) {
+            props.setProperty('ARETE_ANALYSIS_TODAY', JSON.stringify(analysis));
+            props.setProperty('ARETE_ANALYSIS_DATE', azToday2);
+            Logger.log('Arete analysis: ' + analysis.summary);
+            
+            // Run alignment check against live data
+            var alignment = _checkAreteAlignment(analysis);
+            if (alignment) {
+              props.setProperty('ARETE_ALIGNMENT', JSON.stringify(alignment));
+              Logger.log('Arete alignment: GP ' + (alignment.gpAligned ? 'ALIGNED' : 'DIVERGENT') + ', ' + alignment.alignments.length + ' calls checked');
+            }
+          }
+        } catch(anErr) { Logger.log('Arete analysis error: ' + anErr.message); }
+      }
     }
     
     // Cache latest for backward compat
@@ -7797,6 +8102,10 @@ function getDashboardData() {
     var areteWeekRaw = props.getProperty('ARETE_EMAILS_WEEK');
     if (areteWeekRaw) {
       state.areteEmails = JSON.parse(areteWeekRaw);
+      // Include analysis, alignment, and retrospective history
+      try { var _aa = props.getProperty('ARETE_ANALYSIS_TODAY'); if (_aa) state.areteAnalysis = JSON.parse(_aa); } catch(e) {}
+      try { var _al = props.getProperty('ARETE_ALIGNMENT'); if (_al) state.areteAlignment = JSON.parse(_al); } catch(e) {}
+      try { var _ar = props.getProperty('ARETE_RETRO_HIST'); if (_ar) state.areteRetroHist = JSON.parse(_ar); } catch(e) {}
       Logger.log('Arete emails: sending ' + state.areteEmails.length + ' to dashboard');
     } else {
       state.areteEmails = [];
@@ -10276,6 +10585,9 @@ function buildTradeManagementTabs() {
   _ensureSnapshotsTab();
   
   SpreadsheetApp.flush();
+  // Arete retrospective — compare morning calls to EOD results
+  var areteRetro = null;
+  try { areteRetro = _areteRetrospective(); } catch(arErr) { Logger.log('EOD arete retro: ' + arErr.message); }
   var elapsed = ((Date.now() - t0) / 1000).toFixed(1);
   SpreadsheetApp.getUi().alert(
     'Trade Management tabs created! (' + elapsed + 's)\n\n' +
@@ -11075,11 +11387,12 @@ function runEOD() {
   var totalPnl = 0;
   for (var id in accounts) { totalPnl += parseFloat(accounts[id].daily_pnl) || 0; }
   var pnlSign = totalPnl >= 0 ? '+' : '';
+  var retroMsg = areteRetro ? '\nArete: ' + areteRetro.summary : '';
   var msg = 'EOD Complete (' + elapsed + 's)\n\n' +
     'New executions: ' + newExecs + '\n' +
     'Day P&L: ' + pnlSign + '$' + (Math.round(totalPnl * 100) / 100) + '\n\n' +
     'DailyLog updated. Fill in:\n' +
-    '- rules_followed\n- emotional_state\n- lessons\n- plan_for_tomorrow';
+    '- rules_followed\n- emotional_state\n- lessons\n- plan_for_tomorrow' + retroMsg;
   SpreadsheetApp.getUi().alert(msg);
   Logger.log('runEOD: Complete in ' + elapsed + 's');
 }
