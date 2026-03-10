@@ -1,0 +1,181 @@
+SESSION SUMMARY — March 4, 2026
+================================
+Duration: Extended build session
+Scanner: v90.8 → v90.10.3
+Dashboard: v11.15.8 → v11.17.2
+
+═══════════════════════════════════════════════════════
+WHAT WAS ACCOMPLISHED
+═══════════════════════════════════════════════════════
+
+1. SUB-MODE ↔ TRADE MANAGEMENT REWIRE (v90.9)
+   - Connected 16 GP sub-modes to Trade Management sizing, scorecard, active setups
+   - Built Setup×Gameplan matrix: 16 setups × 16 sub-modes with validGP arrays
+   - C-Recovery unlocked: structure setups tradeable at $3-5K base
+   - SUBMODE_SIZING map replaces flat GP_SIZING
+   - 5 targeted edits: SETUP_REGISTRY, computePositionSize, evaluateScorecard,
+     getActiveSetups, getPreTradeData — all sub-mode aware
+   - BigDogBounce added as 16th setup (structure variant for below-VWAP bounces)
+   - Reference page deployed: novakolen-hub.github.io/dundunn/v9_submode_rewire.html
+
+2. SMB PLAYBOOK VALIDATION
+   - Cross-referenced all 9 SMB setups (43 transcripts) against SETUP_REGISTRY
+   - 3 RVOL corrections: DailyBreakout 1.5→3, SecondDay 2→1.5, MarketPlay 0→1.5
+   - All validGP assignments confirmed accurate
+
+3. EXPANDED SETUP DETECTION (v90.9.1)
+   - calcConfluence setup detection expanded from 5 to 13 auto-detectable patterns
+   - BigDog, BigDogBounce, OpeningDrive, GapGo, OR-Break, DailyBreakout,
+     Failed-BD, ReturnPullback, VWAP-Hold, Pullback-EMA, Momentum, SecondDay, Scalping
+   - 3 remain manual: RS-Override, Rotation-ETF, MarketPlay
+   - Setup tags populate on ALL tickers during normal refresh — zero extra UrlFetch
+
+4. DASHBOARD PHASE 3 — FULL BUILD (v11.16.0 through v11.17.2)
+   a) GP Sizing Badge — colored dollar range pill on GP banner ($3-5K, $8-12K, etc.)
+   b) Active Setups Bar — filtered setup pills below GP, green/yellow/blocked
+   c) Setup Tags on Cards — every ticker card shows matched setup + grade (A/B/C/F)
+   d) Trade Candidates Section — top 8 opportunities ranked by grade then confluence
+      - Surfaces setups you should be looking at NOW
+      - Click any card → opens pre-trade modal
+      - Position dot (●) for held tickers, ⚡ for dynamic tickers
+   e) Pre-Trade Scorecard Modal
+      - 8-check scorecard with traffic lights (GP×Setup, RVOL, VWAP, Confluence,
+        Session, VIX, Sector Exposure, RSI)
+      - Contextual guidance engine — reads specific RED/YELLOW checks, gives
+        concise advice + sizing directive
+      - SMB Playbook cards — collapsible, per-setup: entry logic, exit rules,
+        stops, common mistakes, key insight (all 16 setups)
+      - Auto-filled trade plan: smart stops (ATR/VWAP/OR/EMA), target from R:R,
+        shares from sub-mode sizing
+      - Position awareness: shows if held, entry, P&L, tier context advice
+      - Arrow navigation (◀▶ + keyboard ←→) to flip through candidates
+      - Setup dropdown re-runs scorecard + recalculates stops/targets live
+   f) Quick Grade (client-side) — lightweight 8-check scoring from _tq data
+      - A = 7+ green, 0 red, ≤1 yellow (rare, near-perfect)
+      - B = 6+ green, 0 red (solid)
+      - C = 5+ green, ≤1 red (tradeable with issues)
+      - F = don't trade
+      - Uses real position data for sector exposure check
+   g) Arete Emails section — "📧 Arete Emails · Alpha Chasers"
+      - Full week of emails, toggle by day, today auto-expands
+      - Tickers highlighted and clickable (→ pre-trade modal)
+      - Gmail search: from:arete@aretetrading.ccsend.com newer_than:7d
+   h) Hot Sector 🔥 pills on Active Setups bar (pulsing when sector rotating)
+
+5. QUOTA OPTIMIZATION (v90.10)
+   - CORE full scan interval: 30min → 60min (saves ~2,120 fetches/day)
+   - Smart AH bars: after 2pm, bars only for positions + earnings + flagged
+     tickers via _getAHBarsTickers() (saves ~750/day)
+   - CONF_PEAK_5D: dynamic low-signal deprioritization — tickers that never
+     reach confluence 16 in 5 days get skipped for partial bars (saves ~1,500/day)
+   - Decays 15%/night at EOD, auto-restores when ticker wakes up
+   - Net budget: ~64% utilization with headroom for Dynamic
+
+6. DYNAMIC WATCHLIST (v90.10.1-2)
+   - "Dynamic" tab: 75 rotating tickers from 4 sources
+     - Gap scan: 161 S&P 500 + NASDAQ tickers, 1 UrlFetch batch quote,
+       filter |gap| ≥3% + RVOL ≥2 (SMB-aligned criteria)
+     - Earnings: tickers reporting today/tomorrow not in Config
+     - Arete email: $TICKER extraction from cached email
+     - Intraday RVOL alerts: RVOL ≥3 + 3%+ move, max 10/day
+   - Merges into getWatchlist() as section='DYNAMIC'
+   - Gets full treatment: quotes, bars, confluence, setup detection, grading
+   - EOD cleanup removes transients, keeps positions + flagged
+   - Dashboard shows ⚡ badge with source tooltip
+   - Gap Scan Universe setup via menu: "⚡ Set Gap Scan Universe"
+
+7. HOT SECTOR BOOST (v90.10)
+   - If sector ETF moves ≥1.5% with RVOL ≥1.5, all tickers in that sector
+     get partial bars threshold dropped to 15
+   - Zero extra fetch cost — uses existing quote data
+   - Persists to HOT_SECTORS ScriptProperty → dashboard 🔥 pills
+
+8. RVOL TIME-OF-DAY (v90.10.3)
+   - Per-ticker volume profile system replacing raw RVOL
+   - _VolToday tab: records cumulative volume at each 5-min slot (zero fetches)
+   - _VolProfile tab: 10-day rolling average per ticker per slot
+   - EOD merge with outlier cap (2x prevents earnings distortion)
+   - getRvolTOD() checks per-ticker profile first, falls back to generic curve
+   - Generic curve: front-loaded U-shape (sqrt model)
+   - Bootstraps automatically: generic Day 1-4, per-ticker by Day 5+
+   - All RVOL consumers updated: calcConfluence, gap scan, RVOL alerts, hot sector
+
+9. GITHUB DEPLOYMENTS
+   - v9_dashboard.html — live dashboard (v11.17.2)
+   - v9_submode_rewire.html — sub-mode reference page
+   - v9_phase3_scope.html — Phase 3 build scope document
+
+═══════════════════════════════════════════════════════
+FILES FOR DOWNLOAD / PROJECT UPLOAD
+═══════════════════════════════════════════════════════
+
+1. V9_Confluence_Scanner_v90_10_3.txt — Complete scanner (11,741 lines, 226 functions)
+2. v9_dashboard_v11_17_2.html — Complete dashboard (3,456 lines)
+3. V9_Dynamic_Watchlist_Spec.txt — Build spec for Dynamic system
+4. V9_SubMode_Rewire_Spec.html — Sub-mode rewire reference (deployed to GitHub)
+5. v9_phase3_scope.html — Phase 3 scope document (deployed to GitHub)
+6. v9_urlfetch_audit.html — Quota audit with budget breakdown
+7. Session_Mar4_2026_Summary.txt — This file
+
+═══════════════════════════════════════════════════════
+CURRENT DEPLOY STATUS
+═══════════════════════════════════════════════════════
+
+GAS (Apps Script):
+  - v90.10.3 needs to be pasted and saved (replaces v90.10 deployed earlier)
+  - After paste: run "⚡ Set Gap Scan Universe" from menu (one-time)
+  - _VolToday, _VolProfile, Dynamic tabs auto-create on next refresh
+
+GitHub Pages (Dashboard):
+  - v11.17.2 is LIVE at novakolen-hub.github.io/dundunn/v9_dashboard.html
+  - Cache-bust: ?v=11172
+
+═══════════════════════════════════════════════════════
+WHAT'S NEXT
+═══════════════════════════════════════════════════════
+
+IMMEDIATE (deploy + verify):
+  1. Deploy v90.10.3 to GAS
+  2. Run "⚡ Set Gap Scan Universe" from menu
+  3. Verify Dynamic tab auto-creates and populates on next morning
+  4. Verify _VolToday starts recording volume snapshots
+  5. Run EOD to trigger first _mergeVolProfile() and create _VolProfile
+  6. Verify Arete emails populate in dashboard (needs email cache refresh)
+  7. Test pre-trade modal: click setup tag → scorecard → trade plan
+  8. Confirm RVOL-TOD readings look reasonable vs raw RVOL
+
+NEXT BUILD SESSION:
+  1. TM Book Integration (Phase 3 Component E) — replace TradeStation-direct
+     position data with Trade Management module data in the Book section.
+     Daily limit bar, sync status indicator, entry context on position cards.
+  2. Trade logging — "Log Trade" button in the pre-trade modal that writes
+     the planned trade to the Trades tab with a context snapshot.
+  3. Paper trading workflow — test the full pipeline live for a week:
+     Trade Candidates → modal → scorecard → plan → execute → EOD review.
+  4. RVOL-TOD calibration — after 5 days of profile data, compare per-ticker
+     RVOL-TOD vs raw RVOL. Verify the morning readings make sense.
+  5. Dynamic watchlist tuning — monitor how many tickers surface, whether
+     the gap scan catches real movers, whether earnings tickers are useful.
+  6. Config ticker audit — with Dynamic handling overflow, review whether
+     any low-signal Config tickers should be removed to free more budget.
+
+LONGER TERM:
+  - Flutter mobile app (deferred until web dashboard + TM stabilize)
+  - Remaining SMB playbook transcripts → refined validGP assignments
+  - TradesViz EOD auto-population from TM data
+  - Backtesting framework: did the scorecard predict trade outcomes?
+
+═══════════════════════════════════════════════════════
+KEY DESIGN DECISIONS MADE THIS SESSION
+═══════════════════════════════════════════════════════
+
+- C-Recovery sizing: $3-5K (half of B-level) — structure setups only
+- D-Bottoming/D-Choppy: reduced to $6-9K (was $8-12K inverse)
+- Grade thresholds: A is rare (7G/0R/≤1Y), B is solid (6G/0R), C is 
+  tradeable (5G/≤1R), F is everything else
+- RVOL-TOD: per-ticker profile > generic curve > raw RVOL
+  10-day rolling, 2x outlier cap, generic fallback for bootstrapping
+- Dynamic watchlist: 75 max, 4 sources, EOD cleanup, no permanent trim
+- Full scan interval: 60min (was 30) — high-conf tickers already partial
+- Arete emails: full week by day, not truncated, from:arete@aretetrading.ccsend.com
+- Hot sector: ≥1.5% move + RVOL ≥1.5 on sector ETF → threshold drop to 15
