@@ -239,7 +239,7 @@
 <body>
 <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 <div class="status-bar"><div><span class="pulse pulse-off" id="pl"></span><span id="st">Connecting...</span></div><div id="lu" class="mono">--:--</div></div>
-<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative;cursor:pointer" onmouseenter="showQuotaChart()" onclick="toggleQuotaChart()"><span class="tl">Fetches</span><span class="tv" id="tQ">--</span><div id="quotaPopup" onmouseenter="this.style.display='block'" onmouseleave="if(!_quotaChartPinned)this.style.display='none'" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti" style="position:relative;cursor:pointer" onmouseenter="showApiChart()" onclick="toggleApiChart()"><span class="tl">API $</span><span class="tv" id="tCost">--</span><div id="apiPopup" onmouseenter="this.style.display='block'" onmouseleave="if(!_apiChartPinned)this.style.display='none'" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
+<div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative;cursor:pointer" onclick="toggleQuotaChart()" style="cursor:pointer"><span class="tl">Fetches</span><span class="tv" id="tQ">--</span><div id="quotaPopup"  style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti" style="position:relative;cursor:pointer" onclick="toggleApiChart()" style="cursor:pointer"><span class="tl">API $</span><span class="tv" id="tCost">--</span><div id="apiPopup"  style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
 <h1 id="hdr">📡 V9 Trading Dashboard</h1>
 <p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
@@ -1002,9 +1002,9 @@ function rTimer(d){var t=d.timerState||d;function cd(s){if(s===undefined||s===nu
 
 var _quotaHourly=[],_quotaLog='',_quotaTotal=0,_quotaChartPinned=false;
 
-function showQuotaChart(){_renderQuotaChart();}
-function hideQuotaChart(){_quotaChartPinned=false;$('quotaPopup').style.display='none';}
-function toggleQuotaChart(){_quotaChartPinned=!_quotaChartPinned;if(_quotaChartPinned)_renderQuotaChart();else $('quotaPopup').style.display='none';}
+function showQuotaChart(){_quotaChartPinned=true;_renderQuotaChart();}
+function hideQuotaChart(){_quotaChartPinned=false;$('quotaPopup').style.display='none';var tip=document.getElementById('qcTooltip');if(tip)tip.style.display='none';}
+function toggleQuotaChart(){_quotaChartPinned=!_quotaChartPinned;if(_quotaChartPinned)_renderQuotaChart();else hideQuotaChart();}
 
 function _renderQuotaChart(){
   var el=$('quotaPopup');if(!el)return;
@@ -1177,9 +1177,9 @@ function _renderQuotaChart(){
 
 // ═══ API COST CHART ═══
 var _apiCostHourly=[],_apiCostTotal=0,_apiChartPinned=false;
-function showApiChart(){_renderApiChart();}
+function showApiChart(){_apiChartPinned=true;_renderApiChart();}
 function hideApiChart(){_apiChartPinned=false;$('apiPopup').style.display='none';}
-function toggleApiChart(){_apiChartPinned=!_apiChartPinned;if(_apiChartPinned)_renderApiChart();else $('apiPopup').style.display='none';}
+function toggleApiChart(){_apiChartPinned=!_apiChartPinned;if(_apiChartPinned)_renderApiChart();else hideApiChart();}
 
 function _renderApiChart(){
   var el=$('apiPopup');if(!el)return;
@@ -3908,6 +3908,17 @@ document.addEventListener('click',function(ev){
   card.classList.toggle('card-focus');
   if(card.classList.contains('card-focus')){_focusedTickers.add(tk);}else{_focusedTickers.delete(tk);}
   saveFocused();
+});
+
+// Click outside quota/api popups to close them
+document.addEventListener('click',function(ev){
+  var qp=$('quotaPopup'),ap=$('apiPopup');
+  if(qp&&qp.style.display==='block'){
+    if(!qp.contains(ev.target)&&!ev.target.closest('[onclick*="QuotaChart"]')&&!ev.target.closest('#tmrBar .ti')){hideQuotaChart();}
+  }
+  if(ap&&ap.style.display==='block'){
+    if(!ap.contains(ev.target)&&!ev.target.closest('[onclick*="ApiChart"]')&&!ev.target.closest('#tmrBar .ti')){hideApiChart();}
+  }
 });
 </script>
 </body>
