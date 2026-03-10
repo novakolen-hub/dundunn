@@ -1,6 +1,6 @@
 // ============================================================
-// V9 CONFLUENCE SCANNER v91.5 — Google Apps Script
-// v91.5: + INTERNALS HISTORY CACHE (sparklines for TICK/ADD/ADQD/VOLD/VOLQD)
+// V9 CONFLUENCE SCANNER v91.6 — Google Apps Script
+// v91.6: + INTERNALS HISTORY CACHE + ARETE EMAIL FIX + DIAGNOSTICS (sparklines for TICK/ADD/ADQD/VOLD/VOLQD)
 //   - Setup detection: independent scoring replaces if/else waterfall.
 //     Each of 13 setups scored: base(10) + RVOL(0-5) + conf(0-5) + signal(0-10).
 //     Best score = primary, second = secondary. Pipe-delimited in setup column.
@@ -7776,12 +7776,29 @@ function getDashboardData() {
   try {
     var areteWeekTime = parseInt(props.getProperty('ARETE_EMAILS_WEEK_TIME') || '0');
     var areteAge = Date.now() - areteWeekTime;
-    if (areteAge > 7200000) {
-      try { getAreteFromGmail_(); } catch(ag) { Logger.log('getDashboardData arete refresh: ' + ag.message); }
+    if (areteAge > 7200000 || !props.getProperty('ARETE_EMAILS_WEEK')) {
+      Logger.log('Arete emails: refreshing (age=' + Math.round(areteAge/60000) + 'min, hasCache=' + !!props.getProperty('ARETE_EMAILS_WEEK') + ')');
+      try { 
+        getAreteFromGmail_();
+        Logger.log('Arete emails: refresh complete, count=' + (JSON.parse(props.getProperty('ARETE_EMAILS_WEEK') || '[]')).length);
+      } catch(ag) { 
+        Logger.log('Arete emails ERROR: ' + ag.message + ' | stack: ' + ag.stack);
+        state.areteEmailError = ag.message;
+      }
     }
     var areteWeekRaw = props.getProperty('ARETE_EMAILS_WEEK');
-    if (areteWeekRaw) state.areteEmails = JSON.parse(areteWeekRaw);
-  } catch(ae) { state.areteEmails = []; }
+    if (areteWeekRaw) {
+      state.areteEmails = JSON.parse(areteWeekRaw);
+      Logger.log('Arete emails: sending ' + state.areteEmails.length + ' to dashboard');
+    } else {
+      state.areteEmails = [];
+      Logger.log('Arete emails: EMPTY — no ARETE_EMAILS_WEEK in properties');
+    }
+  } catch(ae) { 
+    state.areteEmails = []; 
+    state.areteEmailError = ae.message;
+    Logger.log('Arete emails OUTER ERROR: ' + ae.message);
+  }
   
   // ── First narrative of day (for retrospective) ──
   var azToday = Utilities.formatDate(new Date(), 'America/Phoenix', 'yyyy-MM-dd');
@@ -9751,6 +9768,51 @@ function clearWeekendPulseCache() {
   props.deleteProperty('PULSE_ACTIVE_SESSIONS');
   props.deleteProperty('PULSE_LAST_UPDATE');
   SpreadsheetApp.getUi().alert('Weekend Pulse caches cleared.');
+}
+
+
+// ── Manual Arete test — run from Script Editor to diagnose ──
+function testAreteEmails() {
+  try {
+    Logger.log('Testing Arete email search...');
+    
+    // Test 1: Direct search
+    var threads1 = GmailApp.search('from:arete@aretetrading.ccsend.com newer_than:7d', 0, 7);
+    Logger.log('Search 1 (ccsend.com): ' + threads1.length + ' threads');
+    
+    // Test 2: Broader search
+    var threads2 = GmailApp.search('from:arete newer_than:7d', 0, 7);
+    Logger.log('Search 2 (broader): ' + threads2.length + ' threads');
+    
+    // Test 3: Even broader
+    var threads3 = GmailApp.search('arete newer_than:7d', 0, 7);
+    Logger.log('Search 3 (any mention): ' + threads3.length + ' threads');
+    
+    // Test 4: Check what we actually have
+    if (threads2.length > 0) {
+      var msg = threads2[0].getMessages()[0];
+      Logger.log('Latest: from=' + msg.getFrom() + ' subject=' + msg.getSubject() + ' date=' + msg.getDate());
+    }
+    
+    // Test 5: Check stored data
+    var stored = PropertiesService.getScriptProperties().getProperty('ARETE_EMAILS_WEEK');
+    Logger.log('Stored ARETE_EMAILS_WEEK: ' + (stored ? stored.length + ' chars, ' + JSON.parse(stored).length + ' emails' : 'NULL'));
+    
+    // Test 6: Force refresh
+    Logger.log('Force refreshing...');
+    PropertiesService.getScriptProperties().deleteProperty('ARETE_GMAIL_CACHE_TIME');
+    PropertiesService.getScriptProperties().deleteProperty('ARETE_EMAILS_WEEK_TIME');
+    var result = getAreteFromGmail_();
+    Logger.log('Refresh result: ' + (result ? result.substring(0, 100) + '...' : 'null'));
+    
+    var afterStore = PropertiesService.getScriptProperties().getProperty('ARETE_EMAILS_WEEK');
+    Logger.log('After refresh: ' + (afterStore ? JSON.parse(afterStore).length + ' emails' : 'NULL'));
+    
+    SpreadsheetApp.getUi().alert('Check Execution Log for results');
+  } catch(e) {
+    Logger.log('testAreteEmails ERROR: ' + e.message + '\n' + e.stack);
+    SpreadsheetApp.getUi().alert('Error: ' + e.message);
+  }
 }
 
 // ==================== END WEEKEND PULSE MODULE ====================
