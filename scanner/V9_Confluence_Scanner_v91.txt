@@ -1,6 +1,6 @@
 // ============================================================
-// V9 CONFLUENCE SCANNER v91.1 — Google Apps Script
-// v91.1: SETUP SCORING ENGINE + ARETE FIX + CATEGORY QUOTA TRACKING + % EQUITY SIZING
+// V9 CONFLUENCE SCANNER v91.2 — Google Apps Script
+// v91.2: + % EQUITY SIZING + DYNAMIC ET/DST MARKET TIMING
 //   - Setup detection: independent scoring replaces if/else waterfall.
 //     Each of 13 setups scored: base(10) + RVOL(0-5) + conf(0-5) + signal(0-10).
 //     Best score = primary, second = secondary. Pipe-delimited in setup column.
@@ -1215,8 +1215,9 @@ function getRvolTOD(volume, prevDayVolume, ticker, ss) {
   var azM = parseInt(Utilities.formatDate(now, SCANNER_TIMEZONE, 'm'), 10);
   var azMin = azH * 60 + azM;
   var slot = Math.floor(azMin / 5) * 5;
-  if (slot < 450) slot = 450;
-  if (slot > 840) return prevDayVolume > 0 ? volume / prevDayVolume : 1.0; // AH: raw RVOL
+  var _rOff = _getMarketOffset();
+  if (slot < (450 - _rOff)) slot = 450 - _rOff;
+  if (slot > (840 - _rOff)) return prevDayVolume > 0 ? volume / prevDayVolume : 1.0; // AH: raw RVOL
 
   // Try per-ticker profile first
   if (ticker && ss) {
@@ -1237,8 +1238,8 @@ function getRvolTOD(volume, prevDayVolume, ticker, ss) {
 // Generic fallback curve (market-wide U-shape)
 function _genericVolPct(slot) {
   // First 30min: ~25% of volume. Midday: gradual. Last 30min: ~15%
-  var elapsed = slot - 450; // minutes since market open
-  var total = 840 - 450;    // total minutes
+  var elapsed = slot - (450 - _rOff); // minutes since market open
+  var total = (840 - _rOff) - (450 - _rOff);    // total minutes
   if (elapsed <= 0) return 0.01;
   if (elapsed >= total) return 1.0;
   // U-shape model: heavier at open and close
@@ -1420,11 +1421,17 @@ const VOLDQ_DIVISOR = 1000;
 //
 // Estimated daily budget: ~10,600 fetches (53% of 20K limit)
 
-const PHASE_CONFIG = {
-  PRE_MARKET:   { start: 390, end: 450, threshold: 20, fullInterval: 0, pmWatch: true },  // 6:30-7:30
-  MARKET_OPEN:  { start: 450, end: 510, threshold: 20, fullInterval: 6, pmWatch: true },  // 7:30-8:30
-  CORE_SESSION: { start: 510, end: 840, threshold: 22, fullInterval: 12, pmWatch: true },  // 8:30-2:00 (full scan every 60min)
-  AFTER_HOURS:  { start: 840, end: 960, threshold: 99, fullInterval: 0, pmWatch: true },  // 2:00-4:00 (smart AH: positions + earnings only)
+function _buildPhaseConfig() {
+  var off = _getMarketOffset();
+  return {
+    PRE_MARKET:   { start: 390 - off, end: 450 - off, threshold: 20, fullInterval: 0, pmWatch: true },
+    MARKET_OPEN:  { start: 450 - off, end: 510 - off, threshold: 20, fullInterval: 6, pmWatch: true },
+    CORE_SESSION: { start: 510 - off, end: 840 - off, threshold: 22, fullInterval: 12, pmWatch: true },
+    AFTER_HOURS:  { start: 840 - off, end: 960 - off, threshold: 99, fullInterval: 0, pmWatch: true }
+  };
+}
+var PHASE_CONFIG = _buildPhaseConfig();
+const _PC_INIT = {  // reference — actual from _buildPhaseConfig()
 };
 
 // AH smart filter: only these get bars after 2pm
@@ -1551,6 +1558,26 @@ const PM_WATCHLIST_SECTIONS = new Set([
 ]);
 
 const SCANNER_TIMEZONE = 'America/Phoenix'; // Arizona time (no DST)
+
+// ── Dynamic ET↔AZ offset: detects EDT vs EST automatically ──
+// AZ is always UTC-7. During EST (Nov-Mar): 2h behind ET, market 7:30-2:00 AZ.
+// During EDT (Mar-Nov): 3h behind ET, market 6:30-1:00 AZ.
+// Returns 60 during EDT, 0 during EST. Subtract from all EST-based AZ minutes.
+var _cachedOffset = null;
+function _etDstOffset() {
+  var now = new Date();
+  var azH = parseInt(Utilities.formatDate(now, 'America/Phoenix', 'H'), 10);
+  var etH = parseInt(Utilities.formatDate(now, 'America/New_York', 'H'), 10);
+  var diff = ((etH - azH) + 24) % 24;
+  return diff >= 3 ? 60 : 0;
+}
+function _getMarketOffset() {
+  if (_cachedOffset === null) _cachedOffset = _etDstOffset();
+  return _cachedOffset;
+}
+function _resetMarketOffset() { _cachedOffset = null; }
+function _marketOpenAZ()  { return 450 - _getMarketOffset(); }
+function _marketCloseAZ() { return 840 - _getMarketOffset(); }
 
 // --- URLFETCH QUOTA TRACKING (Rolling 24-Hour Window) ---
 // Google's 20K UrlFetch quota resets on a ROLLING 24-hour basis, not at midnight.
@@ -2789,6 +2816,8 @@ function forceFullScan() {
 }
 
 function updateSheet() {
+  _resetMarketOffset(); // Recalculate ET DST offset each cycle
+  PHASE_CONFIG = _buildPhaseConfig(); // Rebuild phase gates
   const props = PropertiesService.getScriptProperties();
   
   // Clear Weekend Pulse mode — main scanner is taking over
@@ -5322,8 +5351,8 @@ function updateMarketTab() {
 // Cleared at market open each day. All watchlist tickers tracked.
 
 var SPARK_INTERVAL = 5; // minutes between samples
-var SPARK_START = 7 * 60 + 30; // 7:30 AM AZ = minute 450
-var SPARK_END = 14 * 60;       // 2:00 PM AZ = minute 840
+var SPARK_START = 450 - _getMarketOffset(); // 7:30 (EST) or 6:30 (EDT) AZ
+var SPARK_END = 840 - _getMarketOffset();   // 2:00 (EST) or 1:00 (EDT) AZ
 var SPARK_SLOTS = Math.floor((SPARK_END - SPARK_START) / SPARK_INTERVAL) + 1; // 79 slots
 
 function _updateSparkCache(ss, azHour, azMinute) {
@@ -7058,14 +7087,15 @@ function updateDashboard() {
   var azDow  = parseInt(Utilities.formatDate(now, SCANNER_TIMEZONE, 'u'), 10);
   
   if (!force && azDow >= 6) return; // Weekend
-  if (!force && (azTime < 390 || azTime > 960)) return; // 6:30 AM - 4:00 PM AZ
+  var _off = _getMarketOffset();
+  if (!force && (azTime < (390 - _off) || azTime > (960 - _off))) return; // dynamic market hours
   
   // Determine session label
   var session = 'PRE';
-  if (azTime >= 450 && azTime < 540) session = 'OPEN';      // 7:30-9:00
-  else if (azTime >= 540 && azTime < 780) session = 'CORE';  // 9:00-1:00
-  else if (azTime >= 780 && azTime < 840) session = 'POWER'; // 1:00-2:00
-  else if (azTime >= 840) session = 'AH';                     // 2:00+
+  if (azTime >= (450 - _off) && azTime < (540 - _off)) session = 'OPEN';
+  else if (azTime >= (540 - _off) && azTime < (780 - _off)) session = 'CORE';
+  else if (azTime >= (780 - _off) && azTime < (840 - _off)) session = 'POWER';
+  else if (azTime >= (840 - _off)) session = 'AH';
   
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   
@@ -10139,11 +10169,12 @@ function snapshotContext(trigger, tradeNum, tickerForContext) {
   var _tM = parseInt(Utilities.formatDate(now, SCANNER_TIMEZONE, 'm'), 10);
   var azMin = _tH * 60 + _tM;
   var sessionPhase = 'OFF';
-  if (azMin >= 360 && azMin < 450) sessionPhase = 'PM';
-  else if (azMin >= 450 && azMin < 540) sessionPhase = 'OPEN';
-  else if (azMin >= 540 && azMin < 780) sessionPhase = 'CORE';
-  else if (azMin >= 780 && azMin < 840) sessionPhase = 'POWER';
-  else if (azMin >= 840 && azMin < 960) sessionPhase = 'AH';
+  var _gpOff = _getMarketOffset();
+  if (azMin >= (360 - _gpOff) && azMin < (450 - _gpOff)) sessionPhase = 'PM';
+  else if (azMin >= (450 - _gpOff) && azMin < (540 - _gpOff)) sessionPhase = 'OPEN';
+  else if (azMin >= (540 - _gpOff) && azMin < (780 - _gpOff)) sessionPhase = 'CORE';
+  else if (azMin >= (780 - _gpOff) && azMin < (840 - _gpOff)) sessionPhase = 'POWER';
+  else if (azMin >= (840 - _gpOff) && azMin < (960 - _gpOff)) sessionPhase = 'AH';
   
   // Bridge data (IVR, F&G, NAAIM, etc.) from cached properties
   var props = PropertiesService.getScriptProperties();
@@ -11059,11 +11090,12 @@ function _currentSessionPhase() {
   var h = parseInt(Utilities.formatDate(now, SCANNER_TIMEZONE, 'H'), 10);
   var m = parseInt(Utilities.formatDate(now, SCANNER_TIMEZONE, 'm'), 10);
   var azMin = h * 60 + m;
-  if (azMin >= 360 && azMin < 450) return 'PM';
-  if (azMin >= 450 && azMin < 540) return 'OPEN';
-  if (azMin >= 540 && azMin < 780) return 'CORE';
-  if (azMin >= 780 && azMin < 840) return 'POWER';
-  if (azMin >= 840 && azMin < 960) return 'AH';
+  var off = _getMarketOffset();
+  if (azMin >= (360 - off) && azMin < (450 - off)) return 'PM';
+  if (azMin >= (450 - off) && azMin < (540 - off)) return 'OPEN';
+  if (azMin >= (540 - off) && azMin < (780 - off)) return 'CORE';
+  if (azMin >= (780 - off) && azMin < (840 - off)) return 'POWER';
+  if (azMin >= (840 - off) && azMin < (960 - off)) return 'AH';
   return 'OFF';
 }
 
