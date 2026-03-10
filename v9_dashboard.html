@@ -1058,7 +1058,7 @@ function _renderQuotaChart(){
     h+='<line x1="'+padL+'" y1="'+gy+'" x2="'+(cW-padR)+'" y2="'+gy+'" stroke="#1c2333" stroke-width="1"/>';
     h+='<text x="'+(padL-3)+'" y="'+(gy+3)+'" fill="#c4cad4" font-size="8" font-family="JetBrains Mono,monospace" text-anchor="end">'+gv+'</text>';
   }
-  var _prevDay='';
+  var _prevDay='',_prevDay2='';
   for(var i=0;i<n;i++){
     var d=data[i];var x=padL+gap+i*(barW+gap);
     var hasCats=d.c&&Object.keys(d.c).some(function(k){return d.c[k]>0;});
@@ -1071,8 +1071,11 @@ function _renderQuotaChart(){
     }
     if(barW>=8&&d.v>0){var ty=padT+plotH-(d.v/yMax*plotH)-3;if(ty<padT+8)ty=padT+plotH-(d.v/yMax*plotH)+10;var vLbl=d.v>=1000?(Math.ceil(d.v/100)/10).toFixed(1)+'k':String(d.v);h+='<text x="'+(x+barW/2)+'" y="'+ty+'" fill="#e6edf3" font-size="7" font-weight="600" font-family="JetBrains Mono,monospace" text-anchor="middle">'+vLbl+'</text>';}
     h+='<rect class="qc-hover" x="'+x+'" y="'+padT+'" width="'+Math.max(barW,4)+'" height="'+plotH+'" fill="transparent" data-idx="'+i+'"/>';
+    var _isNewDay2=(dayPart!==_prevDay2&&_prevDay2!=='');
     var lblI=n>60?12:n>30?6:n>16?4:n>8?2:1;
-    if(i%lblI===0||i===n-1){var lbl=d.h||'';if(lbl.length>8)lbl=lbl.replace(/ /g,'');h+='<text x="'+(x+barW/2)+'" y="'+(cH-3)+'" fill="#c4cad4" font-size="'+(barW>=6?'8':'7')+'" font-family="JetBrains Mono,monospace" text-anchor="middle">'+e(lbl)+'</text>';}
+    if(_isNewDay2){h+='<text x="'+(x+barW/2)+'" y="'+(cH-3)+'" fill="#58a6ff" font-size="8" font-weight="600" font-family="JetBrains Mono,monospace" text-anchor="middle">'+e(dayPart)+'</text>';}
+    else if(i%lblI===0||i===n-1){var tp=(d.h||'').split(' ')[1]||'';if(tp)h+='<text x="'+(x+barW/2)+'" y="'+(cH-3)+'" fill="#7d8590" font-size="7" font-family="JetBrains Mono,monospace" text-anchor="middle">'+e(tp.toLowerCase())+'</text>';}
+    _prevDay2=dayPart;
   }
   h+='</svg>';
 
