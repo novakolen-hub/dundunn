@@ -1,4 +1,4 @@
-<!-- v11.18.8 cache-bust 1772729951.8953855 -->
+<!-- v11.18.9 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -261,6 +261,7 @@
 <div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative;cursor:pointer" onclick="toggleQuotaChart()"><span class="tl">Fetches</span><span class="tv" id="tQ">--</span><div id="quotaPopup"  style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti" style="position:relative;cursor:pointer" onclick="toggleApiChart()"><span class="tl">API $</span><span class="tv" id="tCost">--</span><div id="apiPopup"  style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
 <h1 id="hdr">📡 V9 Trading Dashboard</h1>
 <p class="dim" style="font-size:12px;margin-top:-8px;position:relative;z-index:10" id="sub">Loading...</p>
+<div id="colExpBar" style="text-align:right;margin:-4px 0 6px;font-size:11px"><a href="javascript:void(0)" id="btnColAll" style="color:#58a6ff;text-decoration:none">Collapse All</a> · <a href="javascript:void(0)" id="btnExpAll" style="color:#58a6ff;text-decoration:none">Expand All</a></div>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
 <div id="sGP"></div>
 
@@ -1334,7 +1335,7 @@ function initSparkTips(){
 function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),mn='Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase);
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span style="float:right;font-size:11px"><a href="#" data-action="collapse" style="color:#58a6ff">Collapse All</a> · <a href="#" data-action="expand" style="color:#58a6ff">Expand All</a></span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>');}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -4021,8 +4022,8 @@ var _isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 function toggleGroup(name){var body=document.getElementById('grpBody_'+name);var arrow=document.getElementById('grpArrow_'+name);if(!body)return;var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';if(arrow)arrow.textContent=isHidden?'\u25bc':'\u25b6';try{localStorage.setItem('v9_grp_'+name,isHidden?'1':'0');}catch(e){}}
 function _restoreGroups(){var g=['market','sectors','stocks','intel','positions','reference'];for(var i=0;i<g.length;i++){try{var s=localStorage.getItem('v9_grp_'+g[i]);if(s==='0'){var b=document.getElementById('grpBody_'+g[i]);var a=document.getElementById('grpArrow_'+g[i]);if(b)b.style.display='none';if(a)a.textContent='\u25b6';}}catch(e){}}}
 _restoreGroups();
-// Delegated handler for Collapse All / Expand All (persists through innerHTML rebuilds)
-document.getElementById('sub').addEventListener('click',function(ev){var a=ev.target.closest('a[data-action]');if(!a)return;ev.preventDefault();if(a.dataset.action==='collapse')toggleAll(true);else if(a.dataset.action==='expand')toggleAll(false);});
+document.getElementById('btnColAll').onclick=function(){toggleAll(true);};
+document.getElementById('btnExpAll').onclick=function(){toggleAll(false);};
 function playYT(vid,el){if(_isMobile){window.open('https://youtu.be/'+vid,'_blank');}else{el.innerHTML='<iframe src="https://www.youtube.com/embed/'+vid+'?autoplay=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen></iframe>';}}
 function playYTInline(vid,idx){var el=$('ytPlayer_'+idx);if(!el)return;if(_isMobile){window.open('https://youtu.be/'+vid,'_blank');return;}el.style.paddingBottom='56.25%';el.innerHTML='<iframe src="https://www.youtube.com/embed/'+vid+'?autoplay=1&rel=0" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allow="autoplay;encrypted-media" allowfullscreen></iframe>';}
 function _wireInstToggles(){
