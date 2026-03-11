@@ -1,4 +1,4 @@
-<!-- v11.18.4 cache-bust 1772729951.8953855 -->
+<!-- v11.18.5 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -265,13 +265,13 @@
 <div id="sGP"></div>
 
 <div id="sToday"></div>
+<div id="sStory"></div>
 
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> THE MARKET</div>
 <div class="grp-body" id="grpBody_market">
 <div id="sBreadth"></div>
 <div id="sInst"></div>
-<div id="sStory"></div>
 </div></div>
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('sectors')"><span class="grp-arrow" id="grpArrow_sectors">▼</span> THE SECTORS</div>
@@ -1671,39 +1671,6 @@ function rToday(d){
     h+='</div>';
   }
 
-  // ── The Story (narrative) ──
-  var nar=d.dashboardNarrative||'';
-  if(nar){
-    var sec2=parseN(nar);
-    var story=gN(sec2,['THE STORY','STORY','MARKET STORY']);
-    if(story){
-      hasContent=true;
-      h+='<div style="margin-top:8px">';
-      h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#d2a8ff;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcd6 THE STORY <span class="dim" style="font-weight:400;font-size:9px;letter-spacing:0">'+e(d.dashboardTimestamp||'')+' \u00b7 '+e(d.dashboardSession||'')+'</span></div>';
-      h+='<div class="story-box" style="font-size:12px;line-height:1.6">'+fmt(story)+'</div>';
-      // Retrospective — collapsed by default INSIDE today
-      var retro2=gN(sec2,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
-      var firstRetro=null;
-      if(!retro2 && d.firstNarrativeOfDay && d.firstNarrativeOfDay !== nar){
-        var firstSec3=parseN(d.firstNarrativeOfDay);
-        firstRetro=gN(firstSec3,['THE STORY','STORY','MARKET STORY']);
-      }
-      if(retro2||firstRetro){
-        var retroContent=retro2||firstRetro;
-        var retroLabel=retro2?'Story Update':'First Story of Day';
-        var retroTs=retro2?'':(d.firstNarrativeTs||'');
-        h+='<div style="margin-top:6px">';
-        h+='<div style="cursor:pointer;font-size:10px;color:#d29922;font-family:JetBrains Mono,monospace;padding:4px 0" onclick="var b=document.getElementById(\'todayRetro\');b.style.display=b.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'span\').textContent=b.style.display===\'none\'?\'\u25b6\':\'\u25bc\'">';
-        h+='<span>\u25b6</span> \ud83d\udccb '+retroLabel;
-        if(retroTs)h+=' <span class="dim" style="font-weight:400">'+e(retroTs)+'</span>';
-        h+='</div>';
-        h+='<div id="todayRetro" style="display:none"><div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:11px;line-height:1.5;margin-top:4px">'+fmt(retroContent)+'</div></div>';
-        h+='</div>';
-      }
-      h+='</div>';
-    }
-  }
-
   // ── Key news (recent, with links) — RIGHT AFTER STORY ──
   var newsArr=d.news||[];
   var nowSec=Date.now()/1000;
@@ -2178,7 +2145,7 @@ function rStory(d){
   var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
   var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'story\')"><span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span> The Story</h2><div id="secBody_story" style="'+(isColSt?'display:none':'')+'">';h+='<p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
-  var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="dim" style="font-size:11px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById(\'sToday\').scrollIntoView({behavior:\'smooth\'})">\u2191 Current story is in TODAY section \u2014 click to scroll</div>';
+  var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
   h+='</div>';$('sStory').innerHTML=h;
 }
 
