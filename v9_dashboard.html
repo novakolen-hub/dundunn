@@ -1,4 +1,4 @@
-<!-- v11.20.4 cache-bust 1772729951.8953855 -->
+<!-- v11.20.1 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -266,15 +266,12 @@
 <div id="sGP"></div>
 
 <div id="sToday"></div>
-<div id="sStory"></div>
-<div id="sNews"></div>
+<div id="sStory" style="display:none"></div>
 
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> MARKET HEALTH</div>
 <div class="grp-body" id="grpBody_market">
 <div id="sBreadth"></div>
-<div id="sInst"></div>
-<div id="sRatios"></div>
 </div></div>
 <!-- sectors merged into breadth -->
 <div class="sec-group">
@@ -1668,6 +1665,8 @@ function rToday(d){
   }
 
   // ── The Story (rendered by rStory into this placeholder) ──
+  h+='<div id="sStoryToday" style="margin-top:8px"></div>';
+  h+='<div id="sNewsToday" style="margin-top:8px"></div>';
   hasContent=true;
 
   // ── Today's Econ Events — HIGH IMPACT, reported/pending state ──
@@ -2096,11 +2095,12 @@ function rBreadth(d){
   h+='</div>';
   h+='</div>';
 
-  // ── CONFIRMATION (compact table with sparklines + Arete S/R) ──
+  // ── CONFIRMATION (heatmap tiles + Arete S/R) ──
   var _bn=gS(d,'BENCHMARKS'),_fut=gS(d,'FUTURES'),_comm=gS(d,'COMMODITIES');
   if(_bn.length||_fut.length||_comm.length){
     var _nar2=d.dashboardNarrative||'',_sec2=parseN(_nar2),_sessAn=gN(_sec2,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
     var _anMap={};if(_sessAn){var _lines=_sessAn.replace(/\|/g,'\n').split('\n');for(var _li=0;_li<_lines.length;_li++){var _m=_lines[_li].trim().match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(_m){_anMap[_m[1].replace(/\*/g,'').trim()]=_m[2].trim();}}}
+    // Arete key levels lookup
     var _arLvl={};
     var _aa=d.areteAnalysis||{};
     if(_aa.keyLevels){for(var _ki=0;_ki<_aa.keyLevels.length;_ki++){var _kl=_aa.keyLevels[_ki];if(_kl.ticker)_arLvl[_kl.ticker.toUpperCase()]=_kl;}}
@@ -2110,64 +2110,74 @@ function rBreadth(d){
     h+='<span id="secArrow_confirm" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColConf?'-90':'0')+'deg)">\u25bc</span> Confirmation</h2>';
     h+='<div id="secBody_confirm" style="'+(isColConf?'display:none':'')+'">';
 
-    // Row helper
-    function _confRow(sym,last,chgStr,arLvl,analysis,label){
-      var r='<tr>';
-      r+='<td class="white bold tc" style="white-space:nowrap">'+e(sym)+(label?' <span class="dim" style="font-size:9px">'+e(label)+'</span>':'')+'</td>';
-      r+='<td class="mono" style="font-size:11px">'+e(last||'')+'</td>';
-      r+='<td style="font-size:11px">'+pct(chgStr)+'</td>';
-      r+='<td style="width:50px">'+sparkSvg(sym.replace('$',''),48,16)+'</td>';
+    // Helper: build one heatmap tile with optional Arete S/R
+    function _confTile(sym,last,chgStr,arLvl,analysis){
+      var cn=parseFloat(String(chgStr).replace('%',''))||0;
+      var cls=hc(cn);
+      var t='<div class="'+cls+'" style="padding:6px 4px;text-align:center;min-width:0">';
+      t+='<div style="font-weight:700;font-size:11px">'+e(sym)+'</div>';
+      if(last)t+='<div style="font-size:10px;opacity:0.8">'+e(last)+'</div>';
+      t+='<div style="font-size:10px;font-weight:600">'+(cn>0?'+':'')+cn.toFixed(2)+'%</div>';
       if(arLvl){
         var typ=(arLvl.type||'').toLowerCase();
         var lbl=typ.indexOf('support')>=0?'S':typ.indexOf('resist')>=0?'R':'Lvl';
-        r+='<td style="font-size:10px;white-space:nowrap"><span style="color:#e3b341">'+lbl+': '+arLvl.level+'</span></td>';
-      } else {
-        r+='<td></td>';
+        t+='<div style="font-size:8px;margin-top:2px;color:#e3b341;font-weight:600">'+lbl+': '+arLvl.level+'</div>';
       }
-      r+='</tr>';
-      return r;
+      if(analysis)t+='<div style="font-size:8px;margin-top:1px;color:#7d8590;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+e(analysis)+'">'+e(analysis.substring(0,30))+'</div>';
+      t+='</div>';
+      return t;
     }
 
-    h+='<div class="info-box" style="padding:0">';
-
     // ── Indexes ──
-    h+='<table style="font-size:11px;width:100%">';
-    h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding:6px 10px 2px;border:none;font-weight:700;letter-spacing:0.5px">INDEXES</td></tr>';
+    h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Indexes</span></div>';
+    h+='<div class="heatmap" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">';
     var _idxKeys=['SPY','QQQ','DIA','IWM'];
     for(var _bk=0;_bk<_idxKeys.length;_bk++){
       var _it=fS(_bn,_idxKeys[_bk]);
-      if(_it){h+=_confRow(_it.sym,_it.val,_it.chg,_arLvl[_it.sym]||null,_anMap[_it.sym]||'');}
+      if(_it){h+=_confTile(_it.sym,_it.val,_it.chg,_arLvl[_it.sym]||null,_anMap[_it.sym]||'');}
     }
+    h+='</div>';
 
-    // ── Risk ──
+    // ── Risk / Volatility ──
     var _bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),_vix2=fS(_bd2,'$VIX'),_dxy2=fS(_bd2,'$DXY');
-    var hasRisk=!!(_vix2||d.tsVix||_dxy2);
-    if(hasRisk){
-      h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding:8px 10px 2px;border:none;font-weight:700;letter-spacing:0.5px">RISK</td></tr>';
-      if(_vix2||d.tsVix){
-        var _vD=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');
-        var _vS=d.tsVix?'TS':'Y';
-        var _vC=(_vix2&&_vix2.chg)?_vix2.chg:'';
-        h+=_confRow('VIX',_vD,_vC,_arLvl['VIX']||null,_anMap['VIX']||_anMap['$VIX']||'',_vS);
-      }
-      if(_dxy2){h+=_confRow('DXY',_dxy2.val,_dxy2.chg,_arLvl['DXY']||null,_anMap['DXY']||_anMap['$DXY']||'');}
+    var _riskItems=[];
+    if(_vix2||d.tsVix){
+      var _vD=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');
+      var _vC=(_vix2&&_vix2.chg)?_vix2.chg:'';
+      // VIX is inverted — down is green for markets
+      var _vN=parseFloat(String(_vC).replace('%',''))||0;
+      _riskItems.push({sym:'VIX',last:_vD,chg:String(-_vN),arLvl:_arLvl['VIX']||null,an:_anMap['VIX']||_anMap['$VIX']||''});
+    }
+    if(_dxy2){_riskItems.push({sym:'DXY',last:_dxy2.val,chg:_dxy2.chg,arLvl:_arLvl['DXY']||null,an:_anMap['DXY']||_anMap['$DXY']||''});}
+    if(_riskItems.length){
+      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Risk</span></div>';
+      h+='<div class="heatmap" style="grid-template-columns:repeat('+_riskItems.length+',1fr);margin-bottom:8px">';
+      for(var _ri=0;_ri<_riskItems.length;_ri++){var _r=_riskItems[_ri];h+=_confTile(_r.sym,_r.last,_r.chg,_r.arLvl,_r.an);}
+      h+='</div>';
     }
 
     // ── Commodities ──
     if(_comm.length){
-      h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding:8px 10px 2px;border:none;font-weight:700;letter-spacing:0.5px">COMMODITIES</td></tr>';
-      for(var _ci=0;_ci<_comm.length;_ci++){h+=_confRow(_comm[_ci].sym,_comm[_ci].val,_comm[_ci].chg,_arLvl[_comm[_ci].sym]||null,_anMap[_comm[_ci].sym]||'');}
+      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Commodities</span></div>';
+      h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_comm.length,4)+',1fr);margin-bottom:8px">';
+      for(var _ci=0;_ci<_comm.length;_ci++){h+=_confTile(_comm[_ci].sym,_comm[_ci].val,_comm[_ci].chg,_arLvl[_comm[_ci].sym]||null,_anMap[_comm[_ci].sym]||'');}
+      h+='</div>';
     }
 
     // ── Futures ──
     if(_fut.length){
-      h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding:8px 10px 2px;border:none;font-weight:700;letter-spacing:0.5px">FUTURES</td></tr>';
-      for(var _fi=0;_fi<_fut.length;_fi++){h+=_confRow(_fut[_fi].sym,_fut[_fi].val,_fut[_fi].chg,null,null);}
+      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Futures</span></div>';
+      h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_fut.length,4)+',1fr);margin-bottom:8px">';
+      for(var _fi=0;_fi<_fut.length;_fi++){h+=_confTile(_fut[_fi].sym,_fut[_fi].val,_fut[_fi].chg,null,null);}
+      h+='</div>';
     }
 
-    h+='</table></div></div>';
+    h+='</div>';
   }
 
+  // ── Placeholders for Inst Pulse and Intermarket (rendered by their own functions) ──
+  h+='<div id="sBreadthInst"></div>';
+  h+='<div id="sBreadthInter"></div>';
 
   h+='</div></div>';$('sBreadth').innerHTML=h;
 }
@@ -2181,7 +2191,11 @@ function rSectors(d){$('sSectors')&&($('sSectors').innerHTML='');}
 // ═══ THE STORY + GAMEPLAN STATUS (colored) ═══
 function rStory(d){
   // Render into TODAY section placeholder
-  var el=$('sStory');if(!el)return;
+  var el=$('sStoryToday');
+  // Also clear the old sStory location
+  var oldEl=$('sStory');if(oldEl)oldEl.innerHTML='';
+  if(!el){el=$('sStory');} // fallback if TODAY hasn't rendered yet
+  if(!el)return;
   var nar=d.dashboardNarrative||'';if(!nar){el.innerHTML='<div class="info-box"><p class="dim">No Opus narrative yet. Run \ud83d\udce1 Dashboard Now.</p></div>';return}
   var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
   var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
@@ -2523,7 +2537,7 @@ function rEarnings(d){
 }
 function rNews(d){
   var news=d.news||[];
-  var _newsEl=$('sNews');
+  var _newsEl=$('sNewsToday')||$('sNews');
   if(!news.length){if(_newsEl)_newsEl.innerHTML='';return;}
   // Build symbol sets
   var wlData=d.watchlistSymbols||{};
@@ -2808,7 +2822,7 @@ var IM_REF={
 'SMH/QQQ':{what:'Semis vs Nasdaq',up:'semis leading tech',dn:'semis lagging',tickers:['SMH','NVDA','AMD','MU','AVGO']}
 };
 function rRatios(d){
-  var r=gS(d,'INTERMARKET RATIOS');if(!r.length){$('sRatios').innerHTML='';return}
+  var r=gS(d,'INTERMARKET RATIOS');if(!r.length){var _re=$('sBreadthInter')||$('sRatios');if(_re)_re.innerHTML='';return}
   var nar=d.dashboardNarrative||'',sec=parseN(nar),imRead=gN(sec,['INTERMARKET READ','INTERMARKET','RATIOS','CROSS-MARKET','MACRO']);
   var isCol=true;try{var _v=localStorage.getItem('sec_col_inter');if(_v!==null)isCol=_v==='1';}catch(e){}
   var tkCol=true;try{var _v=localStorage.getItem('sec_col_intertk');if(_v!==null)tkCol=_v==='1';}catch(e){}
@@ -2828,12 +2842,12 @@ function rRatios(d){
       for(var t=0;t<Math.min(ref.tickers.length,4);t++)h+=tkLink(ref.tickers[t])+' ';
       h+='</div>';}
     h+='</div>';}
-  h+='</div></div></div>';$('sRatios').innerHTML=h;
+  h+='</div></div></div>';var _re2=$('sBreadthInter')||$('sRatios');if(_re2)_re2.innerHTML=h;
 }
 // ═══ COACHING ═══
 // ═══════ INSTITUTIONAL PULSE ═══════
 function rInst(d){
-  var ip=d.instPulse;if(!ip||!ip.data){$('sInst').innerHTML='';return}
+  var ip=d.instPulse;if(!ip||!ip.data){var _ie=$('sBreadthInst')||$('sInst');if(_ie)_ie.innerHTML='';return}
   var vol=ip.data.vol_regime||{},fg=ip.data.fear_greed||{},
       pc=(ip.data.put_call&&ip.data.put_call.cboe)?ip.data.put_call.cboe:{},
       nm=ip.data.aaii||{},nar=ip.narrative||{};
@@ -3008,7 +3022,7 @@ function rInst(d){
   h+='</div>';
   // (Combined Read moved to top of section)
   h+='</div>';
-  $('sInst').innerHTML=h;
+  var _ie2=$('sBreadthInst')||$('sInst');if(_ie2)_ie2.innerHTML=h;
   _wireInstToggles();
 }
 function rCoach(d){
