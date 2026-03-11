@@ -265,7 +265,7 @@
 <div id="sGP"></div>
 
 <div id="sToday"></div>
-<div id="sStory"></div>
+<div id="sStory" style="display:none"></div>
 
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> THE MARKET</div>
@@ -1671,6 +1671,10 @@ function rToday(d){
     h+='</div>';
   }
 
+  // ── The Story (rendered by rStory into this placeholder) ──
+  h+='<div id="sStoryToday" style="margin-top:8px"></div>';
+  hasContent=true;
+
   // ── Key news (recent, with links) — RIGHT AFTER STORY ──
   var newsArr=d.news||[];
   var nowSec=Date.now()/1000;
@@ -2141,12 +2145,39 @@ function rSectors(d){
 
 // ═══ THE STORY + GAMEPLAN STATUS (colored) ═══
 function rStory(d){
-  var nar=d.dashboardNarrative||'';if(!nar){$('sStory').innerHTML='<h2>The Story</h2><div class="info-box"><p class="dim">No Opus narrative yet. Run 📡 Dashboard Now.</p></div>';return}
+  // Render into TODAY section placeholder
+  var el=$('sStoryToday');
+  // Also clear the old sStory location
+  var oldEl=$('sStory');if(oldEl)oldEl.innerHTML='';
+  if(!el){el=$('sStory');} // fallback if TODAY hasn't rendered yet
+  if(!el)return;
+  var nar=d.dashboardNarrative||'';if(!nar){el.innerHTML='<div class="info-box"><p class="dim">No Opus narrative yet. Run \ud83d\udce1 Dashboard Now.</p></div>';return}
   var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
   var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'story\')"><span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span> The Story</h2><div id="secBody_story" style="'+(isColSt?'display:none':'')+'">';h+='<p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
-  var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
-  h+='</div>';$('sStory').innerHTML=h;
+  var h='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#d2a8ff;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;cursor:pointer;user-select:none" onclick="toggleSec(\'story\')">';
+  h+='<span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span>';
+  h+=' \ud83d\udcd6 THE STORY <span class="dim" style="font-weight:400;font-size:9px;letter-spacing:0">Opus \u00b7 '+e(ts)+' \u00b7 '+e(d.dashboardSession||'')+'</span></div>';
+  h+='<div id="secBody_story" style="'+(isColSt?'display:none':'')+'">';
+  var story=gN(sec,['THE STORY','STORY','MARKET STORY']);
+  if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
+  // Retrospective / Story Update
+  var retro=gN(sec,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
+  if(!retro && d.firstNarrativeOfDay && d.firstNarrativeOfDay !== nar){
+    var firstSec=parseN(d.firstNarrativeOfDay);
+    var firstStory=gN(firstSec,['THE STORY','STORY','MARKET STORY']);
+    if(firstStory){
+      retro=firstStory;
+      var firstTs=d.firstNarrativeTs||'';
+      var firstSess=d.firstNarrativeSession||'';
+      h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6">';
+      h+='<p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb First Story of Day <span class="dim" style="font-weight:400;font-size:10px">'+e(firstTs)+(firstSess?' \u00b7 '+e(firstSess):'')+'</span></p>';
+      h+=fmt(retro)+'</div>';
+      retro=null;
+    }
+  }
+  if(retro)h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6"><p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb Previous Story Update</p>'+fmt(retro)+'</div>';
+  h+='</div>';
+  el.innerHTML=h;
 }
 
 // ═══ IN PLAY TODAY (v90.5) ═══
