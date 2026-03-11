@@ -1,4 +1,4 @@
-<!-- v11.20.1 cache-bust 1772729951.8953855 -->
+<!-- v11.21.0 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1222,7 +1222,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['today','breadth','story','econtoday','earntoday','aretecalls','confirm','sess','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
+  var keys=['today','breadth','story','econtoday','earntoday','aretecalls','sess','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
@@ -2095,84 +2095,50 @@ function rBreadth(d){
   h+='</div>';
   h+='</div>';
 
-  // ── CONFIRMATION (heatmap tiles + Arete S/R) ──
+  // ── CONFIRMATION (inline table — no wrapper divs) ──
   var _bn=gS(d,'BENCHMARKS'),_fut=gS(d,'FUTURES'),_comm=gS(d,'COMMODITIES');
   if(_bn.length||_fut.length||_comm.length){
     var _nar2=d.dashboardNarrative||'',_sec2=parseN(_nar2),_sessAn=gN(_sec2,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
     var _anMap={};if(_sessAn){var _lines=_sessAn.replace(/\|/g,'\n').split('\n');for(var _li=0;_li<_lines.length;_li++){var _m=_lines[_li].trim().match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(_m){_anMap[_m[1].replace(/\*/g,'').trim()]=_m[2].trim();}}}
-    // Arete key levels lookup
-    var _arLvl={};
-    var _aa=d.areteAnalysis||{};
+    var _arLvl={};var _aa=d.areteAnalysis||{};
     if(_aa.keyLevels){for(var _ki=0;_ki<_aa.keyLevels.length;_ki++){var _kl=_aa.keyLevels[_ki];if(_kl.ticker)_arLvl[_kl.ticker.toUpperCase()]=_kl;}}
 
-    var isColConf=false;try{isColConf=localStorage.getItem('sec_col_confirm')==='1';}catch(e){}
-    h+='<h2 style="cursor:pointer;user-select:none;margin-top:14px" onclick="toggleSec(\'confirm\')">';
-    h+='<span id="secArrow_confirm" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColConf?'-90':'0')+'deg)">\u25bc</span> Confirmation</h2>';
-    h+='<div id="secBody_confirm" style="'+(isColConf?'display:none':'')+'">';
+    h+=secHdr('Confirmation',0,0).replace(/[\+\-]?0\.0.*\/.*0/,'');
+    h+='<table style="font-size:11px;margin-bottom:10px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg%</th><th>Arete S/R</th></tr>';
 
-    // Helper: build one heatmap tile with optional Arete S/R
-    function _confTile(sym,last,chgStr,arLvl,analysis){
-      var cn=parseFloat(String(chgStr).replace('%',''))||0;
-      var cls=hc(cn);
-      var t='<div class="'+cls+'" style="padding:6px 4px;text-align:center;min-width:0">';
-      t+='<div style="font-weight:700;font-size:11px">'+e(sym)+'</div>';
-      if(last)t+='<div style="font-size:10px;opacity:0.8">'+e(last)+'</div>';
-      t+='<div style="font-size:10px;font-weight:600">'+(cn>0?'+':'')+cn.toFixed(2)+'%</div>';
-      if(arLvl){
-        var typ=(arLvl.type||'').toLowerCase();
-        var lbl=typ.indexOf('support')>=0?'S':typ.indexOf('resist')>=0?'R':'Lvl';
-        t+='<div style="font-size:8px;margin-top:2px;color:#e3b341;font-weight:600">'+lbl+': '+arLvl.level+'</div>';
-      }
-      if(analysis)t+='<div style="font-size:8px;margin-top:1px;color:#7d8590;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+e(analysis)+'">'+e(analysis.substring(0,30))+'</div>';
-      t+='</div>';
-      return t;
-    }
-
-    // ── Indexes ──
-    h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Indexes</span></div>';
-    h+='<div class="heatmap" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">';
+    // Indexes
+    h+='<tr><td colspan="4" style="font-size:10px;color:#58a6ff;padding-top:6px;border:none;font-weight:700">INDEXES</td></tr>';
     var _idxKeys=['SPY','QQQ','DIA','IWM'];
     for(var _bk=0;_bk<_idxKeys.length;_bk++){
       var _it=fS(_bn,_idxKeys[_bk]);
-      if(_it){h+=_confTile(_it.sym,_it.val,_it.chg,_arLvl[_it.sym]||null,_anMap[_it.sym]||'');}
+      if(_it){
+        var _al=_arLvl[_it.sym]||null;var _alS='';
+        if(_al){var _tp=(_al.type||'').toLowerCase();_alS=(_tp.indexOf('support')>=0?'S':_tp.indexOf('resist')>=0?'R':'Lvl')+': '+_al.level;}
+        h+='<tr><td class="white bold">'+e(_it.sym)+'</td><td class="mono">'+e(_it.val)+'</td><td>'+pct(_it.chg)+'</td><td style="color:#e3b341;font-size:10px">'+e(_alS)+'</td></tr>';
+      }
     }
-    h+='</div>';
 
-    // ── Risk / Volatility ──
+    // Risk
     var _bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),_vix2=fS(_bd2,'$VIX'),_dxy2=fS(_bd2,'$DXY');
-    var _riskItems=[];
-    if(_vix2||d.tsVix){
-      var _vD=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');
-      var _vC=(_vix2&&_vix2.chg)?_vix2.chg:'';
-      // VIX is inverted — down is green for markets
-      var _vN=parseFloat(String(_vC).replace('%',''))||0;
-      _riskItems.push({sym:'VIX',last:_vD,chg:String(-_vN),arLvl:_arLvl['VIX']||null,an:_anMap['VIX']||_anMap['$VIX']||''});
-    }
-    if(_dxy2){_riskItems.push({sym:'DXY',last:_dxy2.val,chg:_dxy2.chg,arLvl:_arLvl['DXY']||null,an:_anMap['DXY']||_anMap['$DXY']||''});}
-    if(_riskItems.length){
-      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Risk</span></div>';
-      h+='<div class="heatmap" style="grid-template-columns:repeat('+_riskItems.length+',1fr);margin-bottom:8px">';
-      for(var _ri=0;_ri<_riskItems.length;_ri++){var _r=_riskItems[_ri];h+=_confTile(_r.sym,_r.last,_r.chg,_r.arLvl,_r.an);}
-      h+='</div>';
+    if(_vix2||d.tsVix||_dxy2){
+      h+='<tr><td colspan="4" style="font-size:10px;color:#58a6ff;padding-top:6px;border:none;font-weight:700">RISK</td></tr>';
+      if(_vix2||d.tsVix){var _vD=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');var _vC=(_vix2&&_vix2.chg)?_vix2.chg:'';h+='<tr><td class="y bold">VIX</td><td class="mono">'+e(_vD)+'</td><td>'+pct(_vC)+'</td><td></td></tr>';}
+      if(_dxy2){h+='<tr><td class="dim bold">DXY</td><td class="mono">'+e(_dxy2.val)+'</td><td>'+pct(_dxy2.chg)+'</td><td></td></tr>';}
     }
 
-    // ── Commodities ──
+    // Commodities
     if(_comm.length){
-      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Commodities</span></div>';
-      h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_comm.length,4)+',1fr);margin-bottom:8px">';
-      for(var _ci=0;_ci<_comm.length;_ci++){h+=_confTile(_comm[_ci].sym,_comm[_ci].val,_comm[_ci].chg,_arLvl[_comm[_ci].sym]||null,_anMap[_comm[_ci].sym]||'');}
-      h+='</div>';
+      h+='<tr><td colspan="4" style="font-size:10px;color:#58a6ff;padding-top:6px;border:none;font-weight:700">COMMODITIES</td></tr>';
+      for(var _ci=0;_ci<_comm.length;_ci++){h+='<tr><td class="dim bold">'+e(_comm[_ci].sym)+'</td><td class="mono">'+e(_comm[_ci].val)+'</td><td>'+pct(_comm[_ci].chg)+'</td><td></td></tr>';}
     }
 
-    // ── Futures ──
+    // Futures
     if(_fut.length){
-      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Futures</span></div>';
-      h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_fut.length,4)+',1fr);margin-bottom:8px">';
-      for(var _fi=0;_fi<_fut.length;_fi++){h+=_confTile(_fut[_fi].sym,_fut[_fi].val,_fut[_fi].chg,null,null);}
-      h+='</div>';
+      h+='<tr><td colspan="4" style="font-size:10px;color:#58a6ff;padding-top:6px;border:none;font-weight:700">FUTURES</td></tr>';
+      for(var _fi=0;_fi<_fut.length;_fi++){h+='<tr><td class="dim bold">'+e(_fut[_fi].sym)+'</td><td class="mono">'+e(_fut[_fi].val)+'</td><td>'+pct(_fut[_fi].chg)+'</td><td></td></tr>';}
     }
 
-    h+='</div>';
+    h+='</table>';
   }
 
   // ── Placeholders for Inst Pulse and Intermarket (rendered by their own functions) ──
