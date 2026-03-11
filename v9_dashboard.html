@@ -1,4 +1,4 @@
-<!-- v11.22.1 cache-bust 1772729951.8953855 -->
+<!-- v11.22.2 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -250,9 +250,7 @@
   .arete-check.done{background:rgba(63,185,80,0.1);border-color:rgba(63,185,80,0.3);color:#3fb950}
   
   .sec-group{margin-bottom:4px}
-  #sStory,#sNews{padding:0 8px 8px 8px;border-left:1px solid #e3b341;border-right:1px solid #e3b341;margin-left:0;margin-right:0;background:#0d1117}
-  #sNews{border-bottom:1px solid #e3b341;border-radius:0 0 6px 6px;margin-bottom:12px}
-  #sToday .sec-group{border-radius:6px 6px 0 0;margin-bottom:0}
+
   .grp-hdr{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#58a6ff;letter-spacing:2px;padding:10px 12px;cursor:pointer;user-select:none;background:#0f1318;border:1px solid #1c2333;border-radius:6px;margin:12px 0 8px;display:flex;align-items:center;gap:8px}
   .grp-hdr:hover{color:#79c0ff;background:#161b22}
   .grp-arrow{display:inline-block;font-size:12px;color:#58a6ff}
@@ -268,9 +266,9 @@
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
 <div id="sGP"></div>
 
-<div id="sToday"></div>
 <div id="sStory"></div>
 <div id="sNews"></div>
+<div id="sToday"></div>
 
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> MARKET HEALTH</div>
@@ -1331,9 +1329,31 @@ function initSparkTips(){
 }
 
 function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),mn='Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
-$('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase);
+// Market countdown clock (AZ time, market 7:30am-2:00pm AZ)
+  var _azN=new Date(now.getTime()+(now.getTimezoneOffset()*60000)-(7*3600000));
+  var _azMin=_azN.getHours()*60+_azN.getMinutes();
+  var _mktOpen=7*60+30,_mktClose=14*60;
+  var _isWeekend=_azN.getDay()===0||_azN.getDay()===6;
+  var _clockStr='';
+  if(_isWeekend){
+    var _daysToMon=_azN.getDay()===0?1:2;
+    var _secToMon=_daysToMon*86400-(_azN.getHours()*3600+_azN.getMinutes()*60+_azN.getSeconds())+_mktOpen*60;
+    var _cH=Math.floor(_secToMon/3600);var _cM=Math.floor((_secToMon%3600)/60);
+    _clockStr='<span class="dim" style="font-size:11px">Opens in '+_cH+'h '+_cM+'m</span>';
+  } else if(_azMin<_mktOpen){
+    var _secToOpen=(_mktOpen-_azMin)*60-_azN.getSeconds();
+    var _cH2=Math.floor(_secToOpen/3600);var _cM2=Math.floor((_secToOpen%3600)/60);var _cS2=_secToOpen%60;
+    _clockStr='<span style="color:#e3b341;font-size:11px">Opens '+_cH2+'h '+_cM2+'m '+_cS2+'s</span>';
+  } else if(_azMin<_mktClose){
+    var _secToClose=(_mktClose-_azMin)*60-_azN.getSeconds();
+    var _cH3=Math.floor(_secToClose/3600);var _cM3=Math.floor((_secToClose%3600)/60);var _cS3=_secToClose%60;
+    _clockStr='<span style="color:#3fb950;font-size:11px">Closes '+_cH3+'h '+_cM3+'m '+_cS3+'s</span>';
+  } else {
+    _clockStr='<span class="dim" style="font-size:11px">Market Closed</span>';
+  }
+$('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.1</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.2</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1391,7 +1411,7 @@ function rGP(d){
   h+='</div></div>';
 
   // Distances + market data
-  h+='<div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;font-family:JetBrains Mono,monospace;font-size:10px">';
+  h+='<div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;font-family:JetBrains Mono,monospace;font-size:10px;justify-content:center">';
   // Distance down
   if(gp!=='D'){
     var downGP=gp==='A'?'B':gp==='B'?'C':'D';
@@ -1418,7 +1438,7 @@ function rGP(d){
   if(vix)mkt+=' \u00b7 VIX '+e(vix.val);
   if(_btcGP)mkt+=' \u00b7 BTC '+e(_btcGP.val)+' '+pct(_btcGP.chg);
   for(var _fgi=0;_fgi<Math.min(_futGP.length,2);_fgi++){mkt+=' \u00b7 '+e(_futGP[_fgi].sym)+' '+pct(_futGP[_fgi].chg);}
-  if(mkt)h+='<span style="margin-left:auto;color:#484f58;font-size:10px;line-height:1.4">'+mkt+'</span>';
+  if(mkt)h+='<div style="width:100%;text-align:center;margin-top:4px;font-size:10px;color:#8b949e;line-height:1.5">'+mkt+'</div>';
   h+='</div>';
 
   // ── Alert Banner (from breadthAlerts) ──
