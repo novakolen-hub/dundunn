@@ -1,4 +1,4 @@
-<!-- v11.20.3 cache-bust 1772729951.8953855 -->
+<!-- v11.20.4 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -266,11 +266,15 @@
 <div id="sGP"></div>
 
 <div id="sToday"></div>
+<div id="sStory"></div>
+<div id="sNews"></div>
 
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> MARKET HEALTH</div>
 <div class="grp-body" id="grpBody_market">
 <div id="sBreadth"></div>
+<div id="sInst"></div>
+<div id="sRatios"></div>
 </div></div>
 <!-- sectors merged into breadth -->
 <div class="sec-group">
@@ -1664,8 +1668,6 @@ function rToday(d){
   }
 
   // ── The Story (rendered by rStory into this placeholder) ──
-  h+='<div id="sStory" style="margin-top:8px"></div>';
-  h+='<div id="sNews" style="margin-top:8px"></div>';
   hasContent=true;
 
   // ── Today's Econ Events — HIGH IMPACT, reported/pending state ──
@@ -2166,9 +2168,6 @@ function rBreadth(d){
     h+='</table></div></div>';
   }
 
-  // ── Placeholders for Inst Pulse and Intermarket (rendered by their own functions) ──
-  h+='<div id="sBreadthInst"></div>';
-  h+='<div id="sBreadthInter"></div>';
 
   h+='</div></div>';$('sBreadth').innerHTML=h;
 }
@@ -2809,7 +2808,7 @@ var IM_REF={
 'SMH/QQQ':{what:'Semis vs Nasdaq',up:'semis leading tech',dn:'semis lagging',tickers:['SMH','NVDA','AMD','MU','AVGO']}
 };
 function rRatios(d){
-  var r=gS(d,'INTERMARKET RATIOS');if(!r.length){var _re=$('sBreadthInter')||$('sRatios');if(_re)_re.innerHTML='';return}
+  var r=gS(d,'INTERMARKET RATIOS');if(!r.length){$('sRatios').innerHTML='';return}
   var nar=d.dashboardNarrative||'',sec=parseN(nar),imRead=gN(sec,['INTERMARKET READ','INTERMARKET','RATIOS','CROSS-MARKET','MACRO']);
   var isCol=true;try{var _v=localStorage.getItem('sec_col_inter');if(_v!==null)isCol=_v==='1';}catch(e){}
   var tkCol=true;try{var _v=localStorage.getItem('sec_col_intertk');if(_v!==null)tkCol=_v==='1';}catch(e){}
@@ -2829,12 +2828,12 @@ function rRatios(d){
       for(var t=0;t<Math.min(ref.tickers.length,4);t++)h+=tkLink(ref.tickers[t])+' ';
       h+='</div>';}
     h+='</div>';}
-  h+='</div></div></div>';var _re2=$('sBreadthInter')||$('sRatios');if(_re2)_re2.innerHTML=h;
+  h+='</div></div></div>';$('sRatios').innerHTML=h;
 }
 // ═══ COACHING ═══
 // ═══════ INSTITUTIONAL PULSE ═══════
 function rInst(d){
-  var ip=d.instPulse;if(!ip||!ip.data){var _ie=$('sBreadthInst')||$('sInst');if(_ie)_ie.innerHTML='';return}
+  var ip=d.instPulse;if(!ip||!ip.data){$('sInst').innerHTML='';return}
   var vol=ip.data.vol_regime||{},fg=ip.data.fear_greed||{},
       pc=(ip.data.put_call&&ip.data.put_call.cboe)?ip.data.put_call.cboe:{},
       nm=ip.data.aaii||{},nar=ip.narrative||{};
@@ -3009,7 +3008,7 @@ function rInst(d){
   h+='</div>';
   // (Combined Read moved to top of section)
   h+='</div>';
-  var _ie2=$('sBreadthInst')||$('sInst');if(_ie2)_ie2.innerHTML=h;
+  $('sInst').innerHTML=h;
   _wireInstToggles();
 }
 function rCoach(d){
