@@ -248,6 +248,11 @@
   .arete-check{display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9px;color:#484f58;padding:2px 6px;border-radius:3px;border:1px solid #21262d;background:#0d1117;user-select:none;transition:all 0.15s}
   .arete-check:hover{border-color:#30363d;color:#7d8590}
   .arete-check.done{background:rgba(63,185,80,0.1);border-color:rgba(63,185,80,0.3);color:#3fb950}
+  
+  .sec-group{margin-bottom:4px}
+  .grp-hdr{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#58a6ff;letter-spacing:2px;padding:10px 12px;cursor:pointer;user-select:none;background:#0f1318;border:1px solid #1c2333;border-radius:6px;margin:12px 0 8px;display:flex;align-items:center;gap:8px}
+  .grp-hdr:hover{color:#79c0ff;background:#161b22}
+  .grp-arrow{display:inline-block;font-size:12px;color:#58a6ff}
   </style>
 </head>
 <body>
@@ -258,30 +263,51 @@
 <p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
 <div id="sGP"></div>
-<div id="sActiveSetups"></div>
-<div id="sTradeCandidates"></div>
-<div id="sHidden" style="display:none"></div>
-<div id="sBrief"></div>
-<div id="sStory"></div>
-<div id="sAreteEmails"></div>
+
+<div class="sec-group">
+<div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> THE MARKET</div>
+<div class="grp-body" id="grpBody_market">
 <div id="sBreadth"></div>
-<div id="sSess"></div>
+<div id="sInst"></div>
+<div id="sStory"></div>
+</div></div>
+<div class="sec-group">
+<div class="grp-hdr" onclick="toggleGroup('sectors')"><span class="grp-arrow" id="grpArrow_sectors">▼</span> THE SECTORS</div>
+<div class="grp-body" id="grpBody_sectors">
 <div id="sSectors"></div>
+<div id="sSess"></div>
 <div id="sRatios"></div>
+</div></div>
+<div class="sec-group">
+<div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS</div>
+<div class="grp-body" id="grpBody_stocks">
+<div id="sTradeCandidates"></div>
 <div id="sInPlay"></div>
-<div id="sInverse"></div>
+<div id="sActiveSetups"></div>
+<div id="sWatching"></div>
+<div id="sSetups"></div>
+</div></div>
+<div class="sec-group">
+<div class="grp-hdr" onclick="toggleGroup('intel')"><span class="grp-arrow" id="grpArrow_intel">▼</span> INTELLIGENCE</div>
+<div class="grp-body" id="grpBody_intel">
+<div id="sAreteEmails"></div>
 <div id="sEcon"></div>
 <div id="sEarnings"></div>
-<div id="sInst"></div>
 <div id="sNews"></div>
-<hr class="divider">
-<div id="sFocused"></div>
-<div id="sWatching"></div>
-<div id="sAreteBook"></div>
-<div id="sSetups"></div>
-<hr class="divider">
-<div id="sCoach"></div>
+</div></div>
+<div class="sec-group">
+<div class="grp-hdr" onclick="toggleGroup('positions')"><span class="grp-arrow" id="grpArrow_positions">▼</span> MY POSITIONS</div>
+<div class="grp-body" id="grpBody_positions">
 <div id="sBook"></div>
+<div id="sInverse"></div>
+</div></div>
+<div class="sec-group">
+<div class="grp-hdr" onclick="toggleGroup('reference')"><span class="grp-arrow" id="grpArrow_reference">▼</span> REFERENCE</div>
+<div class="grp-body" id="grpBody_reference">
+<div id="sCoach"></div>
+<div id="sFocused"></div>
+</div></div>
+<div id="sHidden" style="display:none"></div>
 <div class="footer" id="foot">THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><a href=\'v9_chartwall.html\' target=\'_blank\' style=\'color:#58a6ff;font-size:10px\'>Open Chart Wall \u2192</a><br><small>V9 Dashboard · Polling 60s</small></div>
 
 <!-- ═══ PRE-TRADE SCORECARD MODAL ═══ -->
@@ -970,7 +996,7 @@ function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.t
       if(!_wq.setup&&_wt.setup)_wq.setup=_wt.setup;
     }
   }
-  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rActiveSetups(d);rTradeCandidates(d);rBrief(d);rBreadth(d);rSess(d);rSectors(d);rStory(d);rAreteEmails(d);rInPlay(d);rInv(d);rEcon(d);rEarnings(d);rInst(d);rNews(d);rFocused(d);rWatching(d);rBook(d);rAreteBook(d);rSetups(d);rRatios(d);rCoach(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
+  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rInst(d);rStory(d);rSectors(d);rSess(d);rRatios(d);rTradeCandidates(d);rInPlay(d);rActiveSetups(d);rWatching(d);rSetups(d);rAreteEmails(d);rEcon(d);rEarnings(d);rNews(d);rBook(d);rAreteBook(d);rInv(d);rCoach(d);rFocused(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
   // Restore textarea focus
   if(_noteId){var _el=document.getElementById(_noteId);if(_el){_el.focus();_el.selectionStart=_el.selectionEnd=_noteCur;}}
   // Cross-page: open modal from URL param (Chart Wall → Dashboard)
@@ -1201,7 +1227,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['brief','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused'];
+  var keys=['breadth','story','sess','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
@@ -1210,6 +1236,10 @@ function toggleAll(collapse){
     if(arrow)arrow.style.transform=collapse?'rotate(-90deg)':'rotate(0deg)';
     try{localStorage.setItem('sec_col_'+keys[i],collapse?'1':'0');}catch(e){}
   }
+  var gKeys=['market','sectors','stocks','intel','positions','reference'];for(var i=0;i<gKeys.length;i++){var gb=document.getElementById('grpBody_'+gKeys[i]);var ga=document.getElementById('grpArrow_'+gKeys[i]);if(!gb)continue;gb.style.display=collapse?'none':'';if(ga)ga.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('v9_grp_'+gKeys[i],collapse?'0':'1');}catch(e){}}
+  if(!collapse){var sc2=['inter','intertk','focused'];for(var i=0;i<sc2.length;i++){var sb=document.getElementById('secBody_'+sc2[i]);var sa=document.getElementById('secArrow_'+sc2[i]);if(sb){sb.style.display='none';if(sa)sa.style.transform='rotate(-90deg)';try{localStorage.setItem('sec_col_'+sc2[i],'1');}catch(e){}}}}
+  // Inst toggles
+  var iKeys=['volreg','iv5d','termstruct','expmove','sentiment'];for(var i=0;i<iKeys.length;i++){var ib=document.getElementById('instBody_'+iKeys[i]);var ia=document.getElementById('instArrow_'+iKeys[i]);if(ib){ib.style.display=collapse?'none':'';if(ia)ia.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('inst_col_'+iKeys[i],collapse?'1':'0');}catch(e){}}}
   // Also toggle Arete sub-sections
   var aKeys=['outer','Swing','DTC','Option','Long','Watching'];
   for(var i=0;i<aKeys.length;i++){
@@ -1574,7 +1604,8 @@ function rBreadth(d){
   var score=parseFloat(d.breadthScore)||0,hist=d.history||[];
   var cls=bCls(score),col=GP_COLOR[d.gpLetter||'C']||'#e3b341';
   var trend=score>=9.5?'▲ Strong':score>=3?'▲ Positive':score>=-3?'◆ Neutral':'▼ Negative';
-  var h='<h2>Breadth</h2><div class="info-box" style="padding:12px 14px">';
+  var isColB=false;try{isColB=localStorage.getItem('sec_col_breadth')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'breadth\')"><span id="secArrow_breadth" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColB?'-90':'0')+'deg)">\u25bc</span> Breadth <span class="dim" style="font-size:12px;font-weight:400">'+score.toFixed(1)+' \u00b7 '+trend+'</span></h2><div id="secBody_breadth" style="'+(isColB?'display:none':'')+'"><div class="info-box" style="padding:12px 14px">';
   // Score + trend header
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
   h+='<span style="font-family:\'JetBrains Mono\',monospace;font-size:26px;font-weight:700;color:'+col+'">'+score.toFixed(1)+'</span>';
@@ -1835,7 +1866,7 @@ function rBreadth(d){
   h+='<span style="font-family:\'JetBrains Mono\',monospace;font-size:18px;font-weight:700;color:'+gcol+'">'+(grandTotal>0?'+':'')+grandTotal.toFixed(1)+'</span>';
   h+='</div>';
   h+='</div>';
-  h+='</div>';$('sBreadth').innerHTML=h;
+  h+='</div></div>';$('sBreadth').innerHTML=h;
 }
 
 // ═══ SESSION STATS (benchmarks + commodities + Opus analysis) ═══
@@ -1845,14 +1876,15 @@ function rSess(d){
   // Get Opus session analysis
   var nar=d.dashboardNarrative||'',sec=parseN(nar),sessAn=gN(sec,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
   var anMap={};if(sessAn){var lines=sessAn.replace(/\|/g,'\n').split('\n');for(var i=0;i<lines.length;i++){var m=lines[i].trim().match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(m){var tk=m[1].replace(/\*/g,'').trim();anMap[tk]=m[2].trim();}}};
-  var h='<h2>Session Stats</h2><div class="info-box"><table><tr><th>Ticker</th><th>Last</th><th>Chg%</th><th>Analysis</th></tr>';
+  var isColSs=false;try{isColSs=localStorage.getItem('sec_col_sess')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'sess\')"><span id="secArrow_sess" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSs?'-90':'0')+'deg)">\u25bc</span> Session Stats</h2><div id="secBody_sess" style="'+(isColSs?'display:none':'')+'"><div class="info-box">';h+='<table><tr><th>Ticker</th><th>Last</th><th>Chg%</th><th>Analysis</th></tr>';
   var keys=['SPY','QQQ','DIA','IWM'];for(var k=0;k<keys.length;k++){var it=fS(bn,keys[k]);if(it){var an=anMap[it.sym]||'';h+='<tr><td class="white bold tc">'+e(it.sym)+'</td><td class="mono">'+e(it.val)+'</td><td>'+pct(it.chg)+'</td><td class="dim" style="font-size:12px">'+e(an)+'</td></tr>';}}
   var bd=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd,'$VIX'),dxy=fS(bd,'$DXY');
   if(vix||d.tsVix){var va=anMap['VIX']||anMap['$VIX']||'';var vDisp=d.tsVix||((vix&&vix.val)?vix.val:'');var vSrc=d.tsVix?'TS':'Y';var vChg=(vix&&vix.chg)?vix.chg:'';h+='<tr><td class="y bold tc">VIX <span class="dim" style="font-size:9px">'+vSrc+'</span></td><td class="mono">'+e(vDisp)+'</td><td>'+pct(vChg)+'</td><td class="dim" style="font-size:12px">'+e(va)+'</td></tr>';}
   if(dxy){var da=anMap['DXY']||anMap['$DXY']||'';h+='<tr><td class="dim tc">DXY</td><td class="mono">'+e(dxy.val)+'</td><td>'+pct(dxy.chg)+'</td><td class="dim" style="font-size:12px">'+e(da)+'</td></tr>';}
   for(var c=0;c<comm.length;c++){var ca=anMap[comm[c].sym]||'';h+='<tr><td class="dim tc">'+e(comm[c].sym)+'</td><td class="mono">'+e(comm[c].val)+'</td><td>'+pct(comm[c].chg)+'</td><td class="dim" style="font-size:12px">'+e(ca)+'</td></tr>';}
   if(fut.length){h+='<tr><td colspan="4" style="font-size:11px;color:#7d8590;padding-top:6px;border:none">FUTURES</td></tr>';for(var f=0;f<fut.length;f++)h+='<tr><td class="dim tc">'+e(fut[f].sym)+'</td><td class="mono">'+e(fut[f].val)+'</td><td>'+pct(fut[f].chg)+'</td><td></td></tr>';}
-  h+='</table></div>';$('sSess').innerHTML=h;
+  h+='</table></div>';h+='</div>';$('sSess').innerHTML=h;
 }
 
 // ═══ SECTORS ═══
@@ -1875,7 +1907,8 @@ function rSectors(d){
 function rStory(d){
   var nar=d.dashboardNarrative||'';if(!nar){$('sStory').innerHTML='<h2>The Story</h2><div class="info-box"><p class="dim">No Opus narrative yet. Run 📡 Dashboard Now.</p></div>';return}
   var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
-  var h='<h2>The Story</h2><p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
+  var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'story\')"><span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span> The Story</h2><div id="secBody_story" style="'+(isColSt?'display:none':'')+'">';h+='<p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
   var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
   // Retrospective: first check current narrative for explicit retro section
   var retro=gN(sec,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
@@ -1894,7 +1927,7 @@ function rStory(d){
     }
   }
   if(retro)h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6"><p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">📋 Previous Story Update</p>'+fmt(retro)+'</div>';
-  $('sStory').innerHTML=h;
+  h+='</div>';$('sStory').innerHTML=h;
 }
 
 // ═══ IN PLAY TODAY (v90.5) ═══
@@ -2693,6 +2726,7 @@ function rInst(d){
   // (Combined Read moved to top of section)
   h+='</div>';
   $('sInst').innerHTML=h;
+  _wireInstToggles();
 }
 function rCoach(d){
   // Bottom Line & Daily Edge now render inside MY BOOK (PIN-locked)
@@ -3732,6 +3766,107 @@ function toggleAreteWatch(id,el){
   else{_areteSetCheck(id,true);el.classList.add('done');el.innerHTML='\u2705 watched';}
 }
 function _isAreteChecked(id){return !!_areteChecks()[id];}
+
+var _isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+function toggleGroup(name){var body=document.getElementById('grpBody_'+name);var arrow=document.getElementById('grpArrow_'+name);if(!body)return;var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';if(arrow)arrow.textContent=isHidden?'\u25bc':'\u25b6';try{localStorage.setItem('v9_grp_'+name,isHidden?'1':'0');}catch(e){}}
+function _restoreGroups(){var g=['market','sectors','stocks','intel','positions','reference'];for(var i=0;i<g.length;i++){try{var s=localStorage.getItem('v9_grp_'+g[i]);if(s==='0'){var b=document.getElementById('grpBody_'+g[i]);var a=document.getElementById('grpArrow_'+g[i]);if(b)b.style.display='none';if(a)a.textContent='\u25b6';}}catch(e){}}}
+_restoreGroups();
+function playYT(vid,el){if(_isMobile){window.open('https://youtu.be/'+vid,'_blank');}else{el.innerHTML='<iframe src="https://www.youtube.com/embed/'+vid+'?autoplay=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen></iframe>';}}
+function _wireInstToggles(){
+  var inst=document.getElementById('sInst');if(!inst)return;
+  var allPs=inst.querySelectorAll('p');
+  var headers=[];
+  for(var i=0;i<allPs.length;i++){
+    var s=allPs[i].style;
+    if(s.fontWeight==='700'&&s.fontSize==='13px')headers.push(allPs[i]);
+  }
+  var keys=['combined','volreg','iv5d','termstruct','expmove','sentiment'];
+  for(var hi=0;hi<headers.length&&hi<keys.length;hi++){
+    var p=headers[hi],key=keys[hi];
+    if(key==='combined')continue;
+    var isCol=false;try{isCol=localStorage.getItem('inst_col_'+key)==='1';}catch(e){}
+    // Add toggle arrow
+    var arrow=document.createElement('span');arrow.id='instArrow_'+key;
+    arrow.textContent=isCol?'\u25b6':'\u25bc';
+    arrow.style.cssText='font-size:10px;margin-right:4px;color:inherit;';
+    p.insertBefore(arrow,p.firstChild);
+    p.style.cursor='pointer';p.style.userSelect='none';
+    // Collect content after header until next header
+    var content=[],sib=p.nextElementSibling;
+    while(sib){
+      if(sib.tagName==='P'&&sib.style.fontWeight==='700'&&sib.style.fontSize==='13px')break;
+      content.push(sib);sib=sib.nextElementSibling;
+    }
+    // Extract key metrics from content to show in header
+    var metrics=_extractInstMetrics(key,content);
+    if(metrics){
+      var mSpan=document.createElement('span');
+      mSpan.style.cssText='font-size:10px;font-weight:400;color:#7d8590;margin-left:8px;font-family:JetBrains Mono,monospace;';
+      mSpan.innerHTML=metrics;
+      p.appendChild(mSpan);
+    }
+    // Wrap in toggleable div
+    var w=document.createElement('div');w.id='instBody_'+key;
+    w.style.display=isCol?'none':'';
+    for(var ci=0;ci<content.length;ci++)w.appendChild(content[ci]);
+    p.after(w);
+    (function(k,wr,ar){
+      p.addEventListener('click',function(){
+        var h=wr.style.display==='none';wr.style.display=h?'':'none';
+        ar.textContent=h?'\u25bc':'\u25b6';
+        try{localStorage.setItem('inst_col_'+k,h?'0':'1');}catch(e){}
+      });
+    })(key,w,arrow);
+  }
+}
+function _extractInstMetrics(key,content){
+  // Extract key numbers from the rendered content elements
+  var text='';for(var i=0;i<content.length;i++)text+=content[i].textContent+' ';
+  if(key==='volreg'){
+    // Find IVR values: "SPY IVR XX" pattern or just the big number
+    var m=text.match(/(\d+\.?\d*)\s*(?:IVR|ivr)/);
+    if(m)return'<span style="color:#e3b341">IVR '+m[1]+'</span>';
+    // Try to find the IVR number from inst-item spans
+    for(var i=0;i<content.length;i++){
+      var spans=content[i].querySelectorAll&&content[i].querySelectorAll('[style*="font-size:2"]');
+      if(spans&&spans.length>0)return'<span style="color:#e3b341">IVR '+spans[0].textContent.trim()+'</span>';
+    }
+  }
+  if(key==='iv5d'){
+    // Find SPY/QQQ change percentages
+    var vals=[];
+    var ms=text.match(/([\u25b2\u25bc][+\-]?\d+\.?\d*%)/g);
+    if(ms)for(var i=0;i<Math.min(ms.length,3);i++)vals.push(ms[i]);
+    if(vals.length)return vals.join(' ');
+  }
+  if(key==='termstruct'){
+    // Find VIX/VIX3M ratio
+    var m=text.match(/(\d+\.\d+)\s*(?:ratio|VIX\/VIX3M)/i);
+    if(m)return'<span style="color:#e3b341">ratio '+m[1]+'</span>';
+    // Try to find from the term structure signal
+    var sig=text.match(/(CONTANGO|BACKWARDATION|FLAT|INVERTED)/i);
+    // Already in header, skip
+  }
+  if(key==='expmove'){
+    // Find ±$X.XX
+    var m=text.match(/[\u00b1\xb1]\$([\d.]+)/);
+    if(m)return'<span style="color:#58a6ff">\u00b1$'+m[1]+'</span>';
+    var m2=text.match(/(\d+\.\d+)%\s*expected/);
+    if(m2)return'<span style="color:#58a6ff">\u00b1'+m2[1]+'%</span>';
+  }
+  if(key==='sentiment'){
+    // Find F&G score and NAAIM
+    var parts=[];
+    var fg=text.match(/(\d+)\s*(?:Ext|Extreme|Fear|Greed)/);
+    if(fg)parts.push('F&G <span style="color:'+(parseInt(fg[1])<25?'#f85149':parseInt(fg[1])>75?'#3fb950':'#e3b341')+'">'+fg[1]+'</span>');
+    var nm=text.match(/(\d+\.?\d*)%\s*(?:neutral|bullish|bearish)/i);
+    if(nm)parts.push('NAAIM '+nm[1]+'%');
+    var pc=text.match(/(\d+\.\d+)\s*(?:bearish|bullish|neutral)/);
+    if(pc&&!nm)parts.push('P/C '+pc[1]);
+    if(parts.length)return parts.join(' \u00b7 ');
+  }
+  return null;
+}
 </script>
 </body>
 </html>
