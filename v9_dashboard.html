@@ -1,4 +1,4 @@
-<!-- v11.18.5 cache-bust 1772729951.8953855 -->
+<!-- v11.18.6 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1229,7 +1229,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['breadth','story','sess','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
+  var keys=['today','breadth','story','sess','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
