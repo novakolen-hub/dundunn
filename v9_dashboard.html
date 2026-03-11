@@ -1,4 +1,4 @@
-<!-- v11.20.0 cache-bust 1772729951.8953855 -->
+<!-- v11.20.1 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2095,9 +2095,9 @@ function rBreadth(d){
   h+='</div>';
   h+='</div>';
 
-  // ── CONFIRMATION (session stats + Arete S/R) ──
+  // ── CONFIRMATION (heatmap tiles + Arete S/R) ──
   var _bn=gS(d,'BENCHMARKS'),_fut=gS(d,'FUTURES'),_comm=gS(d,'COMMODITIES');
-  if(_bn.length||_fut.length){
+  if(_bn.length||_fut.length||_comm.length){
     var _nar2=d.dashboardNarrative||'',_sec2=parseN(_nar2),_sessAn=gN(_sec2,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
     var _anMap={};if(_sessAn){var _lines=_sessAn.replace(/\|/g,'\n').split('\n');for(var _li=0;_li<_lines.length;_li++){var _m=_lines[_li].trim().match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(_m){_anMap[_m[1].replace(/\*/g,'').trim()]=_m[2].trim();}}}
     // Arete key levels lookup
@@ -2109,24 +2109,70 @@ function rBreadth(d){
     h+='<h2 style="cursor:pointer;user-select:none;margin-top:14px" onclick="toggleSec(\'confirm\')">';
     h+='<span id="secArrow_confirm" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColConf?'-90':'0')+'deg)">\u25bc</span> Confirmation</h2>';
     h+='<div id="secBody_confirm" style="'+(isColConf?'display:none':'')+'">';
-    h+='<div class="info-box"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg%</th><th>Arete S/R</th><th>Analysis</th></tr>';
-    var _bKeys=['SPY','QQQ','DIA','IWM'];
-    for(var _bk=0;_bk<_bKeys.length;_bk++){
-      var _it=fS(_bn,_bKeys[_bk]);
-      if(_it){
-        var _an=_anMap[_it.sym]||'';
-        var _al=_arLvl[_it.sym]||null;
-        var _alStr='';
-        if(_al){_alStr='<span style="font-size:10px">'+((_al.type||'').indexOf('support')>=0?'S':'R')+': <span class="white">'+_al.level+'</span>'+((_al.note)?' <span class="dim">'+e(_al.note)+'</span>':'')+'</span>';}
-        h+='<tr><td class="white bold tc">'+e(_it.sym)+'</td><td class="mono">'+e(_it.val)+'</td><td>'+pct(_it.chg)+'</td><td>'+_alStr+'</td><td class="dim" style="font-size:11px">'+e(_an)+'</td></tr>';
+
+    // Helper: build one heatmap tile with optional Arete S/R
+    function _confTile(sym,last,chgStr,arLvl,analysis){
+      var cn=parseFloat(String(chgStr).replace('%',''))||0;
+      var cls=hc(cn);
+      var t='<div class="'+cls+'" style="padding:6px 4px;text-align:center;min-width:0">';
+      t+='<div style="font-weight:700;font-size:11px">'+e(sym)+'</div>';
+      if(last)t+='<div style="font-size:10px;opacity:0.8">'+e(last)+'</div>';
+      t+='<div style="font-size:10px;font-weight:600">'+(cn>0?'+':'')+cn.toFixed(2)+'%</div>';
+      if(arLvl){
+        var typ=(arLvl.type||'').toLowerCase();
+        var lbl=typ.indexOf('support')>=0?'S':typ.indexOf('resist')>=0?'R':'Lvl';
+        t+='<div style="font-size:8px;margin-top:2px;color:#e3b341;font-weight:600">'+lbl+': '+arLvl.level+'</div>';
       }
+      if(analysis)t+='<div style="font-size:8px;margin-top:1px;color:#7d8590;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+e(analysis)+'">'+e(analysis.substring(0,30))+'</div>';
+      t+='</div>';
+      return t;
     }
+
+    // ── Indexes ──
+    h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Indexes</span></div>';
+    h+='<div class="heatmap" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">';
+    var _idxKeys=['SPY','QQQ','DIA','IWM'];
+    for(var _bk=0;_bk<_idxKeys.length;_bk++){
+      var _it=fS(_bn,_idxKeys[_bk]);
+      if(_it){h+=_confTile(_it.sym,_it.val,_it.chg,_arLvl[_it.sym]||null,_anMap[_it.sym]||'');}
+    }
+    h+='</div>';
+
+    // ── Risk / Volatility ──
     var _bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),_vix2=fS(_bd2,'$VIX'),_dxy2=fS(_bd2,'$DXY');
-    if(_vix2||d.tsVix){var _va2=_anMap['VIX']||_anMap['$VIX']||'';var _vD2=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');var _vS2=d.tsVix?'TS':'Y';var _vC2=(_vix2&&_vix2.chg)?_vix2.chg:'';h+='<tr><td class="y bold tc">VIX <span class="dim" style="font-size:9px">'+_vS2+'</span></td><td class="mono">'+e(_vD2)+'</td><td>'+pct(_vC2)+'</td><td></td><td class="dim" style="font-size:11px">'+e(_va2)+'</td></tr>';}
-    if(_dxy2){var _da2=_anMap['DXY']||_anMap['$DXY']||'';h+='<tr><td class="dim tc">DXY</td><td class="mono">'+e(_dxy2.val)+'</td><td>'+pct(_dxy2.chg)+'</td><td></td><td class="dim" style="font-size:11px">'+e(_da2)+'</td></tr>';}
-    for(var _ci=0;_ci<_comm.length;_ci++){var _ca=_anMap[_comm[_ci].sym]||'';h+='<tr><td class="dim tc">'+e(_comm[_ci].sym)+'</td><td class="mono">'+e(_comm[_ci].val)+'</td><td>'+pct(_comm[_ci].chg)+'</td><td></td><td class="dim" style="font-size:11px">'+e(_ca)+'</td></tr>';}
-    if(_fut.length){h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding-top:6px;border:none">FUTURES</td></tr>';for(var _fi=0;_fi<_fut.length;_fi++)h+='<tr><td class="dim tc">'+e(_fut[_fi].sym)+'</td><td class="mono">'+e(_fut[_fi].val)+'</td><td>'+pct(_fut[_fi].chg)+'</td><td></td><td></td></tr>';}
-    h+='</table></div></div>';
+    var _riskItems=[];
+    if(_vix2||d.tsVix){
+      var _vD=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');
+      var _vC=(_vix2&&_vix2.chg)?_vix2.chg:'';
+      // VIX is inverted — down is green for markets
+      var _vN=parseFloat(String(_vC).replace('%',''))||0;
+      _riskItems.push({sym:'VIX',last:_vD,chg:String(-_vN),arLvl:_arLvl['VIX']||null,an:_anMap['VIX']||_anMap['$VIX']||''});
+    }
+    if(_dxy2){_riskItems.push({sym:'DXY',last:_dxy2.val,chg:_dxy2.chg,arLvl:_arLvl['DXY']||null,an:_anMap['DXY']||_anMap['$DXY']||''});}
+    if(_riskItems.length){
+      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Risk</span></div>';
+      h+='<div class="heatmap" style="grid-template-columns:repeat('+_riskItems.length+',1fr);margin-bottom:8px">';
+      for(var _ri=0;_ri<_riskItems.length;_ri++){var _r=_riskItems[_ri];h+=_confTile(_r.sym,_r.last,_r.chg,_r.arLvl,_r.an);}
+      h+='</div>';
+    }
+
+    // ── Commodities ──
+    if(_comm.length){
+      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Commodities</span></div>';
+      h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_comm.length,4)+',1fr);margin-bottom:8px">';
+      for(var _ci=0;_ci<_comm.length;_ci++){h+=_confTile(_comm[_ci].sym,_comm[_ci].val,_comm[_ci].chg,_arLvl[_comm[_ci].sym]||null,_anMap[_comm[_ci].sym]||'');}
+      h+='</div>';
+    }
+
+    // ── Futures ──
+    if(_fut.length){
+      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Futures</span></div>';
+      h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_fut.length,4)+',1fr);margin-bottom:8px">';
+      for(var _fi=0;_fi<_fut.length;_fi++){h+=_confTile(_fut[_fi].sym,_fut[_fi].val,_fut[_fi].chg,null,null);}
+      h+='</div>';
+    }
+
+    h+='</div>';
   }
 
   // ── Placeholders for Inst Pulse and Intermarket (rendered by their own functions) ──
