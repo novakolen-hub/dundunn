@@ -1,4 +1,4 @@
-<!-- v11.17.9 cache-bust 1772729951.8953855 -->
+<!-- v11.18.0 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -263,6 +263,8 @@
 <p class="dim" style="font-size:12px;margin-top:-8px" id="sub">Loading...</p>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
 <div id="sGP"></div>
+
+<div id="sToday"></div>
 
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> THE MARKET</div>
@@ -996,7 +998,7 @@ function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.t
       if(!_wq.setup&&_wt.setup)_wq.setup=_wt.setup;
     }
   }
-  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rBreadth(d);rInst(d);rStory(d);rSectors(d);rSess(d);rRatios(d);rTradeCandidates(d);rInPlay(d);rActiveSetups(d);rWatching(d);rSetups(d);rAreteEmails(d);rEcon(d);rEarnings(d);rNews(d);rBook(d);rAreteBook(d);rInv(d);rCoach(d);rFocused(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
+  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rToday(d);rBreadth(d);rInst(d);rStory(d);rSectors(d);rSess(d);rRatios(d);rTradeCandidates(d);rInPlay(d);rActiveSetups(d);rWatching(d);rSetups(d);rAreteEmails(d);rEcon(d);rEarnings(d);rNews(d);rBook(d);rAreteBook(d);rInv(d);rCoach(d);rFocused(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
   // Restore textarea focus
   if(_noteId){var _el=document.getElementById(_noteId);if(_el){_el.focus();_el.selectionStart=_el.selectionEnd=_noteCur;}}
   // Cross-page: open modal from URL param (Chart Wall → Dashboard)
@@ -1577,9 +1579,9 @@ function rAreteEmails(d){
         var emailChkId='ae_read_'+dk+'_'+ei;
         var emailIsRead=_isAreteChecked(emailChkId);
         h+='<span class="arete-check'+(emailIsRead?' done':'')+'" onclick="event.stopPropagation();toggleAreteCheck(\''+emailChkId+'\',this)">'+(emailIsRead?'\u2611 read':'\u2610 mark read')+'</span>';
-        h+='<span class="ae-arrow">'+(dayOpen?'\u25bc':'\u25b6')+'</span>';
+        h+='<span class="ae-arrow">'+(emailOpenState?'\u25bc':'\u25b6')+'</span>';
         h+='</div>';
-        h+='<div class="ae-body" id="'+uid+'" style="'+(dayOpen?'':'display:none')+'">';
+        var emailOpenState=dayOpen&&!emailIsRead;h+='<div class="ae-body" id="'+uid+'" style="'+(emailOpenState?'':'display:none')+'">';
         var body=e(em.body||'');
         body=body.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){return '<span class="ae-ticker" onclick="openPT(\''+tk+'\')">$'+tk+'</span>';});
         body=body.replace(/(^|[\s,;:(])([A-Z]{2,5})(\s|[,;:)\.]|$)/g,function(m,pre,tk,post){if(_tq[tk])return pre+'<span class="ae-ticker" onclick="openPT(\''+tk+'\')">'+tk+'</span>'+post;return m;});
@@ -1588,6 +1590,36 @@ function rAreteEmails(d){
       }
     }
   }
+
+  // ── YOUTUBE VIDEOS (Arete channel) ──
+  var ytVids=d.areteYouTube||[];
+  if(ytVids.length){
+    h+='<div style="margin-top:10px">';
+    h+='<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#e3b341;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">\ud83c\udfac Arete YouTube</div>';
+    for(var vi=0;vi<Math.min(ytVids.length,6);vi++){
+      var v=ytVids[vi];var vtId='ae_yt_'+vi;
+      var ytIsWatched=_isAreteChecked(vtId);
+      h+='<div class="ae-day" style="'+(ytIsWatched?'opacity:0.5':'')+';padding:6px 8px">';
+      h+='<div style="display:flex;gap:8px;align-items:center">';
+      // Thumbnail
+      if(v.thumb){
+        h+='<div style="position:relative;width:96px;height:54px;flex-shrink:0;border-radius:4px;overflow:hidden;cursor:pointer;background:#0d1117" onclick="playYT(\''+e(v.id)+'\',this)">';
+        h+='<img src="'+e(v.thumb)+'" style="width:100%;height:100%;object-fit:cover" loading="lazy">';
+        h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:24px;height:24px;background:rgba(0,0,0,0.7);border-radius:50%;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:10px;margin-left:2px">\u25b6</span></div></div>';
+        h+='</div>';
+      }
+      // Info
+      h+='<div style="flex:1;min-width:0">';
+      h+='<div style="font-size:12px;color:#e6edf3;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+e(v.title||'')+'</div>';
+      h+='<div style="display:flex;gap:8px;align-items:center;margin-top:3px">';
+      h+='<span class="dim" style="font-size:10px">'+e(v.date||'')+'</span>';
+      h+='<a href="https://youtu.be/'+e(v.id)+'" target="_blank" style="font-size:10px;color:#58a6ff;text-decoration:none">Watch \u2197</a>';
+      h+='<span class="arete-check'+(ytIsWatched?' done':'')+'" onclick="event.stopPropagation();toggleAreteWatch(\''+vtId+'\',this)">'+(ytIsWatched?'\u2705 watched':'\u25b6 unwatched')+'</span>';
+      h+='</div></div></div></div>';
+    }
+    h+='</div>';
+  }
+
   h+='</div>';
   el.innerHTML=h;
 }
@@ -1598,6 +1630,134 @@ function _azToday(){
   // AZ = UTC-7 always
   var az=new Date(now.getTime()-7*3600000);
   return az.getUTCFullYear()+'-'+String(az.getUTCMonth()+1).padStart(2,'0')+'-'+String(az.getUTCDate()).padStart(2,'0');
+}
+
+
+// ═══ TODAY — time-sensitive aggregation ═══
+function rToday(d){
+  var el=$('sToday');if(!el)return;
+  var azNow=new Date(new Date().getTime()+(new Date().getTimezoneOffset()*60000)-(7*3600000));
+  var azH=azNow.getHours(),azM=azNow.getMinutes();
+  var todayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var todayName=todayNames[azNow.getDay()];
+  var todayDate=azNow.getFullYear()+'-'+String(azNow.getMonth()+1).padStart(2,'0')+'-'+String(azNow.getDate()).padStart(2,'0');
+  var items=[];
+
+  // ── Breadth Alerts ──
+  var alerts=d.breadthAlerts||[];
+  for(var ai=0;ai<alerts.length;ai++){
+    items.push({type:'alert',icon:'\u26a0\ufe0f',label:'Breadth Alert',text:alerts[ai].msg||alerts[ai],time:alerts[ai].time||'',priority:1});
+  }
+
+  // ── Today's Econ Events ──
+  var eco=d.ecoEvents||[];
+  var inTodayBlock=false;
+  for(var ei=0;ei<eco.length;ei++){
+    var ev=eco[ei];
+    if(ev.isSep){
+      var titleUp=(ev.title||'').toUpperCase();
+      inTodayBlock=titleUp.indexOf(todayName.toUpperCase())>=0||titleUp.indexOf('TODAY')>=0;
+      continue;
+    }
+    if(inTodayBlock){
+      var impIcon=ev.impact==='High'?'\ud83d\udd34':ev.impact==='Medium'?'\ud83d\udfe1':'\u26aa';
+      var eText=ev.title||'';
+      if(ev.time)eText=ev.time+' \u2014 '+eText;
+      if(ev.actual)eText+=' (Act: '+ev.actual+')';
+      else if(ev.forecast)eText+=' (Fcst: '+ev.forecast+')';
+      items.push({type:'econ',icon:impIcon,label:ev.impact||'Econ',text:eText,priority:ev.impact==='High'?2:3});
+    }
+  }
+
+  // ── Today's Earnings ──
+  var earn=d.earnings||[];
+  for(var eri=0;eri<earn.length;eri++){
+    var er=earn[eri];
+    // Check if earnings is today — match day name in period field or date
+    var erDay=(er.day||er.period||'').toUpperCase();
+    var isEarnToday=erDay.indexOf(todayName.toUpperCase())>=0;
+    // Also check date field
+    if(!isEarnToday&&er.date){isEarnToday=er.date===todayDate;}
+    if(isEarnToday){
+      var erText=(er.ticker||er.sym||'')+'  '+((er.time||er.when||'').indexOf('AMC')>=0?'After Close':'Pre-Market');
+      if(er.estimate)erText+=' (Est: '+er.estimate+')';
+      items.push({type:'earnings',icon:'\ud83d\udcca',label:'Earnings',text:erText,priority:2});
+    }
+  }
+
+  // ── Position Alerts (from narrative) ──
+  var nar=d.dashboardNarrative||'',sec=parseN(nar),pa=gN(sec,['POSITION ALERTS','POSITIONS','ALERTS','YOUR BOOK','BOOK','ACTIVE POSITIONS','PORTFOLIO ALERTS']);
+  if(pa){
+    var paLines=pa.split('\n');
+    for(var pi=0;pi<paLines.length;pi++){
+      var pl=paLines[pi].trim();
+      if(pl.length>5)items.push({type:'position',icon:'\ud83d\udcbc',label:'Position',text:pl,priority:2});
+    }
+  }
+
+  // ── Arete Key Calls for Today ──
+  var analysis=d.areteAnalysis||null;
+  if(analysis&&analysis.calls&&analysis.calls.length){
+    for(var aci=0;aci<Math.min(analysis.calls.length,5);aci++){
+      var ac=analysis.calls[aci];
+      items.push({type:'arete',icon:'\ud83c\udfaf',label:'Arete',text:(ac.ticker||'')+' \u2014 '+(ac.bias||'')+' '+(ac.level||''),priority:3});
+    }
+  }
+
+  // ── Key news flagged as today ──
+  var news=d.tkNews||{};
+  var newsKeys=Object.keys(news);
+  var newsCount=0;
+  for(var ni=0;ni<newsKeys.length&&newsCount<5;ni++){
+    var nArr=news[newsKeys[ni]]||[];
+    for(var nj=0;nj<nArr.length&&newsCount<5;nj++){
+      var n=nArr[nj];
+      if(n&&n.fresh){
+        items.push({type:'news',icon:'\ud83d\udcf0',label:newsKeys[ni],text:n.headline||n.title||'',priority:4});
+        newsCount++;
+      }
+    }
+  }
+
+  if(!items.length){el.innerHTML='';return;}
+
+  // Sort by priority
+  items.sort(function(a,b){return (a.priority||5)-(b.priority||5);});
+
+  var isCol=false;try{isCol=localStorage.getItem('sec_col_today')==='1';}catch(e){}
+  var h='<div class="sec-group" style="border-color:#e3b341">';
+  h+='<div class="grp-hdr" style="background:linear-gradient(135deg,#1a1500 0%,#0d1117 100%);border-color:#e3b341;color:#e3b341;font-size:14px" onclick="toggleSec(\'today\')">';
+  h+='<span id="secArrow_today" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span>';
+  h+=' \u2600\ufe0f TODAY';
+  h+='<span style="font-size:11px;font-weight:400;color:#7d8590;margin-left:8px">'+todayName+' '+todayDate+'</span>';
+  h+='<span style="margin-left:auto;font-size:11px;font-weight:400;color:#7d8590">'+items.length+' items</span>';
+  h+='</div>';
+  h+='<div id="secBody_today" style="'+(isCol?'display:none':'')+'padding:0 8px 8px 8px">';
+
+  // Type grouping: alerts first, then econ, earnings, arete, positions, news
+  var typeOrder=['alert','econ','earnings','arete','position','news'];
+  var typeLabels={alert:'\u26a0\ufe0f ALERTS',econ:'\ud83d\udcc5 ECONOMIC DATA',earnings:'\ud83d\udcca EARNINGS',arete:'\ud83c\udfaf ARETE CALLS',position:'\ud83d\udcbc POSITIONS',news:'\ud83d\udcf0 NEWS'};
+  var typeColors={alert:'#f85149',econ:'#58a6ff',earnings:'#e3b341',arete:'#e3b341',position:'#3fb950',news:'#7d8590'};
+
+  for(var ti=0;ti<typeOrder.length;ti++){
+    var tType=typeOrder[ti];
+    var tItems=items.filter(function(x){return x.type===tType;});
+    if(!tItems.length)continue;
+    var tCol=typeColors[tType]||'#7d8590';
+    h+='<div style="margin-top:8px">';
+    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:'+tCol+';font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">'+typeLabels[tType]+'</div>';
+    for(var ii=0;ii<tItems.length;ii++){
+      var it=tItems[ii];
+      h+='<div style="display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-bottom:1px solid #21262d;font-size:12px">';
+      h+='<span style="flex-shrink:0;width:18px;text-align:center">'+it.icon+'</span>';
+      h+='<span style="color:#e6edf3;line-height:1.4">'+e(it.text)+'</span>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
+  h+='</div></div>';
+  el.innerHTML=h;
 }
 
 function rBreadth(d){
@@ -3757,7 +3917,7 @@ function toggleAreteCheck(id,el){
   var checks=_areteChecks();
   var isDone=!!checks[id];
   if(isDone){_areteSetCheck(id,false);el.classList.remove('done');el.innerHTML='\u2610 mark read';}
-  else{_areteSetCheck(id,true);el.classList.add('done');el.innerHTML='\u2611 read';}
+  else{_areteSetCheck(id,true);el.classList.add('done');el.innerHTML='\u2611 read';var p=el.closest('.ae-day');if(p){var b=p.querySelector('.ae-body');if(b)b.style.display='none';var a=p.querySelector('.ae-arrow');if(a)a.textContent='\u25b6';}}
 }
 function toggleAreteWatch(id,el){
   var checks=_areteChecks();
