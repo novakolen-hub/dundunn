@@ -1233,7 +1233,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['brief','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused'];
+  var keys=['breadth','story','sess','brief','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
@@ -1242,6 +1242,11 @@ function toggleAll(collapse){
     if(arrow)arrow.style.transform=collapse?'rotate(-90deg)':'rotate(0deg)';
     try{localStorage.setItem('sec_col_'+keys[i],collapse?'1':'0');}catch(e){}
   }
+  // Toggle groups
+  var gKeys=['market','sectors','stocks','intel','positions','reference'];
+  for(var i=0;i<gKeys.length;i++){var gb=document.getElementById('grpBody_'+gKeys[i]);var ga=document.getElementById('grpArrow_'+gKeys[i]);if(!gb)continue;gb.style.display=collapse?'none':'';if(ga)ga.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('v9_grp_'+gKeys[i],collapse?'0':'1');}catch(e){}}
+  // Expand exceptions
+  if(!collapse){var stayCol=['inter','intertk','focused'];for(var i=0;i<stayCol.length;i++){var sb=document.getElementById('secBody_'+stayCol[i]);var sa=document.getElementById('secArrow_'+stayCol[i]);if(sb){sb.style.display='none';if(sa)sa.style.transform='rotate(-90deg)';try{localStorage.setItem('sec_col_'+stayCol[i],'1');}catch(e){}}}}
   // Also toggle Arete sub-sections
   var aKeys=['outer','Swing','DTC','Option','Long','Watching'];
   for(var i=0;i<aKeys.length;i++){
@@ -1847,7 +1852,8 @@ function rBreadth(d){
   var score=parseFloat(d.breadthScore)||0,hist=d.history||[];
   var cls=bCls(score),col=GP_COLOR[d.gpLetter||'C']||'#e3b341';
   var trend=score>=9.5?'▲ Strong':score>=3?'▲ Positive':score>=-3?'◆ Neutral':'▼ Negative';
-  var h='<h2>Breadth</h2><div class="info-box" style="padding:12px 14px">';
+  var isColB=false;try{isColB=localStorage.getItem('sec_col_breadth')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'breadth\')"><span id="secArrow_breadth" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColB?'-90':'0')+'deg)">\u25bc</span> Breadth <span class="dim" style="font-size:12px;font-weight:400">'+score.toFixed(1)+' \u00b7 '+trend+'</span></h2><div id="secBody_breadth" style="'+(isColB?'display:none':'')+ '"><div class="info-box" style="padding:12px 14px">';
   // Score + trend header
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
   h+='<span style="font-family:\'JetBrains Mono\',monospace;font-size:26px;font-weight:700;color:'+col+'">'+score.toFixed(1)+'</span>';
@@ -2108,7 +2114,7 @@ function rBreadth(d){
   h+='<span style="font-family:\'JetBrains Mono\',monospace;font-size:18px;font-weight:700;color:'+gcol+'">'+(grandTotal>0?'+':'')+grandTotal.toFixed(1)+'</span>';
   h+='</div>';
   h+='</div>';
-  h+='</div>';$('sBreadth').innerHTML=h;
+  h+='</div></div>';$('sBreadth').innerHTML=h;
 }
 
 // ═══ SESSION STATS (benchmarks + commodities + Opus analysis) ═══
@@ -2118,14 +2124,16 @@ function rSess(d){
   // Get Opus session analysis
   var nar=d.dashboardNarrative||'',sec=parseN(nar),sessAn=gN(sec,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
   var anMap={};if(sessAn){var lines=sessAn.replace(/\|/g,'\n').split('\n');for(var i=0;i<lines.length;i++){var m=lines[i].trim().match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(m){var tk=m[1].replace(/\*/g,'').trim();anMap[tk]=m[2].trim();}}};
-  var h='<h2>Session Stats</h2><div class="info-box"><table><tr><th>Ticker</th><th>Last</th><th>Chg%</th><th>Analysis</th></tr>';
+  var isColSs=false;try{isColSs=localStorage.getItem('sec_col_sess')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'sess\')"><span id="secArrow_sess" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSs?'-90':'0')+'deg)">\u25bc</span> Session Stats</h2><div id="secBody_sess" style="'+(isColSs?'display:none':'')+ '"><div class="info-box">';
+  h+='<table><tr><th>Ticker</th><th>Last</th><th>Chg%</th><th>Analysis</th></tr>';
   var keys=['SPY','QQQ','DIA','IWM'];for(var k=0;k<keys.length;k++){var it=fS(bn,keys[k]);if(it){var an=anMap[it.sym]||'';h+='<tr><td class="white bold tc">'+e(it.sym)+'</td><td class="mono">'+e(it.val)+'</td><td>'+pct(it.chg)+'</td><td class="dim" style="font-size:12px">'+e(an)+'</td></tr>';}}
   var bd=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd,'$VIX'),dxy=fS(bd,'$DXY');
   if(vix||d.tsVix){var va=anMap['VIX']||anMap['$VIX']||'';var vDisp=d.tsVix||((vix&&vix.val)?vix.val:'');var vSrc=d.tsVix?'TS':'Y';var vChg=(vix&&vix.chg)?vix.chg:'';h+='<tr><td class="y bold tc">VIX <span class="dim" style="font-size:9px">'+vSrc+'</span></td><td class="mono">'+e(vDisp)+'</td><td>'+pct(vChg)+'</td><td class="dim" style="font-size:12px">'+e(va)+'</td></tr>';}
   if(dxy){var da=anMap['DXY']||anMap['$DXY']||'';h+='<tr><td class="dim tc">DXY</td><td class="mono">'+e(dxy.val)+'</td><td>'+pct(dxy.chg)+'</td><td class="dim" style="font-size:12px">'+e(da)+'</td></tr>';}
   for(var c=0;c<comm.length;c++){var ca=anMap[comm[c].sym]||'';h+='<tr><td class="dim tc">'+e(comm[c].sym)+'</td><td class="mono">'+e(comm[c].val)+'</td><td>'+pct(comm[c].chg)+'</td><td class="dim" style="font-size:12px">'+e(ca)+'</td></tr>';}
   if(fut.length){h+='<tr><td colspan="4" style="font-size:11px;color:#7d8590;padding-top:6px;border:none">FUTURES</td></tr>';for(var f=0;f<fut.length;f++)h+='<tr><td class="dim tc">'+e(fut[f].sym)+'</td><td class="mono">'+e(fut[f].val)+'</td><td>'+pct(fut[f].chg)+'</td><td></td></tr>';}
-  h+='</table></div>';$('sSess').innerHTML=h;
+  h+='</table></div>';h+='</div>';$('sSess').innerHTML=h;
 }
 
 // ═══ SECTORS ═══
@@ -2148,7 +2156,9 @@ function rSectors(d){
 function rStory(d){
   var nar=d.dashboardNarrative||'';if(!nar){$('sStory').innerHTML='<h2>The Story</h2><div class="info-box"><p class="dim">No Opus narrative yet. Run 📡 Dashboard Now.</p></div>';return}
   var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
-  var h='<h2>The Story</h2><p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
+  var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'story\')"><span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span> The Story</h2><div id="secBody_story" style="'+(isColSt?'display:none':'')+ '">';
+  h+='<p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
   var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
   // Retrospective: first check current narrative for explicit retro section
   var retro=gN(sec,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
@@ -2167,7 +2177,7 @@ function rStory(d){
     }
   }
   if(retro)h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6"><p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">📋 Previous Story Update</p>'+fmt(retro)+'</div>';
-  $('sStory').innerHTML=h;
+  h+='</div>';$('sStory').innerHTML=h;
 }
 
 // ═══ IN PLAY TODAY (v90.5) ═══
