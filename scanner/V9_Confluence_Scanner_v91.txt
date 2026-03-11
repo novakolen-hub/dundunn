@@ -7704,27 +7704,43 @@ function _cleanAreteBody(raw) {
   body = body.replace(/https?:\/\/[^\s]*?ccsend\.com[^\s)\]>]*/g, '');
   body = body.replace(/https?:\/\/[^\s]*?constantcontact\.com[^\s)\]>]*/g, '');
   
-  // Remove unsubscribe/footer section (everything after these markers)
+  // Remove unsubscribe/footer section
   var footerMarkers = ['unsubscribe', 'update your preferences', 'view this email in', 'powered by', 'constant contact', 'sent by', 'manage your preferences', 'forward this email', 'safe unsubscribe'];
   for (var fi = 0; fi < footerMarkers.length; fi++) {
     var idx = body.toLowerCase().indexOf(footerMarkers[fi]);
-    if (idx > 0 && idx > body.length * 0.4) { // Only cut if it's in the bottom half
+    if (idx > 0 && idx > body.length * 0.4) {
       body = body.substring(0, idx).trim();
       break;
     }
   }
   
-  // Remove social media lines
+  // Remove social media lines and image alt text
   body = body.replace(/^\s*(facebook|twitter|instagram|linkedin|youtube)\s*$/gim, '');
   body = body.replace(/^\s*(follow us|connect with us|share this)[^\n]*$/gim, '');
-  
-  // Remove image alt text artifacts
   body = body.replace(/^\s*\[.*?\]\s*$/gm, '');
   
+  // Detect bold paragraph headers (lines that are ALL CAPS or short bold-style lines)
+  // Mark them with a separator so dashboard can format them
+  var lines = body.split('\n');
+  var result = [];
+  for (var li = 0; li < lines.length; li++) {
+    var line = lines[li].trim();
+    if (!line) { result.push(''); continue; }
+    // Detect headers: all caps lines > 3 chars, or lines ending with ':'
+    var isHeader = false;
+    if (line.length > 3 && line.length < 80 && line === line.toUpperCase() && /[A-Z]/.test(line)) isHeader = true;
+    if (line.length > 3 && line.length < 60 && line.match(/^[A-Z][A-Za-z\s&,]+:?$/)) isHeader = true;
+    if (isHeader) {
+      result.push('');
+      result.push('**' + line + '**');
+    } else {
+      result.push(line);
+    }
+  }
+  
+  body = result.join('\n');
   // Collapse 3+ blank lines to 2
   body = body.replace(/\n{3,}/g, '\n\n');
-  
-  // Trim leading/trailing whitespace
   body = body.trim();
   
   return body;
@@ -7750,6 +7766,10 @@ function _analyzeAreteEmail(subject, cleanBody) {
     + '  ],\n'
     + '  "sectorThemes": ["AI spending","semiconductor rotation"],  // macro themes\n'
     + '  "marketBias": "bullish|bearish|neutral|mixed",  // overall tone\n'
+    + '  "topSectors": ["Technology","Semiconductors",...],  // top 5 sectors mentioned or implied\n'
+    + '  "indexLevels": [  // key index levels mentioned\n'
+    + '    {"index":"SPY","level":680,"type":"support|resistance","note":"key level"}\n'
+    + '  ],\n'
     + '  "summary": "2-3 sentence summary of the key message"\n'
     + '}';
   
