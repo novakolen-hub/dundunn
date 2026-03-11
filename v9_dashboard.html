@@ -1,4 +1,4 @@
-<!-- v11.18.2 cache-bust 1772729951.8953855 -->
+<!-- v11.18.3 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1287,7 +1287,7 @@ var _bookUnlocked=false;
 function unlockBook(){
   var pin=document.getElementById('bookPinInput').value;
   try{var stored=localStorage.getItem('v9_book_pin')||'1234';
-    if(pin===stored){_bookUnlocked=true;if(_lastD)rBook(_lastD);
+    if(pin===stored){_bookUnlocked=true;if(_lastD){rBook(_lastD);rToday(_lastD);}
     }else{var msg=document.getElementById('pinMsg');if(msg){msg.textContent='Wrong PIN';msg.style.color='#f85149';}}
   }catch(e){}
 }
@@ -1769,7 +1769,7 @@ function rToday(d){
       if(ev.time) h+='<span>\ud83d\udd50 '+e(ev.time)+'</span>';
       if(ev.previous) h+='<span>Prev: <span class="white">'+e(ev.previous)+'</span></span>';
       if(ev.forecast) h+='<span>Fcst: <span class="white">'+e(ev.forecast)+'</span></span>';
-      if(ev.actual) h+='<span>Act: <span style="color:#3fb950;font-weight:700">'+e(ev.actual)+'</span></span>';
+      if(ev.actual){var _actN=parseFloat(String(ev.actual).replace(/[^0-9.\-]/g,'')),_fctN=parseFloat(String(ev.forecast||'').replace(/[^0-9.\-]/g,''));var _actCol='#3fb950';if(!isNaN(_actN)&&!isNaN(_fctN)){_actCol=_actN>_fctN?'#3fb950':_actN<_fctN?'#f85149':'#e3b341';}h+='<span>Act: <span style="color:'+_actCol+';font-weight:700">'+e(ev.actual)+((!isNaN(_actN)&&!isNaN(_fctN))?(_actN>_fctN?' \u2713':_actN<_fctN?' \u2717':''):'')+'</span></span>';}
       if(ev.tickers) h+='<span class="b">\u2192 '+e(ev.tickers)+'</span>';
       h+='</div></div></div>';
     }
@@ -1809,7 +1809,7 @@ function rToday(d){
         if(beat)actStr+=' \u2713';
         if(miss)actStr+=' \u2717';
       }
-      h+='<tr style="'+rowBg2+'">';
+      var _earnBeatMiss='';if(er.epsActual!=null){var _eNum=er.note?parseFloat(String(er.note).replace(/.*Est: \$/,'').replace(/ .*/,'')):NaN;if(!isNaN(_eNum)){_earnBeatMiss=er.epsActual>_eNum?'background:#0d2818':er.epsActual<_eNum?'background:#2d0a0a':'';}}h+='<tr style="'+(rowBg2||_earnBeatMiss)+'">';
       h+='<td style="font-weight:700;color:'+tierCol+';cursor:pointer" onclick="openPT(\''+e(tk)+'\')">'+e(tk)+'</td>';
       h+='<td class="dim" style="text-align:center;white-space:nowrap">'+e(when)+'</td>';
       h+='<td class="dim" style="text-align:center">'+e(er.note||'')+'</td>';
@@ -2186,23 +2186,6 @@ function rStory(d){
   var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'story\')"><span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span> The Story</h2><div id="secBody_story" style="'+(isColSt?'display:none':'')+'">';h+='<p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
   var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="dim" style="font-size:11px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById(\'sToday\').scrollIntoView({behavior:\'smooth\'})">\u2191 Current story is in TODAY section \u2014 click to scroll</div>';
-  // Retrospective: first check current narrative for explicit retro section
-  var retro=gN(sec,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
-  // If no explicit retro but we have a first-of-day narrative that differs from current, extract its story
-  if(!retro && d.firstNarrativeOfDay && d.firstNarrativeOfDay !== nar){
-    var firstSec=parseN(d.firstNarrativeOfDay);
-    var firstStory=gN(firstSec,['THE STORY','STORY','MARKET STORY']);
-    if(firstStory){
-      retro=firstStory;
-      var firstTs=d.firstNarrativeTs||'';
-      var firstSess=d.firstNarrativeSession||'';
-      h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6">';
-      h+='<p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">📋 First Story of Day <span class="dim" style="font-weight:400;font-size:10px">'+e(firstTs)+(firstSess?' · '+e(firstSess):'')+'</span></p>';
-      h+=fmt(retro)+'</div>';
-      retro=null; // already rendered
-    }
-  }
-  if(retro)h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6"><p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">📋 Previous Story Update</p>'+fmt(retro)+'</div>';
   h+='</div>';$('sStory').innerHTML=h;
 }
 
