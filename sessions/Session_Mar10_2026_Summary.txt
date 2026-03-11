@@ -1,40 +1,39 @@
-SESSION: March 10, 2026
-Duration: ~8 hours
+SESSION: March 10-11, 2026 (extended)
 
-SCANNER VERSIONS DEPLOYED: v91.1 through v91.9
-- v91.1: % equity position sizing
-- v91.2: Dynamic EDT/EST timing
-- v91.3: News quota fix + 5-day chart data
-- v91.4: Breadth Alert Engine
-- v91.5: Internals history cache
-- v91.6: Arete email fix (forwarding + search)
-- v91.7: Menu reorganization (4 submenus)
-- v91.8: Arete full pipeline (cleanup/analysis/alignment/retro)
-- v91.9: YouTube RSS feed
+SCANNER: v91.1 → v91.9
+  v91.1: % equity sizing
+  v91.2: Dynamic EDT/EST timing  
+  v91.3: News quota fix + 5-day chart
+  v91.4: Breadth Alert Engine
+  v91.5: Internals history cache
+  v91.6: Arete email fix (forwarding + search)
+  v91.7: Menu reorganization (4 submenus)
+  v91.8: Arete pipeline (cleanup/analysis/alignment/retro)
+  v91.9: YouTube RSS feed + improved Arete cleanup + analysis extracts sectors/index levels
 
-DASHBOARD CHANGES:
-- Quota chart: SVG rebuild, zoom/pan, sticky, Y-axis, scroll-pan
-- Compact GP header: ruler + needle + distances + sub-mode tag
-- Alert banner: breadth alerts with cause pills + headline
-- Indicator sparklines: Option C hybrid in Primary Drivers
-- Section reorder: 6 collapsible groups (Market/Sectors/Stocks/Intel/Positions/Reference)
-- Arete Intel: analysis card + alignment + retro scoreboard + merged Book + YouTube
-- Read/watched checkmarks on emails + videos
+DASHBOARD:
+  - Compact GP header (ruler + needle + distances + sub-mode)
+  - Alert banner (breadth alerts with cause pills + headline)
+  - Indicator sparklines (Option C hybrid in Primary Drivers)
+  - Section reorder: 6 collapsible groups (Market/Sectors/Stocks/Intel/Positions/Reference)
+  - Section toggles: Breadth, Story, Session Stats
+  - Inst Pulse sub-toggles: Vol Regime, IV 5-Day, Term Structure, Expected Move, Sentiment
+    - Key metrics in collapsed headers (IVR, ±$, F&G, NAAIM, P/C)
+    - Runtime DOM wiring (no HTML string nesting issues)
+  - Arete Intel: analysis card + alignment + retro scoreboard + merged Book + YouTube
+  - Read/watched checkmarks on emails + videos
+  - Collapse All / Expand All with exceptions (inter, intertk, focused stay collapsed)
+  - Quota chart SVG rebuild with zoom/pan
+  - 35K dead code removed (rBrief, rAreteBook bodies)
 
-SPECS WRITTEN:
-- Phase 2B: Deployment guardrails (swing caps, intraday risk budget, Check 9)
-- Phase 3: Trade Management (scale-in/out, stop lifecycle, theme clustering, unplanned tagging, DT→SW)
-- Phase 4: Broker stop polling
-- Full build spec updated with current state
+SPECS:
+  - Phase 2B: Deployment guardrails
+  - Phase 3: Trade Management (scale-in/out, stop lifecycle, theme clustering, etc)
+  - Full build spec updated on GitHub
 
-OTHER:
-- V9 System Reference page created (v9_system.html)
-- GitHub repo reorganized (specs/, sessions/, bridge/, scanner/)
-- Google Workspace migration planning
-- Confirmed Phase 0, 1, 2A fully complete
-
-PENDING (Mar 11):
-- Section-level toggles (Breadth, Story, Session Stats, Inst Pulse sub-sections)
-- Collapse All / Expand All with exceptions
-- Earnings date sort fix
-- Live market verification of all new features
+NEXT SESSION:
+  - Verify with live market data
+  - Earnings date sort fix
+  - Inst Pulse sub-section reorder (Vol → Term → IV5D → ExpMove → Sentiment)
+  - Load time optimization (272KB JS)
+  - Phase 2B: deployment guardrails build
