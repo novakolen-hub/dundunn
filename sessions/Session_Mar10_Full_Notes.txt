@@ -1,0 +1,249 @@
+═══════════════════════════════════════════════════════════════
+V9 SESSION NOTES — March 10-11, 2026
+═══════════════════════════════════════════════════════════════
+
+SCANNER VERSIONS DEPLOYED: v91.1 through v91.9
+═══════════════════════════════════════════════════════════════
+
+v91.1: % EQUITY POSITION SIZING (Phase 1)
+  - SUBMODE_SIZING_PCT replaces fixed dollar SUBMODE_SIZING
+  - Tiers: full(20-25%/0.75-1%), standard(12-18%/0.5-0.75%), 
+    reduce(8-12%/0.35-0.5%), small(4-7%/0.2-0.35%), bench(0%), inverse(12-18%)
+  - Equity reference: current_equity from Accounts tab (live intraday)
+  - Risk cap: auto-reduces shares if dollar risk exceeds max %
+
+v91.2: DYNAMIC EDT/EST TIMING
+  - _etDstOffset() compares America/Phoenix vs America/New_York
+  - Returns 60 during EDT, 0 during EST
+  - 8 touch points: PHASE_CONFIG, SPARK_START/END, _currentSessionPhase, 
+    getDashboardData, getGPSubMode, RVOL-TOD, updateSheet reset
+  - Never needs manual update — auto-detects each cycle
+
+v91.3: NEWS QUOTA FIX + 5-DAY CHART
+  - RSS cache: 10 min → 30 min
+  - FinnHub cache: 3 min → 30 min
+  - Per-ticker Yahoo feeds: REMOVED
+  - RSS feeds: 5+N → 3 fixed (Investing.com, CNBC, Yahoo general)
+  - Savings: ~572 news fetches/day
+  - Quota chart data: 24h → 120h (5 days)
+
+v91.4: BREADTH ALERT ENGINE
+  - Immediate trigger: ±1.5 in one 5-min cycle
+  - Sustained trigger: ±2.5 over 15 min (3 cycles)
+  - Attribution: sector flips, VIX spike, internals movement,
+    growth/defensive shift, top 3 mega-cap movers
+  - Optional: 1 FinnHub news fetch for headline confirmation
+  - 15-min cooldown between alerts
+  - Stored: BREADTH_ALERTS in ScriptProperties (last 20)
+
+v91.5: INTERNALS HISTORY CACHE
+  - Caches TICK/ADD/ADQD/VOLD/VOLQD every 5-min cycle
+  - INTERNALS_HIST ScriptProperty, clears daily
+  - Up to 200 data points per day (~78 during market hours)
+  - Feeds dashboard indicator sparklines
+
+v91.6: ARETE EMAIL FIX
+  - Problem: Arete emails go to personal Gmail, not Workspace
+  - Solution: Gmail filter forwards from personal → Workspace
+  - Scanner search: "aretetrading.ccsend.com newer_than:7d"
+  - Works for all Arete emails (premarket, weekend, community)
+  - testAreteEmails() diagnostic function added
+  - Better error logging in getDashboardData
+
+v91.7: MENU REORGANIZATION
+  - Old: one giant flat menu (50+ items)
+  - New: 4 submenus:
+    ▶ Controls (start/stop scanner, market, dashboard, pulse)
+    📈 Trading (positions, equity, sync, setups, plan trade, EOD)
+    🔧 Tools (quota, sidebar, cache refresh, IC slugs)
+    ⚙ Setup (credentials, accounts, Finnhub, diagnostics)
+
+v91.8: ARETE FULL PIPELINE
+  Email Cleanup (_cleanAreteBody):
+    - Strips forwarding headers, tracking URLs, footer junk
+    - Detects ALL CAPS lines as section headers → marks with **
+    - Collapses whitespace
+  
+  Claude Analysis (_analyzeAreteEmail):
+    - Runs once/day on most recent email via Claude Sonnet
+    - Extracts: tickers, directional calls (bias/level/note),
+      sector themes, top sectors, index levels, market bias, summary
+    - ~$0.002 per analysis
+  
+  Alignment Check (_checkAreteAlignment):
+    - Compares each call against live scanner data
+    - Status: ALIGNED / PARTIAL / DIVERGENT / NOT_TRACKED
+    - GP alignment: does Arete's market bias match current GP?
+  
+  EOD Retrospective (_areteRetrospective):
+    - Runs inside runEOD()
+    - Compares morning calls to EOD price changes
+    - Tracks accuracy: correct/wrong/neutral
+    - 30-day rolling history in ARETE_RETRO_HIST
+
+v91.9: YOUTUBE RSS + ANALYSIS IMPROVEMENTS
+  - RSS feed: youtube.com/feeds/videos.xml?channel_id=UCTeFsS-bP0XEt3NBMjfW2cA
+  - 4-hour cache, up to 8 videos
+  - Sent as areteYouTube[] in dashboard JSON
+  - Analysis prompt expanded: now extracts topSectors + indexLevels
+
+═══════════════════════════════════════════════════════════════
+DASHBOARD CHANGES
+═══════════════════════════════════════════════════════════════
+
+COMPACT GP HEADER:
+  - Big GP letter + action name + sub-mode with sizing tag
+  - Score + trajectory (right-aligned)
+  - Ruler with needle, zone highlighting (D/C/B/A), threshold labels
+  - Distance badges: ↑ next GP up, ↓ next GP down
+  - SPY/VIX quick glance
+  - Replaces old GP banner + session bar + text block
+
+BREADTH ALERT BANNER:
+  - Renders most recent breadthAlert (if < 30 min old)
+  - Direction badge: ⚡ SURGE or 🔻 DROP
+  - Cause pills: sector moves, VIX, internals, growth shift, top movers
+  - News headline (from FinnHub)
+  - Shows between GP header and Breadth section
+
+INDICATOR SPARKLINES (Option C Hybrid):
+  - Each Primary Driver (TICK, ADD, ADQD, VOLD, VOLQD) gets inline sparkline
+  - Sparkline inside range-shaded zone, zero line, current dot
+  - Color matches current value (green positive, red negative)
+  - Builds from internalsHist data (populates after 15-20 min)
+
+SECTION REORDER WITH GROUP TOGGLES:
+  6 collapsible groups:
+    THE MARKET: Breadth → Institutional Pulse → Story
+    THE SECTORS: Sectors → Session Stats → Ratios
+    THE STOCKS: Trade Candidates → In Play → Active Setups → Watching → Setups
+    INTELLIGENCE: Arete Intel → Econ Calendar → Earnings → News
+    MY POSITIONS: Book → Inverse ETFs
+    REFERENCE: Coaching → Focused
+  
+  - Blue headers with arrows, persist state in localStorage
+  - Collapse All / Expand All in subtitle bar
+  - Expand All exceptions: Intermarket Ratios, Intermarket Tickers, Focused stay collapsed
+
+SECTION TOGGLES:
+  - Breadth: shows score + trend in collapsed header
+  - Story: collapsible
+  - Session Stats: collapsible
+
+INSTITUTIONAL PULSE SUB-TOGGLES:
+  - Vol Regime, IV 5-Day, Term Structure, Expected Move, Sentiment
+  - Runtime DOM wiring (avoids HTML string nesting issues)
+  - Key metrics extracted and shown in collapsed headers:
+    Vol Regime: IVR value
+    IV 5-Day: SPY/QQQ/IWM change %
+    Term Structure: ratio
+    Expected Move: ±$ value
+    Sentiment: F&G score, NAAIM %, P/C ratio
+
+ARETE INTEL SECTION:
+  🎯 Analysis Card:
+    - Market bias badge (BULLISH/BEARISH/NEUTRAL)
+    - Claude-extracted summary
+    - Sector theme pills (gold) + top sectors (blue)
+    - Index levels with support/resistance coloring
+    - Calls table: ticker, bias, level, scanner alignment status
+    - GP alignment check
+  
+  📊 Track Record:
+    - Rolling 5-day accuracy percentage
+    - Mini bar chart of daily accuracy
+    - Latest day detail
+  
+  📚 Arete Book (merged):
+    - Positions + watching from Discord
+    - Collapsible sub-section
+  
+  🎬 YouTube Videos:
+    - Inline embed (desktop), YouTube app (mobile)
+    - Watched checkmarks (localStorage)
+  
+  📧 Emails (cleaned):
+    - Bold headers with spacing
+    - Tickers highlighted and clickable
+    - Read checkmarks (localStorage)
+    - Collapsible by date, today auto-expanded
+
+QUOTA CHART:
+  - SVG rebuild (no scroll, no overflow)
+  - Y-axis with gridlines, every 500 step
+  - Stacked category bars (color-coded)
+  - Zoom: All/24h/8h presets, +/- buttons, arrow pan
+  - Scroll wheel = pan through time
+  - Sticky popup (X to close, click-outside to close)
+  - Mouse-follow tooltip with per-category breakdown
+  - Day boundary dashed lines, date labels in blue
+  - 5-day (120h) history
+
+PERFORMANCE:
+  - Removed 35K dead code (rBrief body, rAreteBook body)
+  - Removed no-cache meta tags (were forcing full re-download)
+  - JS: ~237K (down from ~264K)
+
+═══════════════════════════════════════════════════════════════
+SPECS & DOCS
+═══════════════════════════════════════════════════════════════
+
+V9 System Reference: https://novakolen-hub.github.io/dundunn/v9_system.html
+  - 12 sections covering entire system
+  - Claude can read and update via GitHub API
+
+Build Spec (V9_Build_Spec_Updated.txt):
+  - Phase 0: COMPLETE (foundation, % sizing)
+  - Phase 1: COMPLETE (trade capture, sync, grouping)
+  - Phase 2A: COMPLETE (pre-trade form, scorecard)
+  - Phase 2B: SPECCED (deployment guardrails)
+  - Phase 3: SPECCED (scale-in/out, stop lifecycle, theme clustering, etc)
+  - Phase 4: SPECCED (broker stop polling)
+
+═══════════════════════════════════════════════════════════════
+KEY DECISIONS
+═══════════════════════════════════════════════════════════════
+
+1. SIZING: % of equity, not fixed dollars
+2. BE DISCOUNT: Swings at breakeven count at 50% against cap
+3. LOSS LIMITS: Advisory not hard block
+4. GP TRANSITIONS: Grandfather existing, only block new entries
+5. PAPER TRADES: Exempt from deployment caps
+6. PORTFOLIO VIEW: Theme-based clusters as default
+7. DT→SW: Formal conversion with full carryover
+8. NEWS: 30-min cache, 3 feeds only
+9. TIMING: Dynamic DST detection
+10. ARETE: Reference only — alignment check, not system override
+11. DASHBOARD: Top-down flow (Market → Sectors → Stocks → Intel → Positions)
+12. YOUTUBE: Inline desktop, app on mobile
+
+═══════════════════════════════════════════════════════════════
+LESSONS / PROCESS RULES
+═══════════════════════════════════════════════════════════════
+
+DASHBOARD PUSH RULE (added to memory):
+  Before EVERY push:
+  1. Extract JS
+  2. Run node -c — if fails, DO NOT PUSH
+  3. Verify ALL render functions exist (1 definition each)
+  4. Check braces balance
+  Never push without ALL checks passing. No exceptions.
+
+FUNCTION BOUNDARY RULE:
+  Use brace-counting find_fn_end() for ANY function removal/stubbing.
+  NEVER use "\n\nfunction " as boundary marker — it deletes adjacent functions.
+
+ONE PUSH RULE:
+  Build locally, verify, show preview, get OK, push ONCE.
+  No incremental patches. No "quick fix" pushes.
+
+═══════════════════════════════════════════════════════════════
+NEXT SESSION PRIORITIES
+═══════════════════════════════════════════════════════════════
+
+1. Verify live market rendering (GP header, sparklines, alerts, Arete)
+2. Clear localStorage if stale: localStorage.clear() then reload
+3. Earnings date sort fix (Tuesday before Monday)
+4. Inst Pulse sub-section reorder (Vol → Term → IV5D → ExpMove → Sentiment)
+5. Load time investigation (272KB JS — can we lazy-load?)
+6. Phase 2B: Deployment guardrails build
