@@ -1,4 +1,4 @@
-<!-- v11.19.2 cache-bust 1772729951.8953855 -->
+<!-- v11.20.0 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -269,18 +269,11 @@
 <div id="sStory" style="display:none"></div>
 
 <div class="sec-group">
-<div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> THE MARKET</div>
+<div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> MARKET HEALTH</div>
 <div class="grp-body" id="grpBody_market">
 <div id="sBreadth"></div>
-<div id="sInst"></div>
 </div></div>
-<div class="sec-group">
-<div class="grp-hdr" onclick="toggleGroup('sectors')"><span class="grp-arrow" id="grpArrow_sectors">▼</span> THE SECTORS</div>
-<div class="grp-body" id="grpBody_sectors">
-<div id="sSectors"></div>
-<div id="sSess"></div>
-<div id="sRatios"></div>
-</div></div>
+<!-- sectors merged into breadth -->
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS</div>
 <div class="grp-body" id="grpBody_stocks">
@@ -1229,7 +1222,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['today','breadth','story','econtoday','earntoday','aretecalls','sess','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
+  var keys=['today','breadth','story','econtoday','earntoday','aretecalls','confirm','sess','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
@@ -1238,7 +1231,7 @@ function toggleAll(collapse){
     if(arrow)arrow.style.transform=collapse?'rotate(-90deg)':'rotate(0deg)';
     try{localStorage.setItem('sec_col_'+keys[i],collapse?'1':'0');}catch(e){}
   }
-  var gKeys=['market','sectors','stocks','intel','positions','reference'];for(var i=0;i<gKeys.length;i++){var gb=document.getElementById('grpBody_'+gKeys[i]);var ga=document.getElementById('grpArrow_'+gKeys[i]);if(!gb)continue;gb.style.display=collapse?'none':'';if(ga)ga.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('v9_grp_'+gKeys[i],collapse?'0':'1');}catch(e){}}
+  var gKeys=['market','stocks','intel','positions','reference'];for(var i=0;i<gKeys.length;i++){var gb=document.getElementById('grpBody_'+gKeys[i]);var ga=document.getElementById('grpArrow_'+gKeys[i]);if(!gb)continue;gb.style.display=collapse?'none':'';if(ga)ga.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('v9_grp_'+gKeys[i],collapse?'0':'1');}catch(e){}}
   if(!collapse){var sc2=['inter','intertk','focused'];for(var i=0;i<sc2.length;i++){var sb=document.getElementById('secBody_'+sc2[i]);var sa=document.getElementById('secArrow_'+sc2[i]);if(sb){sb.style.display='none';if(sa)sa.style.transform='rotate(-90deg)';try{localStorage.setItem('sec_col_'+sc2[i],'1');}catch(e){}}}}
   // Inst toggles
   var iKeys=['volreg','iv5d','termstruct','expmove','sentiment'];for(var i=0;i<iKeys.length;i++){var ib=document.getElementById('instBody_'+iKeys[i]);var ia=document.getElementById('instArrow_'+iKeys[i]);if(ib){ib.style.display=collapse?'none':'';if(ia)ia.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('inst_col_'+iKeys[i],collapse?'1':'0');}catch(e){}}}
@@ -2071,11 +2064,26 @@ function rBreadth(d){
   h+='<table style="font-size:11px;margin-bottom:10px;width:100%"><tr><th style="text-align:left">Indicator</th><th style="text-align:right">Value</th><th style="text-align:right;width:36px">Pts</th></tr>'+regimeRows+'</table>';
 
   h+=secHdr('Sector Participation',sectorPts,2);
-  if(gs.length>0){
-    h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Growth ('+growthGreen+'/8):</span> '+gcols.join('<span class="dim" style="font-size:9px"> · </span>')+'</div>';
-    h+='<div style="margin-bottom:10px"><span style="font-size:10px;color:#7d8590">Defensive ('+defGreen+'/5):</span> '+dcols.join('<span class="dim" style="font-size:9px"> · </span>')+'</div>';
-    if(defGreen>=4&&growthGreen<=2)h+='<p style="font-size:10px;color:#f85149;margin:-4px 0 8px 0">⚠ Risk-Off rotation penalty (−0.5)</p>';
-    else if(defGreen>=3&&growthGreen>=6)h+='<p style="font-size:10px;color:#3fb950;margin:-4px 0 8px 0">✓ Broad participation bonus (+0.5)</p>';
+  // Heatmap tiles (from sectorHeatmap data)
+  var _hm=d.sectorHeatmap||[];
+  var _hmGr=_hm.filter(function(x){return x.type==='G'}).sort(function(a,b){return b.chg-a.chg});
+  var _hmDf=_hm.filter(function(x){return x.type==='D'}).sort(function(a,b){return b.chg-a.chg});
+  if(_hmGr.length||gs.length>0){
+    if(_hmGr.length){
+      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Growth ('+growthGreen+'/'+_hmGr.length+')</span></div>';
+      h+='<div class="heatmap" style="margin-bottom:6px">';
+      for(var _hi=0;_hi<_hmGr.length;_hi++){h+='<div class="'+hc(_hmGr[_hi].chg)+'" style="font-size:10px;padding:4px 2px">'+e(_hmGr[_hi].sym)+'<br>'+(_hmGr[_hi].chg>0?'+':'')+_hmGr[_hi].chg.toFixed(2)+'%</div>';}
+      h+='</div>';
+      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Defensive ('+defGreen+'/'+_hmDf.length+')</span></div>';
+      h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_hmDf.length,5)+',1fr);margin-bottom:6px">';
+      for(var _hi2=0;_hi2<_hmDf.length;_hi2++){h+='<div class="'+hc(_hmDf[_hi2].chg)+'" style="font-size:10px;padding:4px 2px">'+e(_hmDf[_hi2].sym)+'<br>'+(_hmDf[_hi2].chg>0?'+':'')+_hmDf[_hi2].chg.toFixed(2)+'%</div>';}
+      h+='</div>';
+    } else {
+      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Growth ('+growthGreen+'/8):</span> '+gcols.join('<span class="dim" style="font-size:9px"> \u00b7 </span>')+'</div>';
+      h+='<div style="margin-bottom:6px"><span style="font-size:10px;color:#7d8590">Defensive ('+defGreen+'/5):</span> '+dcols.join('<span class="dim" style="font-size:9px"> \u00b7 </span>')+'</div>';
+    }
+    if(defGreen>=4&&growthGreen<=2)h+='<p style="font-size:10px;color:#f85149;margin:-4px 0 8px 0">\u26a0 Risk-Off rotation penalty (\u22120.5)</p>';
+    else if(defGreen>=3&&growthGreen>=6)h+='<p style="font-size:10px;color:#3fb950;margin:-4px 0 8px 0">\u2713 Broad participation bonus (+0.5)</p>';
   }else{
     h+='<p class="dim" style="font-size:11px;margin-bottom:10px">'+sectorPts.toFixed(2)+' pts (live from scanner)</p>';
   }
@@ -2086,42 +2094,53 @@ function rBreadth(d){
   h+='<span style="font-family:\'JetBrains Mono\',monospace;font-size:18px;font-weight:700;color:'+gcol+'">'+(grandTotal>0?'+':'')+grandTotal.toFixed(1)+'</span>';
   h+='</div>';
   h+='</div>';
+
+  // ── CONFIRMATION (session stats + Arete S/R) ──
+  var _bn=gS(d,'BENCHMARKS'),_fut=gS(d,'FUTURES'),_comm=gS(d,'COMMODITIES');
+  if(_bn.length||_fut.length){
+    var _nar2=d.dashboardNarrative||'',_sec2=parseN(_nar2),_sessAn=gN(_sec2,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
+    var _anMap={};if(_sessAn){var _lines=_sessAn.replace(/\|/g,'\n').split('\n');for(var _li=0;_li<_lines.length;_li++){var _m=_lines[_li].trim().match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(_m){_anMap[_m[1].replace(/\*/g,'').trim()]=_m[2].trim();}}}
+    // Arete key levels lookup
+    var _arLvl={};
+    var _aa=d.areteAnalysis||{};
+    if(_aa.keyLevels){for(var _ki=0;_ki<_aa.keyLevels.length;_ki++){var _kl=_aa.keyLevels[_ki];if(_kl.ticker)_arLvl[_kl.ticker.toUpperCase()]=_kl;}}
+
+    var isColConf=false;try{isColConf=localStorage.getItem('sec_col_confirm')==='1';}catch(e){}
+    h+='<h2 style="cursor:pointer;user-select:none;margin-top:14px" onclick="toggleSec(\'confirm\')">';
+    h+='<span id="secArrow_confirm" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColConf?'-90':'0')+'deg)">\u25bc</span> Confirmation</h2>';
+    h+='<div id="secBody_confirm" style="'+(isColConf?'display:none':'')+'">';
+    h+='<div class="info-box"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg%</th><th>Arete S/R</th><th>Analysis</th></tr>';
+    var _bKeys=['SPY','QQQ','DIA','IWM'];
+    for(var _bk=0;_bk<_bKeys.length;_bk++){
+      var _it=fS(_bn,_bKeys[_bk]);
+      if(_it){
+        var _an=_anMap[_it.sym]||'';
+        var _al=_arLvl[_it.sym]||null;
+        var _alStr='';
+        if(_al){_alStr='<span style="font-size:10px">'+((_al.type||'').indexOf('support')>=0?'S':'R')+': <span class="white">'+_al.level+'</span>'+((_al.note)?' <span class="dim">'+e(_al.note)+'</span>':'')+'</span>';}
+        h+='<tr><td class="white bold tc">'+e(_it.sym)+'</td><td class="mono">'+e(_it.val)+'</td><td>'+pct(_it.chg)+'</td><td>'+_alStr+'</td><td class="dim" style="font-size:11px">'+e(_an)+'</td></tr>';
+      }
+    }
+    var _bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),_vix2=fS(_bd2,'$VIX'),_dxy2=fS(_bd2,'$DXY');
+    if(_vix2||d.tsVix){var _va2=_anMap['VIX']||_anMap['$VIX']||'';var _vD2=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');var _vS2=d.tsVix?'TS':'Y';var _vC2=(_vix2&&_vix2.chg)?_vix2.chg:'';h+='<tr><td class="y bold tc">VIX <span class="dim" style="font-size:9px">'+_vS2+'</span></td><td class="mono">'+e(_vD2)+'</td><td>'+pct(_vC2)+'</td><td></td><td class="dim" style="font-size:11px">'+e(_va2)+'</td></tr>';}
+    if(_dxy2){var _da2=_anMap['DXY']||_anMap['$DXY']||'';h+='<tr><td class="dim tc">DXY</td><td class="mono">'+e(_dxy2.val)+'</td><td>'+pct(_dxy2.chg)+'</td><td></td><td class="dim" style="font-size:11px">'+e(_da2)+'</td></tr>';}
+    for(var _ci=0;_ci<_comm.length;_ci++){var _ca=_anMap[_comm[_ci].sym]||'';h+='<tr><td class="dim tc">'+e(_comm[_ci].sym)+'</td><td class="mono">'+e(_comm[_ci].val)+'</td><td>'+pct(_comm[_ci].chg)+'</td><td></td><td class="dim" style="font-size:11px">'+e(_ca)+'</td></tr>';}
+    if(_fut.length){h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding-top:6px;border:none">FUTURES</td></tr>';for(var _fi=0;_fi<_fut.length;_fi++)h+='<tr><td class="dim tc">'+e(_fut[_fi].sym)+'</td><td class="mono">'+e(_fut[_fi].val)+'</td><td>'+pct(_fut[_fi].chg)+'</td><td></td><td></td></tr>';}
+    h+='</table></div></div>';
+  }
+
+  // ── Placeholders for Inst Pulse and Intermarket (rendered by their own functions) ──
+  h+='<div id="sBreadthInst"></div>';
+  h+='<div id="sBreadthInter"></div>';
+
   h+='</div></div>';$('sBreadth').innerHTML=h;
 }
 
 // ═══ SESSION STATS (benchmarks + commodities + Opus analysis) ═══
-function rSess(d){
-  var bn=gS(d,'BENCHMARKS'),fut=gS(d,'FUTURES'),comm=gS(d,'COMMODITIES');
-  if(!bn.length&&!fut.length){$('sSess').innerHTML='';return}
-  // Get Opus session analysis
-  var nar=d.dashboardNarrative||'',sec=parseN(nar),sessAn=gN(sec,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
-  var anMap={};if(sessAn){var lines=sessAn.replace(/\|/g,'\n').split('\n');for(var i=0;i<lines.length;i++){var m=lines[i].trim().match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(m){var tk=m[1].replace(/\*/g,'').trim();anMap[tk]=m[2].trim();}}};
-  var isColSs=false;try{isColSs=localStorage.getItem('sec_col_sess')==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'sess\')"><span id="secArrow_sess" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSs?'-90':'0')+'deg)">\u25bc</span> Session Stats</h2><div id="secBody_sess" style="'+(isColSs?'display:none':'')+'"><div class="info-box">';h+='<table><tr><th>Ticker</th><th>Last</th><th>Chg%</th><th>Analysis</th></tr>';
-  var keys=['SPY','QQQ','DIA','IWM'];for(var k=0;k<keys.length;k++){var it=fS(bn,keys[k]);if(it){var an=anMap[it.sym]||'';h+='<tr><td class="white bold tc">'+e(it.sym)+'</td><td class="mono">'+e(it.val)+'</td><td>'+pct(it.chg)+'</td><td class="dim" style="font-size:12px">'+e(an)+'</td></tr>';}}
-  var bd=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd,'$VIX'),dxy=fS(bd,'$DXY');
-  if(vix||d.tsVix){var va=anMap['VIX']||anMap['$VIX']||'';var vDisp=d.tsVix||((vix&&vix.val)?vix.val:'');var vSrc=d.tsVix?'TS':'Y';var vChg=(vix&&vix.chg)?vix.chg:'';h+='<tr><td class="y bold tc">VIX <span class="dim" style="font-size:9px">'+vSrc+'</span></td><td class="mono">'+e(vDisp)+'</td><td>'+pct(vChg)+'</td><td class="dim" style="font-size:12px">'+e(va)+'</td></tr>';}
-  if(dxy){var da=anMap['DXY']||anMap['$DXY']||'';h+='<tr><td class="dim tc">DXY</td><td class="mono">'+e(dxy.val)+'</td><td>'+pct(dxy.chg)+'</td><td class="dim" style="font-size:12px">'+e(da)+'</td></tr>';}
-  for(var c=0;c<comm.length;c++){var ca=anMap[comm[c].sym]||'';h+='<tr><td class="dim tc">'+e(comm[c].sym)+'</td><td class="mono">'+e(comm[c].val)+'</td><td>'+pct(comm[c].chg)+'</td><td class="dim" style="font-size:12px">'+e(ca)+'</td></tr>';}
-  if(fut.length){h+='<tr><td colspan="4" style="font-size:11px;color:#7d8590;padding-top:6px;border:none">FUTURES</td></tr>';for(var f=0;f<fut.length;f++)h+='<tr><td class="dim tc">'+e(fut[f].sym)+'</td><td class="mono">'+e(fut[f].val)+'</td><td>'+pct(fut[f].chg)+'</td><td></td></tr>';}
-  h+='</table></div>';h+='</div>';$('sSess').innerHTML=h;
-}
+function rSess(d){$('sSess')&&($('sSess').innerHTML='');}
 
 // ═══ SECTORS ═══
-function rSectors(d){
-  var hm=d.sectorHeatmap||[],gr=hm.filter(function(x){return x.type==='G'}).sort(function(a,b){return b.chg-a.chg}),df=hm.filter(function(x){return x.type==='D'}).sort(function(a,b){return b.chg-a.chg});
-  var gg=gr.filter(function(x){return x.chg>0.05}).length,dg=df.filter(function(x){return x.chg>0.05}).length;
-  var isCol=true;try{var _v=localStorage.getItem('sec_col_sectors');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'sectors\')"><span id="secArrow_sectors" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Sectors <span class="dim" style="font-size:12px;font-weight:400">('+gg+'/'+gr.length+' growth · '+dg+'/'+df.length+' defensive)</span></h2>';
-  h+='<div id="secBody_sectors" style="'+(isCol?'display:none':'')+'">';
-  h+='<h3>Growth ('+gg+'/'+gr.length+')</h3><div class="heatmap">';
-  for(var i=0;i<gr.length;i++){var nm=SN[gr[i].sym]||'';h+='<div class="'+hc(gr[i].chg)+'">'+e(gr[i].sym)+'<br>'+(gr[i].chg>0?'+':'')+gr[i].chg.toFixed(2)+'%'+(nm?'<br><span style="font-size:9px;opacity:.7">'+e(nm)+'</span>':'')+'</div>';}
-  h+='</div>';
-  h+='<h3 style="margin-top:10px">Defensive ('+dg+'/'+df.length+')</h3><div class="heatmap" style="grid-template-columns:repeat('+Math.min(df.length,5)+',1fr)">';
-  for(var i=0;i<df.length;i++){var nm=SN[df[i].sym]||'';h+='<div class="'+hc(df[i].chg)+'">'+e(df[i].sym)+'<br>'+(df[i].chg>0?'+':'')+df[i].chg.toFixed(2)+'%'+(nm?'<br><span style="font-size:9px;opacity:.7">'+e(nm)+'</span>':'')+'</div>';}
-  h+='</div></div>';
-  $('sSectors').innerHTML=h;
-}
+function rSectors(d){$('sSectors')&&($('sSectors').innerHTML='');}
 
 // ═══ THE STORY + GAMEPLAN STATUS (colored) ═══
 function rStory(d){
@@ -2757,7 +2776,7 @@ var IM_REF={
 'SMH/QQQ':{what:'Semis vs Nasdaq',up:'semis leading tech',dn:'semis lagging',tickers:['SMH','NVDA','AMD','MU','AVGO']}
 };
 function rRatios(d){
-  var r=gS(d,'INTERMARKET RATIOS');if(!r.length){$('sRatios').innerHTML='';return}
+  var r=gS(d,'INTERMARKET RATIOS');if(!r.length){var _re=$('sBreadthInter')||$('sRatios');if(_re)_re.innerHTML='';return}
   var nar=d.dashboardNarrative||'',sec=parseN(nar),imRead=gN(sec,['INTERMARKET READ','INTERMARKET','RATIOS','CROSS-MARKET','MACRO']);
   var isCol=true;try{var _v=localStorage.getItem('sec_col_inter');if(_v!==null)isCol=_v==='1';}catch(e){}
   var tkCol=true;try{var _v=localStorage.getItem('sec_col_intertk');if(_v!==null)tkCol=_v==='1';}catch(e){}
@@ -2777,12 +2796,12 @@ function rRatios(d){
       for(var t=0;t<Math.min(ref.tickers.length,4);t++)h+=tkLink(ref.tickers[t])+' ';
       h+='</div>';}
     h+='</div>';}
-  h+='</div></div></div>';$('sRatios').innerHTML=h;
+  h+='</div></div></div>';var _re2=$('sBreadthInter')||$('sRatios');if(_re2)_re2.innerHTML=h;
 }
 // ═══ COACHING ═══
 // ═══════ INSTITUTIONAL PULSE ═══════
 function rInst(d){
-  var ip=d.instPulse;if(!ip||!ip.data){$('sInst').innerHTML='';return}
+  var ip=d.instPulse;if(!ip||!ip.data){var _ie=$('sBreadthInst')||$('sInst');if(_ie)_ie.innerHTML='';return}
   var vol=ip.data.vol_regime||{},fg=ip.data.fear_greed||{},
       pc=(ip.data.put_call&&ip.data.put_call.cboe)?ip.data.put_call.cboe:{},
       nm=ip.data.aaii||{},nar=ip.narrative||{};
@@ -2957,7 +2976,7 @@ function rInst(d){
   h+='</div>';
   // (Combined Read moved to top of section)
   h+='</div>';
-  $('sInst').innerHTML=h;
+  var _ie2=$('sBreadthInst')||$('sInst');if(_ie2)_ie2.innerHTML=h;
   _wireInstToggles();
 }
 function rCoach(d){
@@ -4001,7 +4020,7 @@ function _isAreteChecked(id){return !!_areteChecks()[id];}
 
 var _isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 function toggleGroup(name){var body=document.getElementById('grpBody_'+name);var arrow=document.getElementById('grpArrow_'+name);if(!body)return;var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';if(arrow)arrow.textContent=isHidden?'\u25bc':'\u25b6';try{localStorage.setItem('v9_grp_'+name,isHidden?'1':'0');}catch(e){}}
-function _restoreGroups(){var g=['market','sectors','stocks','intel','positions','reference'];for(var i=0;i<g.length;i++){try{var s=localStorage.getItem('v9_grp_'+g[i]);if(s==='0'){var b=document.getElementById('grpBody_'+g[i]);var a=document.getElementById('grpArrow_'+g[i]);if(b)b.style.display='none';if(a)a.textContent='\u25b6';}}catch(e){}}}
+function _restoreGroups(){var g=['market','stocks','intel','positions','reference'];for(var i=0;i<g.length;i++){try{var s=localStorage.getItem('v9_grp_'+g[i]);if(s==='0'){var b=document.getElementById('grpBody_'+g[i]);var a=document.getElementById('grpArrow_'+g[i]);if(b)b.style.display='none';if(a)a.textContent='\u25b6';}}catch(e){}}}
 _restoreGroups();
 document.getElementById('btnColAll').onclick=function(){toggleAll(true);};
 document.getElementById('btnExpAll').onclick=function(){toggleAll(false);};
