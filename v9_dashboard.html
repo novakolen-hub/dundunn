@@ -1,4 +1,4 @@
-<!-- v11.18.9 cache-bust 1772729951.8953855 -->
+<!-- v11.19.0 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -296,7 +296,6 @@
 <div id="sAreteEmails"></div>
 <div id="sEcon"></div>
 <div id="sEarnings"></div>
-<div id="sNews"></div>
 </div></div>
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('positions')"><span class="grp-arrow" id="grpArrow_positions">▼</span> MY POSITIONS</div>
@@ -1674,34 +1673,8 @@ function rToday(d){
 
   // ── The Story (rendered by rStory into this placeholder) ──
   h+='<div id="sStoryToday" style="margin-top:8px"></div>';
+  h+='<div id="sNewsToday" style="margin-top:8px"></div>';
   hasContent=true;
-
-  // ── Key news (recent, with links) — RIGHT AFTER STORY ──
-  var newsArr=d.news||[];
-  var nowSec=Date.now()/1000;
-  var recentNews=[];
-  for(var ni=0;ni<newsArr.length&&recentNews.length<5;ni++){
-    var n=newsArr[ni];
-    if(n.time&&(nowSec-n.time)<43200){recentNews.push(n);}
-  }
-  if(recentNews.length){
-    hasContent=true;
-    h+='<div style="margin-top:8px">';
-    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#7d8590;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcf0 NEWS</div>';
-    for(var ni2=0;ni2<recentNews.length;ni2++){
-      var n=recentNews[ni2];
-      var age=tA(n.time);
-      var nUrl=n.url||'';
-      h+='<div style="display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-bottom:1px solid #21262d;font-size:12px">';
-      h+='<span style="color:#58a6ff;flex-shrink:0">\u2022</span>';
-      h+='<div style="flex:1;min-width:0">';
-      if(nUrl){h+='<a href="'+e(nUrl)+'" target="_blank" style="color:#79c0ff;text-decoration:none;line-height:1.4">'+e(n.headline||'')+'</a>';}
-      else{h+='<span style="color:#e6edf3;line-height:1.4">'+e(n.headline||'')+'</span>';}
-      h+=' <span class="dim" style="font-size:9px">'+e(n.source||'')+' \u00b7 '+age+'</span>';
-      h+='</div></div>';
-    }
-    h+='</div>';
-  }
 
   // ── Today's Econ Events — HIGH IMPACT, reported/pending state ──
   var eco=d.ecoEvents||[];
@@ -2436,6 +2409,9 @@ function rEarnings(d){
     if(!dayMap[dk]){dayMap[dk]=[];dayOrder.push(dk);}
     dayMap[dk].push(earn[i]);
   }
+  // Sort days chronologically (Mon-Fri)
+  var _dayIdx={Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6,Sunday:0,Other:99};
+  dayOrder.sort(function(a,b){return (_dayIdx[a]||99)-(_dayIdx[b]||99);});
   // Determine today's day name for auto-collapse
   var todayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var azNow=new Date(new Date().getTime()+(new Date().getTimezoneOffset()*60000)-(7*3600000));
@@ -2492,7 +2468,8 @@ function rEarnings(d){
 }
 function rNews(d){
   var news=d.news||[];
-  if(!news.length){$('sNews').innerHTML='';return;}
+  var _newsEl=$('sNewsToday')||$('sNews');
+  if(!news.length){if(_newsEl)_newsEl.innerHTML='';return;}
   // Build symbol sets
   var wlData=d.watchlistSymbols||{};
   var autoPass={},conf22={},allWL={};
@@ -2553,7 +2530,7 @@ function rNews(d){
     h+='</div>';
   }
   h+='</div>';
-  $('sNews').innerHTML=h;
+  if(_newsEl)_newsEl.innerHTML=h;
 }
 function newsItem(n,nt,autoPass,conf22){
   var age=tA(n.time),stale=(Date.now()/1000-(n.time||0))>7200,src=n.source||n.feed||'',ft=n.feed||'';
