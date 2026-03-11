@@ -1,4 +1,4 @@
-<!-- v11.19.0 cache-bust 1772729951.8953855 -->
+<!-- v11.19.1 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1229,7 +1229,7 @@ function toggleBookOuter(){
   try{localStorage.setItem('book_col_outer',isHidden?'0':'1');}catch(e){}
 }
 function toggleAll(collapse){
-  var keys=['today','breadth','story','sess','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
+  var keys=['today','breadth','story','econtoday','earntoday','aretecalls','sess','sectors','econ','earn','inter','intertk','pulse','news','watch','setups','inv','focused','areteemails','inplay'];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
     var arrow=document.getElementById('secArrow_'+keys[i]);
@@ -1694,7 +1694,9 @@ function rToday(d){
   if(todayEco.length){
     hasContent=true;
     h+='<div style="margin-top:8px">';
-    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#58a6ff;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcc5 KEY ECONOMIC DATA</div>';
+    var isColEcT=false;try{isColEcT=localStorage.getItem('sec_col_econtoday')==='1';}catch(e){}
+    h+='<h2 style="color:#58a6ff;cursor:pointer;user-select:none" onclick="toggleSec(\'econtoday\')"><span id="secArrow_econtoday" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColEcT?'-90':'0')+'deg)">\u25bc</span> \ud83d\udcc5 Key Economic Data <span class="dim" style="font-size:12px;font-weight:400">('+todayEco.length+')</span></h2>';
+    h+='<div id="secBody_econtoday" style="'+(isColEcT?'display:none':'')+'">';
     h+='<div class="info-box" style="padding:0;margin:0">';
     for(var tei=0;tei<todayEco.length;tei++){
       var ev=todayEco[tei];
@@ -1718,7 +1720,7 @@ function rToday(d){
       if(ev.tickers) h+='<span class="b">\u2192 '+e(ev.tickers)+'</span>';
       h+='</div></div></div>';
     }
-    h+='</div></div>';
+    h+='</div></div></div>';
   }
 
   // ── Today's Earnings — table with tier pills ──
@@ -1734,7 +1736,9 @@ function rToday(d){
   if(todayEarn.length){
     hasContent=true;
     h+='<div style="margin-top:8px">';
-    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#e3b341;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcca EARNINGS TODAY ('+todayEarn.length+')</div>';
+    var isColErT=false;try{isColErT=localStorage.getItem('sec_col_earntoday')==='1';}catch(e){}
+    h+='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleSec(\'earntoday\')"><span id="secArrow_earntoday" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColErT?'-90':'0')+'deg)">\u25bc</span> \ud83d\udcca Earnings Today <span class="dim" style="font-size:12px;font-weight:400">('+todayEarn.length+')</span></h2>';
+    h+='<div id="secBody_earntoday" style="'+(isColErT?'display:none':'')+'">';
     h+='<div class="info-box" style="padding:0;margin:0"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>When</th><th>Est</th><th>Actual</th><th style="font-size:9px">Tier</th></tr>';
     for(var tei2=0;tei2<todayEarn.length;tei2++){
       var er=todayEarn[tei2];
@@ -1762,7 +1766,7 @@ function rToday(d){
       h+='<td style="text-align:center"><span style="font-size:9px;padding:1px 5px;border-radius:3px;background:'+tierCol+'22;color:'+tierCol+';border:1px solid '+tierCol+'44">'+tierLabel+'</span></td>';
       h+='</tr>';
     }
-    h+='</table></div></div>';
+    h+='</table></div></div></div>';
   }
 
   // ── Arete Calls (enriched from today's email + scanner data) ──
@@ -1770,7 +1774,9 @@ function rToday(d){
   if(analysis&&analysis.calls&&analysis.calls.length){
     hasContent=true;
     h+='<div style="margin-top:8px">';
-    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#e3b341;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83c\udfaf ARETE CALLS <span class="dim" style="font-weight:400;letter-spacing:0">(from today\'s email)</span></div>';
+    var isColArT=false;try{isColArT=localStorage.getItem('sec_col_aretecalls')==='1';}catch(e){}
+    h+='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleSec(\'aretecalls\')"><span id="secArrow_aretecalls" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColArT?'-90':'0')+'deg)">\u25bc</span> \ud83c\udfaf Arete Calls <span class="dim" style="font-size:12px;font-weight:400">('+Math.min(analysis.calls.length,8)+' from today\'s email)</span></h2>';
+    h+='<div id="secBody_aretecalls" style="'+(isColArT?'display:none':'')+'">';
     for(var aci=0;aci<Math.min(analysis.calls.length,8);aci++){
       var ac=analysis.calls[aci];
       var atk=(ac.ticker||'').toUpperCase();
@@ -1805,7 +1811,7 @@ function rToday(d){
       if(pills)h+='<div style="margin-top:3px">'+pills+'</div>';
       h+='</div>';
     }
-    h+='</div>';
+    h+='</div></div>';
   }
 
   if(!hasContent){el.innerHTML='';return;}
@@ -2128,9 +2134,7 @@ function rStory(d){
   var nar=d.dashboardNarrative||'';if(!nar){el.innerHTML='<div class="info-box"><p class="dim">No Opus narrative yet. Run \ud83d\udce1 Dashboard Now.</p></div>';return}
   var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
   var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
-  var h='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#d2a8ff;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;cursor:pointer;user-select:none" onclick="toggleSec(\'story\')">';
-  h+='<span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span>';
-  h+=' \ud83d\udcd6 THE STORY <span class="dim" style="font-weight:400;font-size:9px;letter-spacing:0">Opus \u00b7 '+e(ts)+' \u00b7 '+e(d.dashboardSession||'')+'</span></div>';
+  var h='<h2 style="color:#d2a8ff;cursor:pointer;user-select:none" onclick="toggleSec(\'story\')"><span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span> \ud83d\udcd6 The Story <span class="dim" style="font-size:12px;font-weight:400">Opus \u00b7 '+e(ts)+' \u00b7 '+e(d.dashboardSession||'')+'</span></h2>';
   h+='<div id="secBody_story" style="'+(isColSt?'display:none':'')+'">';
   var story=gN(sec,['THE STORY','STORY','MARKET STORY']);
   if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
