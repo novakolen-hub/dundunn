@@ -1,4 +1,4 @@
-<!-- v11.21.1 cache-bust 1772729951.8953855 -->
+<!-- v11.21.2 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1400,10 +1400,19 @@ function rGP(d){
     var upDist=Math.abs(upThresh-sc);
     h+='<span style="padding:2px 7px;border-radius:3px;background:#161b22;border:1px solid #21262d;color:#7d8590"><span style="color:#3fb950;font-weight:600">\u2191</span> '+upGP+': '+upDist.toFixed(1)+'</span>';
   }
-  // SPY/VIX
-  var bn=gS(d,'BENCHMARKS'),spy=fS(bn,'SPY'),bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd2,'$VIX');
-  var mkt='';if(spy)mkt+='SPY '+e(spy.val)+' '+pct(spy.chg);if(vix)mkt+=' \u00b7 VIX '+e(vix.val);
-  if(mkt)h+='<span style="margin-left:auto;color:#484f58">'+mkt+'</span>';
+  // SPY/QQQ/BTC/Futures + Arete S/R
+  var bn=gS(d,'BENCHMARKS'),spy=fS(bn,'SPY'),qqq=fS(bn,'QQQ'),bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),vix=fS(bd2,'$VIX');
+  var comm2g=gS(d,'COMMODITIES');var btcG=null;for(var _gi=0;_gi<comm2g.length;_gi++){if(comm2g[_gi].sym==='BTCUSD'||comm2g[_gi].sym==='BTC')btcG=comm2g[_gi];}
+  var fut2g=gS(d,'FUTURES');
+  var _arG={};var _aaG=d.areteAnalysis||{};if(_aaG.keyLevels){for(var _ki=0;_ki<_aaG.keyLevels.length;_ki++){var _kl=_aaG.keyLevels[_ki];if(_kl.ticker)_arG[_kl.ticker.toUpperCase()]=_kl;}}
+  function _gpSR(sym){var lv=_arG[sym];if(!lv)return'';var tp=(lv.type||'').toLowerCase();var lb=tp.indexOf('support')>=0?'S':tp.indexOf('resist')>=0?'R':'';return lb?' <span style="color:#e3b341;font-size:9px">'+lb+':'+lv.level+'</span>':'';}
+  var mkt='';
+  if(spy)mkt+='SPY '+e(spy.val)+' '+pct(spy.chg)+_gpSR('SPY');
+  if(qqq)mkt+=' \u00b7 QQQ '+e(qqq.val)+' '+pct(qqq.chg)+_gpSR('QQQ');
+  if(vix)mkt+=' \u00b7 VIX '+e(vix.val);
+  if(btcG)mkt+=' \u00b7 BTC '+e(btcG.val)+' '+pct(btcG.chg);
+  if(fut2g.length){for(var _fg=0;_fg<Math.min(fut2g.length,2);_fg++){mkt+=' \u00b7 '+e(fut2g[_fg].sym)+' '+pct(fut2g[_fg].chg);}}
+  if(mkt)h+='<span style="margin-left:auto;color:#484f58;font-size:10px;line-height:1.4">'+mkt+'</span>';
   h+='</div>';
 
   // ── Alert Banner (from breadthAlerts) ──
@@ -2078,6 +2087,15 @@ function rBreadth(d){
       h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_hmDf.length,5)+',1fr);margin-bottom:6px">';
       for(var _hi2=0;_hi2<_hmDf.length;_hi2++){h+='<div class="'+hc(_hmDf[_hi2].chg)+'" style="font-size:10px;padding:4px 2px">'+e(_hmDf[_hi2].sym)+'<br>'+(_hmDf[_hi2].chg>0?'+':'')+_hmDf[_hi2].chg.toFixed(2)+'%</div>';}
       h+='</div>';
+      // Commodity tiles below defensives
+      var _commT=gS(d,'COMMODITIES');
+      var _commTiles=_commT.filter(function(x){return x.sym!=='BTCUSD'&&x.sym!=='BTC';});
+      if(_commTiles.length){
+        h+='<div style="margin-top:6px;margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Commodities ('+_commTiles.length+')</span></div>';
+        h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_commTiles.length,5)+',1fr);margin-bottom:6px">';
+        for(var _cti=0;_cti<_commTiles.length;_cti++){h+='<div class="'+hc(_commTiles[_cti].chg)+'" style="font-size:10px;padding:4px 2px">'+e(_commTiles[_cti].sym)+'<br>'+(_commTiles[_cti].chg>0?'+':'')+_commTiles[_cti].chg.toFixed(2)+'%</div>';}
+        h+='</div>';
+      }
     } else {
       h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Growth ('+growthGreen+'/8):</span> '+gcols.join('<span class="dim" style="font-size:9px"> \u00b7 </span>')+'</div>';
       h+='<div style="margin-bottom:6px"><span style="font-size:10px;color:#7d8590">Defensive ('+defGreen+'/5):</span> '+dcols.join('<span class="dim" style="font-size:9px"> \u00b7 </span>')+'</div>';
@@ -2094,52 +2112,6 @@ function rBreadth(d){
   h+='<span style="font-family:\'JetBrains Mono\',monospace;font-size:18px;font-weight:700;color:'+gcol+'">'+(grandTotal>0?'+':'')+grandTotal.toFixed(1)+'</span>';
   h+='</div>';
   h+='</div>';
-
-  // ── CONFIRMATION (inline table — no wrapper divs) ──
-  var _bn=gS(d,'BENCHMARKS'),_fut=gS(d,'FUTURES'),_comm=gS(d,'COMMODITIES');
-  if(_bn.length||_fut.length||_comm.length){
-    var _nar2=d.dashboardNarrative||'',_sec2=parseN(_nar2),_sessAn=gN(_sec2,['SESSION ANALYSIS','SESSION','MARKET ANALYSIS','ASSET ANALYSIS','KEY LEVELS','STATS']);
-    var _anMap={};if(_sessAn){var _lines=_sessAn.replace(/\|/g,'\n').split('\n');for(var _li=0;_li<_lines.length;_li++){var _m=_lines[_li].trim().match(/^\**([A-Z$\/0-9]+)\**:?\s*(.+)/);if(_m){_anMap[_m[1].replace(/\*/g,'').trim()]=_m[2].trim();}}}
-    var _arLvl={};var _aa=d.areteAnalysis||{};
-    if(_aa.keyLevels){for(var _ki=0;_ki<_aa.keyLevels.length;_ki++){var _kl=_aa.keyLevels[_ki];if(_kl.ticker)_arLvl[_kl.ticker.toUpperCase()]=_kl;}}
-
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;margin-top:10px;border-top:1px solid #1c2333;padding-top:8px"><span style="font-size:10px;font-weight:700;color:#7d8590;letter-spacing:0.5px;text-transform:uppercase">Confirmation</span></div>';
-    h+='<table style="font-size:11px;margin-bottom:10px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg%</th><th>Arete S/R</th></tr>';
-
-    // Indexes
-    h+='<tr><td colspan="4" style="font-size:10px;color:#58a6ff;padding-top:6px;border:none;font-weight:700">INDEXES</td></tr>';
-    var _idxKeys=['SPY','QQQ','DIA','IWM'];
-    for(var _bk=0;_bk<_idxKeys.length;_bk++){
-      var _it=fS(_bn,_idxKeys[_bk]);
-      if(_it){
-        var _al=_arLvl[_it.sym]||null;var _alS='';
-        if(_al){var _tp=(_al.type||'').toLowerCase();_alS=(_tp.indexOf('support')>=0?'S':_tp.indexOf('resist')>=0?'R':'Lvl')+': '+_al.level;}
-        h+='<tr><td class="white bold">'+e(_it.sym)+'</td><td class="mono">'+e(_it.val)+'</td><td>'+pct(_it.chg)+'</td><td style="color:#e3b341;font-size:10px">'+e(_alS)+'</td></tr>';
-      }
-    }
-
-    // Risk
-    var _bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),_vix2=fS(_bd2,'$VIX'),_dxy2=fS(_bd2,'$DXY');
-    if(_vix2||d.tsVix||_dxy2){
-      h+='<tr><td colspan="4" style="font-size:10px;color:#58a6ff;padding-top:6px;border:none;font-weight:700">RISK</td></tr>';
-      if(_vix2||d.tsVix){var _vD=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');var _vC=(_vix2&&_vix2.chg)?_vix2.chg:'';h+='<tr><td class="y bold">VIX</td><td class="mono">'+e(_vD)+'</td><td>'+pct(_vC)+'</td><td></td></tr>';}
-      if(_dxy2){h+='<tr><td class="dim bold">DXY</td><td class="mono">'+e(_dxy2.val)+'</td><td>'+pct(_dxy2.chg)+'</td><td></td></tr>';}
-    }
-
-    // Commodities
-    if(_comm.length){
-      h+='<tr><td colspan="4" style="font-size:10px;color:#58a6ff;padding-top:6px;border:none;font-weight:700">COMMODITIES</td></tr>';
-      for(var _ci=0;_ci<_comm.length;_ci++){h+='<tr><td class="dim bold">'+e(_comm[_ci].sym)+'</td><td class="mono">'+e(_comm[_ci].val)+'</td><td>'+pct(_comm[_ci].chg)+'</td><td></td></tr>';}
-    }
-
-    // Futures
-    if(_fut.length){
-      h+='<tr><td colspan="4" style="font-size:10px;color:#58a6ff;padding-top:6px;border:none;font-weight:700">FUTURES</td></tr>';
-      for(var _fi=0;_fi<_fut.length;_fi++){h+='<tr><td class="dim bold">'+e(_fut[_fi].sym)+'</td><td class="mono">'+e(_fut[_fi].val)+'</td><td>'+pct(_fut[_fi].chg)+'</td><td></td></tr>';}
-    }
-
-    h+='</table>';
-  }
 
   // ── Placeholders for Inst Pulse and Intermarket (rendered by their own functions) ──
   h+='<div id="sBreadthInst"></div>';
