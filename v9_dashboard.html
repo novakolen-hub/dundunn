@@ -1,4 +1,4 @@
-<!-- v11.20.1 cache-bust 1772729951.8953855 -->
+<!-- v11.20.5 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2110,69 +2110,60 @@ function rBreadth(d){
     h+='<span id="secArrow_confirm" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColConf?'-90':'0')+'deg)">\u25bc</span> Confirmation</h2>';
     h+='<div id="secBody_confirm" style="'+(isColConf?'display:none':'')+'">';
 
-    // Helper: build one heatmap tile with optional Arete S/R
-    function _confTile(sym,last,chgStr,arLvl,analysis){
-      var cn=parseFloat(String(chgStr).replace('%',''))||0;
-      var cls=hc(cn);
-      var t='<div class="'+cls+'" style="padding:6px 4px;text-align:center;min-width:0">';
-      t+='<div style="font-weight:700;font-size:11px">'+e(sym)+'</div>';
-      if(last)t+='<div style="font-size:10px;opacity:0.8">'+e(last)+'</div>';
-      t+='<div style="font-size:10px;font-weight:600">'+(cn>0?'+':'')+cn.toFixed(2)+'%</div>';
+    // Row helper: ticker, last, chg%, sparkline, Arete S/R
+    function _confRow(sym,last,chgStr,arLvl,label){
+      var r='<tr>';
+      r+='<td class="white bold tc" style="white-space:nowrap">'+e(sym)+(label?' <span class="dim" style="font-size:9px">'+e(label)+'</span>':'')+'</td>';
+      r+='<td class="mono" style="font-size:11px">'+e(last||'')+'</td>';
+      r+='<td style="font-size:11px">'+pct(chgStr)+'</td>';
+      r+='<td style="width:50px">'+sparkSvg(sym.replace('$',''),48,16)+'</td>';
       if(arLvl){
         var typ=(arLvl.type||'').toLowerCase();
         var lbl=typ.indexOf('support')>=0?'S':typ.indexOf('resist')>=0?'R':'Lvl';
-        t+='<div style="font-size:8px;margin-top:2px;color:#e3b341;font-weight:600">'+lbl+': '+arLvl.level+'</div>';
-      }
-      if(analysis)t+='<div style="font-size:8px;margin-top:1px;color:#7d8590;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+e(analysis)+'">'+e(analysis.substring(0,30))+'</div>';
-      t+='</div>';
-      return t;
+        r+='<td style="font-size:10px;white-space:nowrap"><span style="color:#e3b341">'+lbl+': '+arLvl.level+'</span></td>';
+      } else { r+='<td></td>'; }
+      r+='</tr>';
+      return r;
     }
 
+    h+='<div class="info-box" style="padding:0">';
+    h+='<table style="font-size:11px;width:100%">';
+
     // ── Indexes ──
-    h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Indexes</span></div>';
-    h+='<div class="heatmap" style="grid-template-columns:repeat(4,1fr);margin-bottom:8px">';
+    h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding:6px 10px 2px;border:none;font-weight:700;letter-spacing:0.5px">INDEXES</td></tr>';
     var _idxKeys=['SPY','QQQ','DIA','IWM'];
     for(var _bk=0;_bk<_idxKeys.length;_bk++){
       var _it=fS(_bn,_idxKeys[_bk]);
-      if(_it){h+=_confTile(_it.sym,_it.val,_it.chg,_arLvl[_it.sym]||null,_anMap[_it.sym]||'');}
+      if(_it){h+=_confRow(_it.sym,_it.val,_it.chg,_arLvl[_it.sym]||null);}
     }
-    h+='</div>';
 
-    // ── Risk / Volatility ──
+    // ── Risk ──
     var _bd2=gS(d,'BREADTH DETAIL').concat(gS(d,'INTERNALS')),_vix2=fS(_bd2,'$VIX'),_dxy2=fS(_bd2,'$DXY');
-    var _riskItems=[];
-    if(_vix2||d.tsVix){
-      var _vD=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');
-      var _vC=(_vix2&&_vix2.chg)?_vix2.chg:'';
-      // VIX is inverted — down is green for markets
-      var _vN=parseFloat(String(_vC).replace('%',''))||0;
-      _riskItems.push({sym:'VIX',last:_vD,chg:String(-_vN),arLvl:_arLvl['VIX']||null,an:_anMap['VIX']||_anMap['$VIX']||''});
-    }
-    if(_dxy2){_riskItems.push({sym:'DXY',last:_dxy2.val,chg:_dxy2.chg,arLvl:_arLvl['DXY']||null,an:_anMap['DXY']||_anMap['$DXY']||''});}
-    if(_riskItems.length){
-      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Risk</span></div>';
-      h+='<div class="heatmap" style="grid-template-columns:repeat('+_riskItems.length+',1fr);margin-bottom:8px">';
-      for(var _ri=0;_ri<_riskItems.length;_ri++){var _r=_riskItems[_ri];h+=_confTile(_r.sym,_r.last,_r.chg,_r.arLvl,_r.an);}
-      h+='</div>';
+    var hasRisk=!!(_vix2||d.tsVix||_dxy2);
+    if(hasRisk){
+      h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding:8px 10px 2px;border:none;font-weight:700;letter-spacing:0.5px">RISK</td></tr>';
+      if(_vix2||d.tsVix){
+        var _vD=d.tsVix||((_vix2&&_vix2.val)?_vix2.val:'');
+        var _vS=d.tsVix?'TS':'Y';
+        var _vC=(_vix2&&_vix2.chg)?_vix2.chg:'';
+        h+=_confRow('VIX',_vD,_vC,_arLvl['VIX']||null,_vS);
+      }
+      if(_dxy2){h+=_confRow('DXY',_dxy2.val,_dxy2.chg,_arLvl['DXY']||null);}
     }
 
     // ── Commodities ──
     if(_comm.length){
-      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Commodities</span></div>';
-      h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_comm.length,4)+',1fr);margin-bottom:8px">';
-      for(var _ci=0;_ci<_comm.length;_ci++){h+=_confTile(_comm[_ci].sym,_comm[_ci].val,_comm[_ci].chg,_arLvl[_comm[_ci].sym]||null,_anMap[_comm[_ci].sym]||'');}
-      h+='</div>';
+      h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding:8px 10px 2px;border:none;font-weight:700;letter-spacing:0.5px">COMMODITIES</td></tr>';
+      for(var _ci=0;_ci<_comm.length;_ci++){h+=_confRow(_comm[_ci].sym,_comm[_ci].val,_comm[_ci].chg,_arLvl[_comm[_ci].sym]||null);}
     }
 
     // ── Futures ──
     if(_fut.length){
-      h+='<div style="margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Futures</span></div>';
-      h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_fut.length,4)+',1fr);margin-bottom:8px">';
-      for(var _fi=0;_fi<_fut.length;_fi++){h+=_confTile(_fut[_fi].sym,_fut[_fi].val,_fut[_fi].chg,null,null);}
-      h+='</div>';
+      h+='<tr><td colspan="5" style="font-size:10px;color:#7d8590;padding:8px 10px 2px;border:none;font-weight:700;letter-spacing:0.5px">FUTURES</td></tr>';
+      for(var _fi=0;_fi<_fut.length;_fi++){h+=_confRow(_fut[_fi].sym,_fut[_fi].val,_fut[_fi].chg,null);}
     }
 
-    h+='</div>';
+    h+='</table></div></div>';
   }
 
   // ── Placeholders for Inst Pulse and Intermarket (rendered by their own functions) ──
