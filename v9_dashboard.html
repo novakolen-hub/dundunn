@@ -1,4 +1,4 @@
-<!-- v11.18.3 cache-bust 1772729951.8953855 -->
+<!-- v11.18.4 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1820,54 +1820,47 @@ function rToday(d){
     h+='</table></div></div>';
   }
 
-  // ── Arete Calls (extracted from today's email analysis) ──
+  // ── Arete Calls (enriched from today's email + scanner data) ──
   var analysis=d.areteAnalysis||null;
   if(analysis&&analysis.calls&&analysis.calls.length){
     hasContent=true;
     h+='<div style="margin-top:8px">';
     h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#e3b341;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83c\udfaf ARETE CALLS <span class="dim" style="font-weight:400;letter-spacing:0">(from today\'s email)</span></div>';
-    for(var aci=0;aci<Math.min(analysis.calls.length,5);aci++){
+    for(var aci=0;aci<Math.min(analysis.calls.length,8);aci++){
       var ac=analysis.calls[aci];
       var atk=(ac.ticker||'').toUpperCase();
       var abias=ac.bias||'';
       var abCls=abias.toLowerCase().indexOf('long')>=0||abias.toLowerCase().indexOf('bull')>=0?'g':abias.toLowerCase().indexOf('short')>=0||abias.toLowerCase().indexOf('bear')>=0?'r':'dim';
-      h+='<div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid #21262d;font-size:12px">';
-      h+='<span class="white bold" style="cursor:pointer" onclick="openPT(\''+e(atk)+'\')">'+e(atk)+'</span>';
-      h+='<span class="'+abCls+'">'+e(abias)+'</span>';
-      if(ac.level)h+='<span class="dim" style="font-size:11px">'+e(ac.level)+'</span>';
+      // Enrich from _tq (scanner live data)
+      var aq=_tq[atk]||{};
+      var aLast=aq.last||'';
+      var aChg=aq.chg||'';
+      var aConf=aq.conf?parseFloat(aq.conf):NaN;
+      var aRvol=aq.rvol?parseFloat(aq.rvol):NaN;
+      var aSetup=aq.setup||'';
+      var aGap=aq.gap?parseFloat(String(aq.gap).replace('%',''))  :NaN;
+      var aRs=aq.rs?parseFloat(aq.rs):NaN;
+      h+='<div style="border-bottom:1px solid #21262d;padding:6px 0">';
+      // Row 1: ticker, bias, level, price, change
+      h+='<div style="display:flex;gap:8px;align-items:center;font-size:12px">';
+      h+=tkLink(atk)+' ';
+      h+='<span class="'+abCls+'" style="font-weight:600">'+e(abias)+'</span>';
+      if(ac.level)h+='<span class="dim" style="font-size:11px">@ '+e(ac.level)+'</span>';
+      if(aLast)h+='<span style="margin-left:auto;font-family:JetBrains Mono,monospace;font-size:11px;color:#c9d1d9">'+e(aLast)+'</span>';
+      if(aChg)h+=' '+pct(aChg);
+      h+=sparkSvg(atk,48,16);
+      h+='</div>';
+      // Row 2: enrichment pills
+      var pills='';
+      if(!isNaN(aConf)){var cc=aConf>=7?'g':aConf>=4?'y':'dim';pills+='<span class="'+cc+'" style="font-size:10px">CF:'+aConf.toFixed(0)+'</span> ';}
+      if(!isNaN(aRvol)&&aRvol>0){var rc=aRvol>=2?'g':aRvol>=1.2?'y':'dim';pills+='<span class="'+rc+'" style="font-size:10px">RVOL:'+aRvol.toFixed(1)+'x</span> ';}
+      if(!isNaN(aGap)&&Math.abs(aGap)>0.1){var gc2=aGap>0?'g':'r';pills+='<span class="'+gc2+'" style="font-size:10px">Gap:'+(aGap>0?'+':'')+aGap.toFixed(1)+'%</span> ';}
+      if(!isNaN(aRs)){var rsc=aRs>1?'g':aRs<-1?'r':'dim';pills+='<span class="'+rsc+'" style="font-size:10px">RS:'+(aRs>0?'+':'')+aRs.toFixed(1)+'</span> ';}
+      if(aSetup)pills+='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#d2a8ff22;color:#d2a8ff;border:1px solid #d2a8ff44">'+e(aSetup)+'</span> ';
+      if(pills)h+='<div style="margin-top:3px">'+pills+'</div>';
       h+='</div>';
     }
     h+='</div>';
-  }
-
-  // ── Active Positions — compact color-coded tiles ──
-  var pos=d.positions||[];
-  if(pos.length&&_bookUnlocked){
-    hasContent=true;
-    h+='<div style="margin-top:8px">';
-    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#3fb950;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcbc POSITIONS ('+pos.length+')</div>';
-    h+='<div style="display:flex;flex-wrap:wrap;gap:4px">';
-    for(var pi=0;pi<pos.length;pi++){
-      var p=pos[pi];
-      var sym=p.symbol||'';
-      var chgN=parseFloat(String(p.dayPLPct).replace('%',''))||0;
-      var tileBg=chgN>0.5?'#0d2818':chgN<-0.5?'#2d0a0a':'#161b22';
-      var tileBorder=chgN>0.5?'#238636':chgN<-0.5?'#da3633':'#30363d';
-      var chgCol=chgN>0?'#3fb950':chgN<0?'#f85149':'#7d8590';
-      var tag=p.tag||'';
-      var tagCol=tag.toUpperCase()==='HOLD'?'#3fb950':tag.toUpperCase()==='REVIEW'?'#e3b341':tag.toUpperCase()==='EXIT'?'#f85149':'#7d8590';
-      h+='<div style="background:'+tileBg+';border:1px solid '+tileBorder+';border-radius:6px;padding:6px 10px;min-width:80px;cursor:pointer" onclick="openPT(\''+e(sym)+'\')">';
-      h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:6px">';
-      h+='<span style="font-weight:700;font-size:12px;color:#e6edf3">'+e(sym)+'</span>';
-      if(tag)h+='<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:'+tagCol+'22;color:'+tagCol+';border:1px solid '+tagCol+'44;text-transform:uppercase;font-weight:700">'+e(tag)+'</span>';
-      h+='</div>';
-      h+='<div style="display:flex;justify-content:space-between;margin-top:3px;font-family:JetBrains Mono,monospace;font-size:11px">';
-      h+='<span style="color:#7d8590">'+e(p.last||'')+'</span>';
-      h+='<span style="color:'+chgCol+';font-weight:600">'+(chgN>0?'+':'')+chgN.toFixed(1)+'%</span>';
-      h+='</div>';
-      h+='</div>';
-    }
-    h+='</div></div>';
   }
 
   if(!hasContent){el.innerHTML='';return;}
