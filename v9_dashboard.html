@@ -1,4 +1,4 @@
-<!-- v11.20.2 cache-bust 1772729951.8953855 -->
+<!-- v11.20.3 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -266,7 +266,6 @@
 <div id="sGP"></div>
 
 <div id="sToday"></div>
-<div id="sStory" style="display:none"></div>
 
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> MARKET HEALTH</div>
@@ -1665,8 +1664,8 @@ function rToday(d){
   }
 
   // ── The Story (rendered by rStory into this placeholder) ──
-  h+='<div id="sStoryToday" style="margin-top:8px"></div>';
-  h+='<div id="sNewsToday" style="margin-top:8px"></div>';
+  h+='<div id="sStory" style="margin-top:8px"></div>';
+  h+='<div id="sNews" style="margin-top:8px"></div>';
   hasContent=true;
 
   // ── Today's Econ Events — HIGH IMPACT, reported/pending state ──
@@ -2183,11 +2182,7 @@ function rSectors(d){$('sSectors')&&($('sSectors').innerHTML='');}
 // ═══ THE STORY + GAMEPLAN STATUS (colored) ═══
 function rStory(d){
   // Render into TODAY section placeholder
-  var el=$('sStoryToday');
-  // Also clear the old sStory location
-  var oldEl=$('sStory');if(oldEl)oldEl.innerHTML='';
-  if(!el){el=$('sStory');} // fallback if TODAY hasn't rendered yet
-  if(!el)return;
+  var el=$('sStory');if(!el)return;
   var nar=d.dashboardNarrative||'';if(!nar){el.innerHTML='<div class="info-box"><p class="dim">No Opus narrative yet. Run \ud83d\udce1 Dashboard Now.</p></div>';return}
   var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
   var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
@@ -2529,7 +2524,7 @@ function rEarnings(d){
 }
 function rNews(d){
   var news=d.news||[];
-  var _newsEl=$('sNewsToday')||$('sNews');
+  var _newsEl=$('sNews');
   if(!news.length){if(_newsEl)_newsEl.innerHTML='';return;}
   // Build symbol sets
   var wlData=d.watchlistSymbols||{};
