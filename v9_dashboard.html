@@ -1,4 +1,4 @@
-<!-- v11.18.1 cache-bust 1772729951.8953855 -->
+<!-- v11.18.2 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1599,23 +1599,24 @@ function rAreteEmails(d){
     for(var vi=0;vi<Math.min(ytVids.length,6);vi++){
       var v=ytVids[vi];var vtId='ae_yt_'+vi;
       var ytIsWatched=_isAreteChecked(vtId);
-      h+='<div class="ae-day" style="'+(ytIsWatched?'opacity:0.5':'')+';padding:6px 8px">';
-      h+='<div style="display:flex;gap:8px;align-items:center">';
-      // Thumbnail
-      if(v.thumb){
-        h+='<div style="position:relative;width:96px;height:54px;flex-shrink:0;border-radius:4px;overflow:hidden;cursor:pointer;background:#0d1117" onclick="playYT(\''+e(v.id)+'\',this)">';
-        h+='<img src="'+e(v.thumb)+'" style="width:100%;height:100%;object-fit:cover" loading="lazy">';
-        h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="width:24px;height:24px;background:rgba(0,0,0,0.7);border-radius:50%;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:10px;margin-left:2px">\u25b6</span></div></div>';
-        h+='</div>';
-      }
-      // Info
+      h+='<div class="ae-day" style="'+(ytIsWatched?'opacity:0.5':'')+';padding:6px 8px;margin-bottom:6px">';
+      // Title + controls
+      h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">';
       h+='<div style="flex:1;min-width:0">';
-      h+='<div style="font-size:12px;color:#e6edf3;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+e(v.title||'')+'</div>';
+      h+='<div style="font-size:13px;color:#e6edf3;font-weight:600;line-height:1.3">'+e(v.title||'')+'</div>';
       h+='<div style="display:flex;gap:8px;align-items:center;margin-top:3px">';
       h+='<span class="dim" style="font-size:10px">'+e(v.date||'')+'</span>';
-      h+='<a href="https://youtu.be/'+e(v.id)+'" target="_blank" style="font-size:10px;color:#58a6ff;text-decoration:none">Watch \u2197</a>';
+      h+='<a href="https://youtu.be/'+e(v.id)+'" target="_blank" style="font-size:10px;color:#58a6ff;text-decoration:none">Open in app \u2197</a>';
       h+='<span class="arete-check'+(ytIsWatched?' done':'')+'" onclick="event.stopPropagation();toggleAreteWatch(\''+vtId+'\',this)">'+(ytIsWatched?'\u2705 watched':'\u25b6 unwatched')+'</span>';
-      h+='</div></div></div></div>';
+      h+='</div></div></div>';
+      // Large 16:9 player area
+      h+='<div id="ytPlayer_'+vi+'" style="position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:6px;overflow:hidden;cursor:pointer" onclick="playYTInline(\''+e(v.id)+'\','+vi+')">';
+      if(v.thumb){h+='<img src="'+e(v.thumb).replace('/default.jpg','/hqdefault.jpg').replace('/sddefault.jpg','/hqdefault.jpg')+'" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover" loading="lazy">';}
+      h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3)">';
+      h+='<div style="width:56px;height:56px;background:rgba(255,0,0,0.85);border-radius:12px;display:flex;align-items:center;justify-content:center">';
+      h+='<span style="color:#fff;font-size:22px;margin-left:4px">\u25b6</span></div></div>';
+      h+='</div>';
+      h+='</div>';
     }
     h+='</div>';
   }
@@ -1631,6 +1632,7 @@ function _azToday(){
   var az=new Date(now.getTime()-7*3600000);
   return az.getUTCFullYear()+'-'+String(az.getUTCMonth()+1).padStart(2,'0')+'-'+String(az.getUTCDate()).padStart(2,'0');
 }
+
 
 
 
@@ -1672,28 +1674,64 @@ function rToday(d){
   // ── The Story (narrative) ──
   var nar=d.dashboardNarrative||'';
   if(nar){
-    hasContent=true;
     var sec2=parseN(nar);
     var story=gN(sec2,['THE STORY','STORY','MARKET STORY']);
     if(story){
+      hasContent=true;
       h+='<div style="margin-top:8px">';
-      h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#d2a8ff;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcd6 THE STORY</div>';
+      h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#d2a8ff;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcd6 THE STORY <span class="dim" style="font-weight:400;font-size:9px;letter-spacing:0">'+e(d.dashboardTimestamp||'')+' \u00b7 '+e(d.dashboardSession||'')+'</span></div>';
       h+='<div class="story-box" style="font-size:12px;line-height:1.6">'+fmt(story)+'</div>';
-      // If there's a first story of day that differs, show it collapsed
-      if(d.firstNarrativeOfDay && d.firstNarrativeOfDay !== nar){
-        var firstSec2=parseN(d.firstNarrativeOfDay);
-        var firstStory2=gN(firstSec2,['THE STORY','STORY','MARKET STORY']);
-        if(firstStory2){
-          var firstTs2=d.firstNarrativeTs||'';var firstSess2=d.firstNarrativeSession||'';
-          h+='<div style="margin-top:4px"><div style="cursor:pointer;font-size:10px;color:#d29922;font-family:JetBrains Mono,monospace" onclick="var b=this.nextElementSibling;b.style.display=b.style.display===\'none\'?\'block\':\'none\'">\u25b6 First Story of Day <span class="dim">'+e(firstTs2)+'</span></div>';
-          h+='<div style="display:none" class="info-box" style="border-left:3px solid #d29922;font-size:11px;line-height:1.5;margin-top:4px">'+fmt(firstStory2)+'</div></div>';
-        }
+      // Retrospective — collapsed by default INSIDE today
+      var retro2=gN(sec2,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
+      var firstRetro=null;
+      if(!retro2 && d.firstNarrativeOfDay && d.firstNarrativeOfDay !== nar){
+        var firstSec3=parseN(d.firstNarrativeOfDay);
+        firstRetro=gN(firstSec3,['THE STORY','STORY','MARKET STORY']);
+      }
+      if(retro2||firstRetro){
+        var retroContent=retro2||firstRetro;
+        var retroLabel=retro2?'Story Update':'First Story of Day';
+        var retroTs=retro2?'':(d.firstNarrativeTs||'');
+        h+='<div style="margin-top:6px">';
+        h+='<div style="cursor:pointer;font-size:10px;color:#d29922;font-family:JetBrains Mono,monospace;padding:4px 0" onclick="var b=document.getElementById(\'todayRetro\');b.style.display=b.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'span\').textContent=b.style.display===\'none\'?\'\u25b6\':\'\u25bc\'">';
+        h+='<span>\u25b6</span> \ud83d\udccb '+retroLabel;
+        if(retroTs)h+=' <span class="dim" style="font-weight:400">'+e(retroTs)+'</span>';
+        h+='</div>';
+        h+='<div id="todayRetro" style="display:none"><div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:11px;line-height:1.5;margin-top:4px">'+fmt(retroContent)+'</div></div>';
+        h+='</div>';
       }
       h+='</div>';
     }
   }
 
-  // ── Today's Econ Events — HIGH IMPACT ONLY, full format ──
+  // ── Key news (recent, with links) — RIGHT AFTER STORY ──
+  var newsArr=d.news||[];
+  var nowSec=Date.now()/1000;
+  var recentNews=[];
+  for(var ni=0;ni<newsArr.length&&recentNews.length<5;ni++){
+    var n=newsArr[ni];
+    if(n.time&&(nowSec-n.time)<43200){recentNews.push(n);}
+  }
+  if(recentNews.length){
+    hasContent=true;
+    h+='<div style="margin-top:8px">';
+    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#7d8590;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcf0 NEWS</div>';
+    for(var ni2=0;ni2<recentNews.length;ni2++){
+      var n=recentNews[ni2];
+      var age=tA(n.time);
+      var nUrl=n.url||'';
+      h+='<div style="display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-bottom:1px solid #21262d;font-size:12px">';
+      h+='<span style="color:#58a6ff;flex-shrink:0">\u2022</span>';
+      h+='<div style="flex:1;min-width:0">';
+      if(nUrl){h+='<a href="'+e(nUrl)+'" target="_blank" style="color:#79c0ff;text-decoration:none;line-height:1.4">'+e(n.headline||'')+'</a>';}
+      else{h+='<span style="color:#e6edf3;line-height:1.4">'+e(n.headline||'')+'</span>';}
+      h+=' <span class="dim" style="font-size:9px">'+e(n.source||'')+' \u00b7 '+age+'</span>';
+      h+='</div></div>';
+    }
+    h+='</div>';
+  }
+
+  // ── Today's Econ Events — HIGH IMPACT, reported/pending state ──
   var eco=d.ecoEvents||[];
   var inTodayBlock=false;
   var todayEco=[];
@@ -1717,13 +1755,18 @@ function rToday(d){
       var ev=todayEco[tei];
       var ic=impactColor[ev.impact]||'#7d8590';
       var id=impactDot[ev.impact]||'';
-      h+='<div style="padding:7px 10px;border-bottom:1px solid #161b22;display:flex;gap:8px;align-items:flex-start">';
-      h+='<div style="width:3px;min-height:32px;background:'+ic+';border-radius:2px;flex-shrink:0;margin-top:2px"></div>';
+      var hasReported=!!(ev.actual&&String(ev.actual).trim());
+      var rowBg=hasReported?'background:#0d1a0d':'';
+      h+='<div style="padding:7px 10px;border-bottom:1px solid #161b22;display:flex;gap:8px;align-items:flex-start;'+rowBg+'">';
+      h+='<div style="width:3px;min-height:32px;background:'+(hasReported?'#238636':ic)+';border-radius:2px;flex-shrink:0;margin-top:2px"></div>';
       h+='<div style="flex:1;min-width:0">';
-      h+='<div style="font-size:12px;font-weight:700;color:#e6edf3">'+e(ev.title)+'</div>';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+      h+='<span style="font-size:12px;font-weight:700;color:#e6edf3">'+e(ev.title)+'</span>';
+      if(hasReported)h+='<span style="font-size:9px;background:#238636;color:#fff;padding:1px 6px;border-radius:3px;font-weight:700">REPORTED</span>';
+      else h+='<span style="font-size:9px;background:#30363d;color:#7d8590;padding:1px 6px;border-radius:3px">PENDING</span>';
+      h+='</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:3px;font-size:11px;color:#7d8590">';
       if(ev.time) h+='<span>\ud83d\udd50 '+e(ev.time)+'</span>';
-      if(ev.impact) h+='<span style="color:'+ic+';font-weight:700">'+id+' '+e(ev.impact)+'</span>';
       if(ev.previous) h+='<span>Prev: <span class="white">'+e(ev.previous)+'</span></span>';
       if(ev.forecast) h+='<span>Fcst: <span class="white">'+e(ev.forecast)+'</span></span>';
       if(ev.actual) h+='<span>Act: <span style="color:#3fb950;font-weight:700">'+e(ev.actual)+'</span></span>';
@@ -1733,7 +1776,7 @@ function rToday(d){
     h+='</div></div>';
   }
 
-  // ── Today's Earnings ──
+  // ── Today's Earnings — table with tier pills ──
   var earn=d.earnings||[];
   var todayEarn=[];
   for(var eri=0;eri<earn.length;eri++){
@@ -1746,32 +1789,43 @@ function rToday(d){
   if(todayEarn.length){
     hasContent=true;
     h+='<div style="margin-top:8px">';
-    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#e3b341;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcca EARNINGS TODAY</div>';
-    h+='<div class="info-box" style="padding:0;margin:0">';
+    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#e3b341;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcca EARNINGS TODAY ('+todayEarn.length+')</div>';
+    h+='<div class="info-box" style="padding:0;margin:0"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>When</th><th>Est</th><th>Actual</th><th style="font-size:9px">Tier</th></tr>';
     for(var tei2=0;tei2<todayEarn.length;tei2++){
       var er=todayEarn[tei2];
-      var tk=(er.ticker||er.sym||'').toUpperCase();
-      var when=(er.time||er.when||'');
-      var whenLabel=when.indexOf('amc')>=0||when.indexOf('AMC')>=0?'After Close':'Pre-Market';
-      h+='<div style="padding:6px 10px;border-bottom:1px solid #161b22;display:flex;justify-content:space-between;align-items:center">';
-      h+='<div style="display:flex;gap:8px;align-items:center">';
-      h+='<span class="white bold" style="font-size:13px;cursor:pointer" onclick="openPT(\''+e(tk)+'\')">'+e(tk)+'</span>';
-      h+='<span class="dim" style="font-size:11px">'+whenLabel+'</span>';
-      h+='</div>';
-      h+='<div style="display:flex;gap:8px;font-size:11px;color:#7d8590">';
-      if(er.estimate)h+='<span>Est: <span class="white">'+e(er.estimate)+'</span></span>';
-      if(er.marketCap)h+='<span>MCap: <span class="dim">'+e(er.marketCap)+'</span></span>';
-      h+='</div></div>';
+      var tk=(er.symbol||er.ticker||er.sym||'').toUpperCase();
+      var tier=er.tier||'market';
+      var tierCol=tier==='mine'?'#3fb950':tier==='watchlist'?'#58a6ff':'#7d8590';
+      var tierLabel=tier==='mine'?'\u2b50 Position':tier==='watchlist'?'\ud83d\udc41 Watch':'Market';
+      var rowBg2=tier==='mine'?'background:#0d2010':tier==='watchlist'?'background:#0d1a2a':'';
+      var when=er.time||'';
+      var actStr='';
+      if(er.epsActual!=null){
+        var estNum=er.note?parseFloat(String(er.note).replace(/.*Est: \\$/,'').replace(/ .*/,'')):NaN;
+        var beat=!isNaN(estNum)&&er.epsActual>estNum;
+        var miss=!isNaN(estNum)&&er.epsActual<estNum;
+        var ac=beat?'#3fb950':miss?'#f85149':'#c9d1d9';
+        actStr='<span style="color:'+ac+';font-weight:700">$'+er.epsActual+'</span>';
+        if(beat)actStr+=' \u2713';
+        if(miss)actStr+=' \u2717';
+      }
+      h+='<tr style="'+rowBg2+'">';
+      h+='<td style="font-weight:700;color:'+tierCol+';cursor:pointer" onclick="openPT(\''+e(tk)+'\')">'+e(tk)+'</td>';
+      h+='<td class="dim" style="text-align:center;white-space:nowrap">'+e(when)+'</td>';
+      h+='<td class="dim" style="text-align:center">'+e(er.note||'')+'</td>';
+      h+='<td style="text-align:center">'+actStr+'</td>';
+      h+='<td style="text-align:center"><span style="font-size:9px;padding:1px 5px;border-radius:3px;background:'+tierCol+'22;color:'+tierCol+';border:1px solid '+tierCol+'44">'+tierLabel+'</span></td>';
+      h+='</tr>';
     }
-    h+='</div></div>';
+    h+='</table></div></div>';
   }
 
-  // ── Arete Key Calls ──
+  // ── Arete Calls (extracted from today's email analysis) ──
   var analysis=d.areteAnalysis||null;
   if(analysis&&analysis.calls&&analysis.calls.length){
     hasContent=true;
     h+='<div style="margin-top:8px">';
-    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#e3b341;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83c\udfaf ARETE CALLS</div>';
+    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#e3b341;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83c\udfaf ARETE CALLS <span class="dim" style="font-weight:400;letter-spacing:0">(from today\'s email)</span></div>';
     for(var aci=0;aci<Math.min(analysis.calls.length,5);aci++){
       var ac=analysis.calls[aci];
       var atk=(ac.ticker||'').toUpperCase();
@@ -1786,48 +1840,34 @@ function rToday(d){
     h+='</div>';
   }
 
-  // ── Position Alerts ──
-  var pa=nar?gN(parseN(nar),['POSITION ALERTS','POSITIONS','ALERTS','YOUR BOOK','BOOK','ACTIVE POSITIONS','PORTFOLIO ALERTS']):null;
-  if(pa){
-    var paLines=pa.split('\n');
-    var realLines=[];
-    for(var pi=0;pi<paLines.length;pi++){var pl=paLines[pi].trim();if(pl.length>5)realLines.push(pl);}
-    if(realLines.length){
-      hasContent=true;
-      h+='<div style="margin-top:8px">';
-      h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#3fb950;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcbc POSITIONS</div>';
-      for(var pi2=0;pi2<realLines.length;pi2++){
-        h+='<div style="font-size:12px;color:#e6edf3;line-height:1.5;padding:2px 0">'+fmt(realLines[pi2])+'</div>';
-      }
-      h+='</div>';
-    }
-  }
-
-  // ── Key news (recent, with links) ──
-  var newsArr=d.news||[];
-  var nowSec=Date.now()/1000;
-  var recentNews=[];
-  for(var ni=0;ni<newsArr.length&&recentNews.length<5;ni++){
-    var n=newsArr[ni];
-    if(n.time&&(nowSec-n.time)<43200){recentNews.push(n);}  // last 12 hours
-  }
-  if(recentNews.length){
+  // ── Active Positions — compact color-coded tiles ──
+  var pos=d.positions||[];
+  if(pos.length&&_bookUnlocked){
     hasContent=true;
     h+='<div style="margin-top:8px">';
-    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#7d8590;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcf0 NEWS</div>';
-    for(var ni2=0;ni2<recentNews.length;ni2++){
-      var n=recentNews[ni2];
-      var age=tA(n.time);
-      var nUrl=n.url||'';
-      h+='<div style="display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-bottom:1px solid #21262d;font-size:12px">';
-      h+='<span style="color:#58a6ff;flex-shrink:0">\u2022</span>';
-      h+='<div style="flex:1;min-width:0">';
-      if(nUrl){h+='<a href="'+e(nUrl)+'" target="_blank" style="color:#79c0ff;text-decoration:none;line-height:1.4">'+e(n.headline||'')+'</a>';}
-      else{h+='<span style="color:#e6edf3;line-height:1.4">'+e(n.headline||'')+'</span>';}
-      h+=' <span class="dim" style="font-size:9px">'+e(n.source||'')+' \u00b7 '+age+'</span>';
-      h+='</div></div>';
+    h+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#3fb950;font-weight:700;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase">\ud83d\udcbc POSITIONS ('+pos.length+')</div>';
+    h+='<div style="display:flex;flex-wrap:wrap;gap:4px">';
+    for(var pi=0;pi<pos.length;pi++){
+      var p=pos[pi];
+      var sym=p.symbol||'';
+      var chgN=parseFloat(String(p.dayPLPct).replace('%',''))||0;
+      var tileBg=chgN>0.5?'#0d2818':chgN<-0.5?'#2d0a0a':'#161b22';
+      var tileBorder=chgN>0.5?'#238636':chgN<-0.5?'#da3633':'#30363d';
+      var chgCol=chgN>0?'#3fb950':chgN<0?'#f85149':'#7d8590';
+      var tag=p.tag||'';
+      var tagCol=tag.toUpperCase()==='HOLD'?'#3fb950':tag.toUpperCase()==='REVIEW'?'#e3b341':tag.toUpperCase()==='EXIT'?'#f85149':'#7d8590';
+      h+='<div style="background:'+tileBg+';border:1px solid '+tileBorder+';border-radius:6px;padding:6px 10px;min-width:80px;cursor:pointer" onclick="openPT(\''+e(sym)+'\')">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:6px">';
+      h+='<span style="font-weight:700;font-size:12px;color:#e6edf3">'+e(sym)+'</span>';
+      if(tag)h+='<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:'+tagCol+'22;color:'+tagCol+';border:1px solid '+tagCol+'44;text-transform:uppercase;font-weight:700">'+e(tag)+'</span>';
+      h+='</div>';
+      h+='<div style="display:flex;justify-content:space-between;margin-top:3px;font-family:JetBrains Mono,monospace;font-size:11px">';
+      h+='<span style="color:#7d8590">'+e(p.last||'')+'</span>';
+      h+='<span style="color:'+chgCol+';font-weight:600">'+(chgN>0?'+':'')+chgN.toFixed(1)+'%</span>';
+      h+='</div>';
+      h+='</div>';
     }
-    h+='</div>';
+    h+='</div></div>';
   }
 
   if(!hasContent){el.innerHTML='';return;}
@@ -1835,7 +1875,6 @@ function rToday(d){
   h+='</div></div>';
   el.innerHTML=h;
 }
-
 
 function rBreadth(d){
   var score=parseFloat(d.breadthScore)||0,hist=d.history||[];
@@ -2146,7 +2185,7 @@ function rStory(d){
   var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
   var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'story\')"><span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span> The Story</h2><div id="secBody_story" style="'+(isColSt?'display:none':'')+'">';h+='<p class="dim" style="font-size:11px">Opus · '+e(ts)+' · '+e(d.dashboardSession||'')+'</p>';
-  var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="dim" style="font-size:11px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById(\'sToday\').scrollIntoView({behavior:\'smooth\'})">↑ Story is in TODAY section above</div>';
+  var story=gN(sec,['THE STORY','STORY','MARKET STORY']);if(story)h+='<div class="dim" style="font-size:11px;margin-bottom:6px;cursor:pointer" onclick="document.getElementById(\'sToday\').scrollIntoView({behavior:\'smooth\'})">\u2191 Current story is in TODAY section \u2014 click to scroll</div>';
   // Retrospective: first check current narrative for explicit retro section
   var retro=gN(sec,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
   // If no explicit retro but we have a first-of-day narrative that differs from current, extract its story
