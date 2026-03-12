@@ -1,4 +1,4 @@
-<!-- v11.22.4 cache-bust 1772729951.8953855 -->
+<!-- v11.22.5 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -266,8 +266,6 @@
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
 <div id="sGP"></div>
 
-<div id="sStory"></div>
-<div id="sNews"></div>
 <div id="sToday"></div>
 
 <div class="sec-group">
@@ -1361,7 +1359,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.4</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.5</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1848,6 +1846,68 @@ function rToday(d){
     h+='</div></div>';
   }
 
+
+  // ── THE STORY (inlined from rStory) ──
+  var _stNar=d.dashboardNarrative||'';
+  if(_stNar){
+    hasContent=true;
+    var _stSec=parseN(_stNar),_stTs=d.dashboardTimestamp||'',_stGp=d.gpLetter||'C';
+    var _stColSt=false;try{_stColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
+    h+='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'story\')"><span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(_stColSt?'-90':'0')+'deg)">\u25bc</span> The Story <span class="dim" style="font-size:12px;font-weight:400">Opus \u00b7 '+e(_stTs)+' \u00b7 '+e(d.dashboardSession||'')+'</span></h2>';
+    h+='<div id="secBody_story" style="'+(_stColSt?'display:none':'')+'">';
+    var _stStory=gN(_stSec,['THE STORY','STORY','MARKET STORY']);
+    if(_stStory)h+='<div class="story-box">'+fmt(_stStory)+'</div>';
+    var _stRetro=gN(_stSec,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
+    if(!_stRetro&&d.firstNarrativeOfDay&&d.firstNarrativeOfDay!==_stNar){
+      var _stFS=parseN(d.firstNarrativeOfDay);
+      var _stFSt=gN(_stFS,['THE STORY','STORY','MARKET STORY']);
+      if(_stFSt){
+        _stRetro=_stFSt;var _stFTs=d.firstNarrativeTs||'',_stFSe=d.firstNarrativeSession||'';
+        h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6">';
+        h+='<p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb First Story of Day <span class="dim" style="font-weight:400;font-size:10px">'+e(_stFTs)+(_stFSe?' \u00b7 '+e(_stFSe):'')+'</span></p>';
+        h+=fmt(_stRetro)+'</div>';_stRetro=null;
+      }
+    }
+    if(_stRetro)h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6"><p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb Previous Story Update</p>'+fmt(_stRetro)+'</div>';
+    h+='</div>';
+  } else {
+    hasContent=true;
+    h+='<div class="info-box"><p class="dim">No Opus narrative yet. Run \ud83d\udce1 Dashboard Now.</p></div>';
+  }
+
+
+  // ── MARKET NEWS (inlined from rNews) ──
+  var _nwNews=d.news||[];
+  if(_nwNews.length){
+    hasContent=true;
+    var _nwWlData=d.watchlistSymbols||{};
+    var _nwAutoPass={},_nwConf22={},_nwAllWL={};
+    var _nwAp=_nwWlData.autoPass||[];for(var _nwi=0;_nwi<_nwAp.length;_nwi++){_nwAutoPass[_nwAp[_nwi]]=1;_nwAllWL[_nwAp[_nwi]]=1;}
+    var _nwC2=_nwWlData.conf22||[];for(var _nwi=0;_nwi<_nwC2.length;_nwi++){_nwConf22[_nwC2[_nwi]]=1;_nwAllWL[_nwC2[_nwi]]=1;}
+    var _nwMl=_nwWlData.manualLong||[];for(var _nwi=0;_nwi<_nwMl.length;_nwi++){_nwAllWL[_nwMl[_nwi]]=1;}
+    var _nwMs=_nwWlData.manualShort||[];for(var _nwi=0;_nwi<_nwMs.length;_nwi++){_nwAllWL[_nwMs[_nwi]]=1;}
+    var _nwPri=[],_nwSec=[];
+    for(var _nwi=0;_nwi<_nwNews.length;_nwi++){
+      var _nwN=_nwNews[_nwi],_nwIsPri=false;
+      if(_nwN.tickers&&_nwN.tickers.length){for(var _nwj=0;_nwj<_nwN.tickers.length;_nwj++){if(_nwAllWL[_nwN.tickers[_nwj]]){_nwIsPri=true;break;}}}
+      if(_nwIsPri)_nwPri.push(_nwN);else _nwSec.push(_nwN);
+    }
+    var _nwIsCol=false;try{_nwIsCol=localStorage.getItem('sec_col_news')==='1';}catch(e){}
+    h+='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'news\')"><span id="secArrow_news" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(_nwIsCol?'-90':'0')+'deg)">\u25bc</span> Market News <span class="dim" style="font-size:12px;font-weight:400">('+_nwPri.length+' of '+_nwNews.length+')</span></h2>';
+    h+='<div id="secBody_news" style="'+(_nwIsCol?'display:none':'')+'">';
+    function _nwRow(n,isPri){
+      var r='<div class="info-box" style="padding:8px 10px;margin-bottom:4px'+(isPri?';border-left:3px solid #58a6ff':'')+'"><div style="display:flex;justify-content:space-between;align-items:flex-start">';
+      r+='<div style="flex:1"><span style="font-size:12px;color:#c9d1d9;line-height:1.5">'+e(n.headline||'')+'</span>';
+      if(n.tickers&&n.tickers.length){r+='<div style="margin-top:3px">';for(var ti=0;ti<n.tickers.length;ti++){var _tk=n.tickers[ti];var _cls=_nwAutoPass[_tk]?'g':_nwConf22[_tk]?'b':_nwAllWL[_tk]?'y':'dim';r+='<span class="tag" style="font-size:9px;margin-right:3px"><span class="'+_cls+'">'+e(_tk)+'</span></span>';}r+='</div>';}
+      r+='</div>';
+      if(n.source)r+='<a href="'+e(n.url||'#')+'" target="_blank" style="font-size:9px;color:#484f58;white-space:nowrap;margin-left:8px">'+e(n.source)+'</a>';
+      r+='</div></div>';return r;
+    }
+    if(_nwPri.length){for(var _nwi=0;_nwi<_nwPri.length;_nwi++)h+=_nwRow(_nwPri[_nwi],true);}
+    if(_nwSec.length){for(var _nwi=0;_nwi<Math.min(_nwSec.length,15);_nwi++)h+=_nwRow(_nwSec[_nwi],false);}
+    h+='</div>';
+  }
+
   if(!hasContent){el.innerHTML='';return;}
 
   h+='</div></div>';
@@ -2155,36 +2215,7 @@ function rSess(d){}
 function rSectors(d){}
 
 // ═══ THE STORY + GAMEPLAN STATUS (colored) ═══
-function rStory(d){
-  // Render into TODAY section placeholder
-  var el=$('sStory');
-  if(!el)return;
-  var nar=d.dashboardNarrative||'';if(!nar){el.innerHTML='<div class="info-box"><p class="dim">No Opus narrative yet. Run \ud83d\udce1 Dashboard Now.</p></div>';return}
-  var sec=parseN(nar),ts=d.dashboardTimestamp||'',gp=d.gpLetter||'C',cl=GPC[gp]||'dim';
-  var isColSt=false;try{isColSt=localStorage.getItem('sec_col_story')==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'story\')"><span id="secArrow_story" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColSt?'-90':'0')+'deg)">\u25bc</span> The Story <span class="dim" style="font-size:12px;font-weight:400">Opus \u00b7 '+e(ts)+' \u00b7 '+e(d.dashboardSession||'')+'</span></h2>';
-  h+='<div id="secBody_story" style="'+(isColSt?'display:none':'')+'">';
-  var story=gN(sec,['THE STORY','STORY','MARKET STORY']);
-  if(story)h+='<div class="story-box">'+fmt(story)+'</div>';
-  // Retrospective / Story Update
-  var retro=gN(sec,['STORY UPDATE','RETROSPECTIVE','PREVIOUS STORY','STORY REVIEW']);
-  if(!retro && d.firstNarrativeOfDay && d.firstNarrativeOfDay !== nar){
-    var firstSec=parseN(d.firstNarrativeOfDay);
-    var firstStory=gN(firstSec,['THE STORY','STORY','MARKET STORY']);
-    if(firstStory){
-      retro=firstStory;
-      var firstTs=d.firstNarrativeTs||'';
-      var firstSess=d.firstNarrativeSession||'';
-      h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6">';
-      h+='<p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb First Story of Day <span class="dim" style="font-weight:400;font-size:10px">'+e(firstTs)+(firstSess?' \u00b7 '+e(firstSess):'')+'</span></p>';
-      h+=fmt(retro)+'</div>';
-      retro=null;
-    }
-  }
-  if(retro)h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6"><p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb Previous Story Update</p>'+fmt(retro)+'</div>';
-  h+='</div>';
-  el.innerHTML=h;
-}
+function rStory(d){}
 
 // ═══ IN PLAY TODAY (v90.5) ═══
 function rInPlay(d){
@@ -2498,72 +2529,8 @@ function rEarnings(d){
   h+='</div>';
   $('sEarnings').innerHTML=h;
 }
-function rNews(d){
-  var news=d.news||[];
-  var _newsEl=$('sNews');
-  if(!news.length){if(_newsEl)_newsEl.innerHTML='';return;}
-  // Build symbol sets
-  var wlData=d.watchlistSymbols||{};
-  var autoPass={},conf22={},allWL={};
-  var ap=wlData.autoPass||[];
-  var c22=wlData.conf22||[];
-  var allArr=wlData.all||[];
-  for(var i=0;i<ap.length;i++) autoPass[ap[i]]=1;
-  for(var i=0;i<c22.length;i++) conf22[c22[i]]=1;
-  for(var i=0;i<allArr.length;i++) allWL[allArr[i]]=1;
-  // Also add positions to autoPass + allWL
-  var pos=d.positions||[];
-  for(var i=0;i<pos.length;i++) if(pos[i].ticker){autoPass[pos[i].ticker]=1;allWL[pos[i].ticker]=1;}
-  // Macro tags always pass
-  var macroTags={Tariffs:1,Fed:1,Inflation:1,Jobs:1,China:1,Geopolitical:1,Rates:1,Debt:1,Macro:1,Oil:1,Bonds:1,Gold:1,Dollar:1};
-  var primary=[],secondary=[],seenSec={};
-  for(var i=0;i<news.length;i++){
-    var n=news[i],nt=nTags(n.headline||'',n.related||'');
-    // Check macro
-    var hasMacro=false;
-    for(var t=0;t<nt.tags.length;t++) if(macroTags[nt.tags[t].l]) hasMacro=true;
-    // Check autoPass
-    var inAuto=false;
-    for(var k=0;k<nt.tickers.length;k++) if(autoPass[nt.tickers[k]]) inAuto=true;
-    // Check conf22
-    var inConf=false;
-    for(var k=0;k<nt.tickers.length;k++) if(conf22[nt.tickers[k]]) inConf=true;
-    // Check any watchlist ticker
-    var inWL=false;
-    for(var k=0;k<nt.tickers.length;k++) if(allWL[nt.tickers[k]]) inWL=true;
-    if(hasMacro||inAuto||inConf){
-      primary.push({n:n,nt:nt,inPos:inAuto});
-      seenSec[i]=1;
-    } else if(inWL){
-      secondary.push({n:n,nt:nt});
-    }
-  }
-  // Sort: position news first
-  primary.sort(function(a,b){return(b.inPos?1:0)-(a.inPos?1:0);});
-  // Render
-  var totalShown=primary.length+secondary.length;
-  var isCol=true;try{var _v=localStorage.getItem('sec_col_news');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'news\')"><span id="secArrow_news" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Market News <span class="dim" style="font-size:12px;font-weight:400">('+totalShown+' of '+news.length+')</span></h2>';
-  h+='<div id="secBody_news" style="'+(isCol?'display:none':'')+'">';
-  // ── Primary section ──
-  h+='<div class="info-box" style="padding:0">';
-  if(!primary.length) h+='<p class="dim" style="padding:10px;font-size:12px">No relevant news matching filters.</p>';
-  for(var i=0;i<Math.min(primary.length,30);i++) h+=newsItem(primary[i].n,primary[i].nt,autoPass,conf22);
-  h+='</div>';
-  // ── Secondary section (watchlist tab, any confluence) ──
-  if(secondary.length){
-    h+='<div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px">'
-      +'<div style="flex:1;height:1px;background:#21262d"></div>'
-      +'<span style="font-size:10px;font-weight:700;color:#7d8590;white-space:nowrap">WATCHLIST — ALL TICKERS</span>'
-      +'<div style="flex:1;height:1px;background:#21262d"></div>'
-      +'</div>';
-    h+='<div class="info-box" style="padding:0">';
-    for(var i=0;i<Math.min(secondary.length,20);i++) h+=newsItem(secondary[i].n,secondary[i].nt,autoPass,conf22);
-    h+='</div>';
-  }
-  h+='</div>';
-  if(_newsEl)_newsEl.innerHTML=h;
-}
+function rNews(d){}
+
 function newsItem(n,nt,autoPass,conf22){
   var age=tA(n.time),stale=(Date.now()/1000-(n.time||0))>7200,src=n.source||n.feed||'',ft=n.feed||'';
   // Check if any ticker is in positions
