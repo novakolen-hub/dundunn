@@ -1,4 +1,4 @@
-<!-- v11.25.8 cache-bust 1772729951.8953855 -->
+<!-- v11.25.9 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -445,18 +445,36 @@ function setupTagHtml(setupRaw,subModeLabel,gpLetter,ticker){
   var r=C_REGISTRY[key],chk=_cSGP(key,subModeLabel,gpLetter);
   var onclick=ticker?' onclick="event.stopPropagation();openPT(\''+ticker+'\')" style="cursor:pointer"':'';
   if(!chk.ok){
-    // GP-D: setups valid as shorts
-    if(gpLetter==='D'){
-      var h2=' <span class="setup-tag st-warn" title="Short direction in GP-D"'+onclick+'>'+e(r.label)+' \u25bc</span>';
-      if(ticker){var gr2=quickGrade(ticker,key,subModeLabel,gpLetter,'SHORT');if(gr2)h2+=gradeHtml(gr2);}
-      return h2;
+    // GP blocked: check if short side works better
+    if(ticker){
+      var grS=quickGrade(ticker,key,subModeLabel,gpLetter,'SHORT');
+      var grL=quickGrade(ticker,key,subModeLabel,gpLetter,'LONG');
+      var best=grS,bSide='SHORT';
+      if(grL&&grS){var sL2=grL.greens-grL.reds,sS2=grS.greens-grS.reds;if(sL2>sS2){best=grL;bSide='LONG';}}
+      else if(grL&&!grS){best=grL;bSide='LONG';}
+      if(best&&best.grade!=='F'){
+        var dirI=bSide==='SHORT'?'\u25bc':'\u25b2';
+        return ' <span class="setup-tag st-warn" title="'+bSide+' direction"'+onclick+'>'+e(r.label)+' '+dirI+'</span>'+gradeHtml(best);
+      }
     }
     return ' <span style="font-size:9px;color:#484f58;font-family:JetBrains Mono,monospace" title="'+e(chk.reason||'GP blocked')+'"'+onclick+'>'+e(r.label)+'</span>';
   }
+  // Determine best direction: check both long and short grades
+  var grLong=ticker?quickGrade(ticker,key,subModeLabel,gpLetter,'LONG'):null;
+  var grShort=ticker?quickGrade(ticker,key,subModeLabel,gpLetter,'SHORT'):null;
+  var bestSide='LONG',bestGr=grLong;
+  if(grShort&&grLong){
+    var sL=grLong.greens-grLong.reds,sS=grShort.greens-grShort.reds;
+    if(sS>sL){bestSide='SHORT';bestGr=grShort;}
+  } else if(grShort&&!grLong){bestSide='SHORT';bestGr=grShort;}
+  var q2=_tq[ticker]||{};
+  if(q2.setupDir==='SHORT'&&!bestGr)bestSide='SHORT';
+
   var cls=chk.caution?'st-warn':'st-ok';
-  var icon=chk.caution?'△':'✓';
-  var h=' <span class="setup-tag '+cls+'" title="'+e(chk.reason||'')+'"'+onclick+'>'+e(r.label)+' '+icon+'</span>';
-  if(ticker){var gr=quickGrade(ticker,key,subModeLabel,gpLetter,'LONG');if(gr)h+=gradeHtml(gr);}
+  if(bestSide==='SHORT')cls='st-warn';
+  var dirIcon=bestSide==='SHORT'?'▼':'▲';
+  var h=' <span class="setup-tag '+cls+'" title="'+e(chk.reason||'')+' ('+bestSide+')"'+onclick+'>'+e(r.label)+' '+dirIcon+'</span>';
+  if(bestGr&&bestGr.grade!=='F')h+=gradeHtml(bestGr);
   return h;
 }
 
@@ -1263,7 +1281,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.8</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.9</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2812,6 +2830,7 @@ function rSetups(d){
     if(!qt.chg&&w[i].chg)qt.chg=String(w[i].chg);
     if(!qt.conf&&w[i].confluence)qt.conf=String(w[i].confluence);
     if(!qt.setup&&w[i].setup)qt.setup=w[i].setup;
+    if(!qt.setupDir&&w[i].setupDir)qt.setupDir=w[i].setupDir;
     merged.push(sym);
   }
   // Sort: GP-allowed first, then by confluence
