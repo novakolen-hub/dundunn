@@ -1,4 +1,4 @@
-<!-- v11.22.7 cache-bust 1772729951.8953855 -->
+<!-- v11.22.8 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -269,7 +269,7 @@
 <div id="sToday"></div>
 
 <div class="sec-group">
-<div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> MARKET HEALTH</div>
+<div class="grp-hdr" onclick="toggleGroup('market')"><span class="grp-arrow" id="grpArrow_market">▼</span> MARKET HEALTH<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('market',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('market',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_market">
 <div id="sBreadth"></div>
 <div id="sInst"></div>
@@ -277,7 +277,7 @@
 </div></div>
 <!-- sectors merged into breadth -->
 <div class="sec-group">
-<div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS</div>
+<div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_stocks">
 <div id="sTradeCandidates"></div>
 <div id="sInPlay"></div>
@@ -286,20 +286,20 @@
 <div id="sSetups"></div>
 </div></div>
 <div class="sec-group">
-<div class="grp-hdr" onclick="toggleGroup('intel')"><span class="grp-arrow" id="grpArrow_intel">▼</span> INTELLIGENCE</div>
+<div class="grp-hdr" onclick="toggleGroup('intel')"><span class="grp-arrow" id="grpArrow_intel">▼</span> INTELLIGENCE<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_intel">
 <div id="sAreteEmails"></div>
 <div id="sEcon"></div>
 <div id="sEarnings"></div>
 </div></div>
 <div class="sec-group">
-<div class="grp-hdr" onclick="toggleGroup('positions')"><span class="grp-arrow" id="grpArrow_positions">▼</span> MY POSITIONS</div>
+<div class="grp-hdr" onclick="toggleGroup('positions')"><span class="grp-arrow" id="grpArrow_positions">▼</span> MY POSITIONS<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('positions',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('positions',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_positions">
 <div id="sBook"></div>
 <div id="sInverse"></div>
 </div></div>
 <div class="sec-group">
-<div class="grp-hdr" onclick="toggleGroup('reference')"><span class="grp-arrow" id="grpArrow_reference">▼</span> REFERENCE</div>
+<div class="grp-hdr" onclick="toggleGroup('reference')"><span class="grp-arrow" id="grpArrow_reference">▼</span> REFERENCE<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('reference',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('reference',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_reference">
 <div id="sCoach"></div>
 <div id="sFocused"></div>
@@ -1359,7 +1359,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.7</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.8</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -4013,6 +4013,24 @@ function _isAreteChecked(id){return !!_areteChecks()[id];}
 
 var _isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 function toggleGroup(name){var body=document.getElementById('grpBody_'+name);var arrow=document.getElementById('grpArrow_'+name);if(!body)return;var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';if(arrow)arrow.textContent=isHidden?'\u25bc':'\u25b6';try{localStorage.setItem('v9_grp_'+name,isHidden?'1':'0');}catch(e){}}
+
+function toggleGroupSections(grp,collapse){
+  var map={market:['breadth','inter','intertk','pulse'],stocks:['inplay','watch','setups'],intel:['areteemails','econ','earn'],positions:['inv'],reference:['focused']};
+  var keys=map[grp]||[];
+  for(var i=0;i<keys.length;i++){
+    var body=document.getElementById('secBody_'+keys[i]);
+    var arrow=document.getElementById('secArrow_'+keys[i]);
+    if(!body)continue;
+    body.style.display=collapse?'none':'';
+    if(arrow)arrow.style.transform=collapse?'rotate(-90deg)':'rotate(0deg)';
+    try{localStorage.setItem('sec_col_'+keys[i],collapse?'1':'0');}catch(e){}
+  }
+  // Also handle inst toggles for market group
+  if(grp==='market'){
+    var iKeys=['volreg','iv5d','termstruct','expmove','sentiment'];
+    for(var i=0;i<iKeys.length;i++){var ib=document.getElementById('instBody_'+iKeys[i]);var ia=document.getElementById('instArrow_'+iKeys[i]);if(ib){ib.style.display=collapse?'none':'';if(ia)ia.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('inst_col_'+iKeys[i],collapse?'1':'0');}catch(e){}}}
+  }
+}
 function _restoreGroups(){var g=['market','stocks','intel','positions','reference'];for(var i=0;i<g.length;i++){try{var s=localStorage.getItem('v9_grp_'+g[i]);if(s==='0'){var b=document.getElementById('grpBody_'+g[i]);var a=document.getElementById('grpArrow_'+g[i]);if(b)b.style.display='none';if(a)a.textContent='\u25b6';}}catch(e){}}}
 _restoreGroups();
 document.getElementById('btnColAll').onclick=function(){toggleAll(true);};
