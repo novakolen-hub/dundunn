@@ -1,4 +1,4 @@
-<!-- v11.25.5 cache-bust 1772729951.8953855 -->
+<!-- v11.25.6 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1257,7 +1257,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.5</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.6</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2809,16 +2809,20 @@ function rSetups(d){
     merged.push(sym);
   }
   // Sort: GP-allowed first, then by confluence
-  var _subM=(_lastD&&_lastD.gpSubMode&&_lastD.gpSubMode.subMode)?_lastD.gpSubMode.subMode:'';
-  var _gpL=(_lastD&&_lastD.gpLetter)?_lastD.gpLetter:'C';
-  merged.sort(function(a,b){
-    var qa=_tq[a]||{},qb=_tq[b]||{};
-    var ka=_matchSetupKey(qa.setup||''),kb=_matchSetupKey(qb.setup||'');
-    var okA=ka?_cSGP(ka,_subM,_gpL).ok:false;
-    var okB=kb?_cSGP(kb,_subM,_gpL).ok:false;
-    if(okA!==okB)return okA?-1:1;
-    return parseFloat(qb.conf||0)-parseFloat(qa.conf||0);
-  });
+  try{
+    var _subM=(_lastD&&_lastD.gpSubMode&&_lastD.gpSubMode.subMode)?_lastD.gpSubMode.subMode:'';
+    var _gpL=(_lastD&&_lastD.gpLetter)?_lastD.gpLetter:'C';
+    merged.sort(function(a,b){
+      var qa=_tq[a]||{},qb=_tq[b]||{};
+      var ka=qa.setup?_matchSetupKey(qa.setup):null,kb=qb.setup?_matchSetupKey(qb.setup):null;
+      var okA=ka?_cSGP(ka,_subM,_gpL).ok:false;
+      var okB=kb?_cSGP(kb,_subM,_gpL).ok:false;
+      if(okA!==okB)return okA?-1:1;
+      return parseFloat(qb.conf||0)-parseFloat(qa.conf||0);
+    });
+  }catch(e){
+    merged.sort(function(a,b){return parseFloat((_tq[b]||{}).conf||0)-parseFloat((_tq[a]||{}).conf||0);});
+  }
   if(!merged.length){$('sSetups').innerHTML='';return}
   // Store for pagination
   window._setupsMerged=merged;
@@ -3093,28 +3097,11 @@ function rCoach(d){
 
 function rFocused(d){
   if(!_focusList||!_focusList.length){$('sFocused').innerHTML='';return;}
-  var tks=_focusList.slice();
-  var posMap={};(d.positions||[]).forEach(function(p){posMap[p.ticker||p.sym]=p;});
-  var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
   var isCol=false;try{var _v=localStorage.getItem('sec_col_focused');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none;color:#d2a8ff" onclick="toggleSec(\'focused\')"><span id="secArrow_focused" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Focused <span class="dim" style="font-size:12px;font-weight:400">('+tks.length+')</span> <span style="font-size:10px;color:#7d8590;font-weight:400;cursor:pointer" onclick="event.stopPropagation();_focusList=[];try{localStorage.setItem(\'v9_focused\',\'[]\');}catch(e){};if(_lastD)R(_lastD);">clear</span></h2>';
+  var h='<h2 style="cursor:pointer;user-select:none;color:#d2a8ff" onclick="toggleSec(\'focused\')"><span id="secArrow_focused" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Focused <span class="dim" style="font-size:12px;font-weight:400">('+_focusList.length+')</span> <span style="font-size:10px;color:#7d8590;font-weight:400;cursor:pointer" onclick="event.stopPropagation();_focusList=[];_focusedTickers.clear();try{localStorage.setItem(\'v9_focused\',\'[]\');localStorage.setItem(\'v9_card_focus\',\'[]\');}catch(e){};if(_lastD)R(_lastD);">clear</span></h2>';
   h+='<div id="secBody_focused" style="'+(isCol?'display:none':'')+'">';
-  // Compact cards with live data
-  for(var i=0;i<tks.length;i++){
-    var tk=tks[i],q=_tq[tk]||{},pos=posMap[tk]||null,ar=areteMap[tk]||null;
-    h+='<div class="info-box" style="padding:6px 10px;margin-bottom:3px;border-left:3px solid #d2a8ff;display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
-    h+='<span class="ae-ticker" style="cursor:pointer;font-weight:700;font-size:13px" onclick="openPT(\''+e(tk)+'\')">'+e(tk)+'</span>';
-    if(q.last)h+='<span class="mono" style="font-size:11px">'+e(q.last)+'</span>';
-    if(q.chg)h+='<span style="font-size:11px">'+pct(q.chg)+'</span>';
-    if(q.conf)h+='<span style="font-size:10px;color:#58a6ff">CF:'+e(q.conf)+'</span>';
-    if(q.setup)h+='<span style="font-size:10px;color:#d2a8ff">'+e(q.setup)+'</span>';
-    if(pos)h+='<span class="tag" style="background:#0d2818;color:#3fb950;border-color:#3fb950;font-size:8px">POS</span>';
-    if(ar)h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border-color:#9e6a03;font-size:8px">ARETE</span>';
-    // Wall + unfocus buttons on right
-    h+='<span style="margin-left:auto;display:flex;gap:6px;align-items:center">';
-    h+='<span style="font-size:9px;cursor:pointer;color:'+(isOnWall(tk)?'#58a6ff':'#484f58')+'" onclick="event.stopPropagation();toggleWall(\''+tk+'\')" title="Wall">'+(isOnWall(tk)?'\u25a3':'\u25a1')+'</span>';
-    h+='<span style="font-size:9px;cursor:pointer;color:#f85149" onclick="event.stopPropagation();toggleFocus(\''+tk+'\')" title="Remove">\u2715</span>';
-    h+='</span></div>';
+  for(var i=0;i<_focusList.length;i++){
+    h+=uCard(_focusList[i],'compact',{showFocus:true});
   }
   h+='</div>';
   $('sFocused').innerHTML=h;
