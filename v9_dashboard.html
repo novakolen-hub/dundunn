@@ -1,4 +1,4 @@
-<!-- v11.25.3 cache-bust 1772729951.8953855 -->
+<!-- v11.25.4 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -443,12 +443,14 @@ function setupTagHtml(setupRaw,subModeLabel,gpLetter,ticker){
   var key=_matchSetupKey(setupRaw);
   if(!key||!C_REGISTRY[key])return '';
   var r=C_REGISTRY[key],chk=_cSGP(key,subModeLabel,gpLetter);
-  var cls=chk.ok?(chk.caution?'st-warn':'st-ok'):'st-off';
-  var icon=chk.ok?(chk.caution?'△':'✓'):'✗';
-  var tip=chk.reason||'';
   var onclick=ticker?' onclick="event.stopPropagation();openPT(\''+ticker+'\')" style="cursor:pointer"':'';
-  var h=' <span class="setup-tag '+cls+'" title="'+e(tip)+'"'+onclick+'>'+e(r.label)+' '+icon+'</span>';
-  if(ticker&&chk.ok){var gr=quickGrade(ticker,key,subModeLabel,gpLetter,'LONG');if(gr)h+=gradeHtml(gr);}
+  if(!chk.ok){
+    return ' <span style="font-size:9px;color:#484f58;font-family:JetBrains Mono,monospace" title="'+e(chk.reason||'GP blocked')+'"'+onclick+'>'+e(r.label)+'</span>';
+  }
+  var cls=chk.caution?'st-warn':'st-ok';
+  var icon=chk.caution?'△':'✓';
+  var h=' <span class="setup-tag '+cls+'" title="'+e(chk.reason||'')+'"'+onclick+'>'+e(r.label)+' '+icon+'</span>';
+  if(ticker){var gr=quickGrade(ticker,key,subModeLabel,gpLetter,'LONG');if(gr)h+=gradeHtml(gr);}
   return h;
 }
 
@@ -1251,7 +1253,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.3</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.4</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2802,7 +2804,17 @@ function rSetups(d){
     if(!qt.setup&&w[i].setup)qt.setup=w[i].setup;
     merged.push(sym);
   }
-  merged.sort(function(a,b){return parseFloat(_tq[b]&&_tq[b].conf||0)-parseFloat(_tq[a]&&_tq[a].conf||0);});
+  // Sort: GP-allowed first, then by confluence
+  var _subM=(_lastD&&_lastD.gpSubMode&&_lastD.gpSubMode.subMode)?_lastD.gpSubMode.subMode:'';
+  var _gpL=(_lastD&&_lastD.gpLetter)?_lastD.gpLetter:'C';
+  merged.sort(function(a,b){
+    var qa=_tq[a]||{},qb=_tq[b]||{};
+    var ka=_matchSetupKey(qa.setup||''),kb=_matchSetupKey(qb.setup||'');
+    var okA=ka?_cSGP(ka,_subM,_gpL).ok:false;
+    var okB=kb?_cSGP(kb,_subM,_gpL).ok:false;
+    if(okA!==okB)return okA?-1:1;
+    return parseFloat(qb.conf||0)-parseFloat(qa.conf||0);
+  });
   if(!merged.length){$('sSetups').innerHTML='';return}
   // Store for pagination
   window._setupsMerged=merged;
