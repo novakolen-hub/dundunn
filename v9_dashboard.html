@@ -1,4 +1,4 @@
-<!-- v11.23.1 cache-bust 1772729951.8953855 -->
+<!-- v11.23.2 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1236,10 +1236,9 @@ function toggleAll(collapse){
     try{localStorage.setItem('sec_col_'+keys[i],collapse?'1':'0');}catch(e){}
   }
   var gKeys=['market','stocks','intel','positions','reference'];for(var i=0;i<gKeys.length;i++){var gb=document.getElementById('grpBody_'+gKeys[i]);var ga=document.getElementById('grpArrow_'+gKeys[i]);if(!gb)continue;gb.style.display=collapse?'none':'';if(ga)ga.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('v9_grp_'+gKeys[i],collapse?'0':'1');}catch(e){}}
-  if(!collapse){var sc2=['inter','intertk','focused'];for(var i=0;i<sc2.length;i++){var sb=document.getElementById('secBody_'+sc2[i]);var sa=document.getElementById('secArrow_'+sc2[i]);if(sb){sb.style.display='none';if(sa)sa.style.transform='rotate(-90deg)';try{localStorage.setItem('sec_col_'+sc2[i],'1');}catch(e){}}}}
-  // Inst toggles
-  var iKeys=['volreg','iv5d','termstruct','expmove','sentiment'];for(var i=0;i<iKeys.length;i++){var ib=document.getElementById('instBody_'+iKeys[i]);var ia=document.getElementById('instArrow_'+iKeys[i]);if(ib){ib.style.display=collapse?'none':'';if(ia)ia.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('inst_col_'+iKeys[i],collapse?'1':'0');}catch(e){}}}
-  // Also toggle Arete sub-sections
+  if(!collapse){var sc2=['inter','intertk','focused','pulse'];for(var i=0;i<sc2.length;i++){var sb=document.getElementById('secBody_'+sc2[i]);var sa=document.getElementById('secArrow_'+sc2[i]);if(sb){sb.style.display='none';if(sa)sa.style.transform='rotate(-90deg)';try{localStorage.setItem('sec_col_'+sc2[i],'1');}catch(e){}}}}
+  // Inst toggles — only collapse, never auto-expand
+  if(collapse){var iKeys=['volreg','iv5d','termstruct','expmove','sentiment'];for(var i=0;i<iKeys.length;i++){var ib=document.getElementById('instBody_'+iKeys[i]);var ia=document.getElementById('instArrow_'+iKeys[i]);if(ib){ib.style.display='none';if(ia)ia.textContent='\u25b6';try{localStorage.setItem('inst_col_'+iKeys[i],'1');}catch(e){}}}}
   var aKeys=['outer','Swing','DTC','Option','Long','Watching'];
   for(var i=0;i<aKeys.length;i++){
     var body=document.getElementById('areteBody_'+aKeys[i]);
@@ -1359,7 +1358,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.1</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.2</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2498,9 +2497,8 @@ function rEarnings(d){
     // Auto-collapse: past days collapsed by default, today+ open
     var isPast=!pastToday&&dk!==todayName&&dayOrder.indexOf(todayName)>di;
     var _isDayToday2=dk===todayName;
-    var dayCol=isPast;
-    if(!_isDayToday2){try{var sv=localStorage.getItem('earn_day_'+dayKey);if(sv!==null)dayCol=sv==='1';}catch(e){}}
-    else{dayCol=false;}
+    var dayCol=isPast?true:(_isDayToday2?false:true);
+    if(!isPast&&!_isDayToday2){try{var sv=localStorage.getItem('earn_day_'+dayKey);if(sv!==null)dayCol=sv==='1';}catch(e){}}
     if(dk===todayName)pastToday=true;
     var items=dayMap[dk];
     var isDayToday=dk===todayName;
@@ -4037,9 +4035,9 @@ function toggleGroupSections(grp,collapse){
     try{localStorage.setItem('sec_col_'+keys[i],collapse?'1':'0');}catch(e){}
   }
   // Also handle inst toggles for market group
-  if(grp==='market'){
+  if(grp==='market'&&collapse){
     var iKeys=['volreg','iv5d','termstruct','expmove','sentiment'];
-    for(var i=0;i<iKeys.length;i++){var ib=document.getElementById('instBody_'+iKeys[i]);var ia=document.getElementById('instArrow_'+iKeys[i]);if(ib){ib.style.display=collapse?'none':'';if(ia)ia.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('inst_col_'+iKeys[i],collapse?'1':'0');}catch(e){}}}
+    for(var i=0;i<iKeys.length;i++){var ib=document.getElementById('instBody_'+iKeys[i]);var ia=document.getElementById('instArrow_'+iKeys[i]);if(ib){ib.style.display='none';if(ia)ia.textContent='\u25b6';try{localStorage.setItem('inst_col_'+iKeys[i],'1');}catch(e){}}}
   }
 }
 function _restoreGroups(){var g=['market','stocks','intel','positions','reference'];for(var i=0;i<g.length;i++){try{var s=localStorage.getItem('v9_grp_'+g[i]);if(s==='0'){var b=document.getElementById('grpBody_'+g[i]);var a=document.getElementById('grpArrow_'+g[i]);if(b)b.style.display='none';if(a)a.textContent='\u25b6';}}catch(e){}}}
