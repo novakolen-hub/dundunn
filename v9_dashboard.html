@@ -1,4 +1,4 @@
-<!-- v11.23.5 cache-bust 1772729951.8953855 -->
+<!-- v11.23.6 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1358,7 +1358,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.5</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.6</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1617,8 +1617,15 @@ function rAreteEmails(d){
         h+='<span class="ae-arrow">'+(emailOpenState?'\u25bc':'\u25b6')+'</span>';
         h+='</div>';
         var emailOpenState=dayOpen&&!emailIsRead;h+='<div class="ae-body" id="'+uid+'" style="'+(emailOpenState?'':'display:none')+'">';
-        var body=e(em.body||'').replace(/\n\n/g,'</p><p style="margin:8px 0">').replace(/\n/g,'<br>');
-        body='<p style="margin:8px 0">'+body+'</p>';
+        var body=e(em.body||'');
+        // Format ALL CAPS lines as headers (min 3 chars, entire line uppercase)
+        body=body.replace(/^([A-Z][A-Z ]{2,}[A-Z])$/gm, '<strong style="color:#e3b341;font-size:13px;display:block;margin:12px 0 6px">$1</strong>');
+        // Format lines with SPY/QQQ $ levels as monospace
+        body=body.replace(/((?:SPY|QQQ|IWM|DIA)\s*\$[\d,.]+[^<]*)/g, '<span style="font-family:JetBrains Mono,monospace;color:#58a6ff">$1</span>');
+        // Paragraph breaks
+        body=body.replace(/\n\n/g, '</p><p style="margin:8px 0;line-height:1.6">');
+        body=body.replace(/\n/g, '<br>');
+        body='<div style="font-size:12px;line-height:1.6"><p style="margin:8px 0;line-height:1.6">'+body+'</p></div>';
         body=body.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){return '<span class="ae-ticker" onclick="openPT(\''+tk+'\')">$'+tk+'</span>';});
         body=body.replace(/(^|[\s,;:(])([A-Z]{2,5})(\s|[,;:)\.]|$)/g,function(m,pre,tk,post){if(_tq[tk])return pre+'<span class="ae-ticker" onclick="openPT(\''+tk+'\')">'+tk+'</span>'+post;return m;});
         h+=body;
