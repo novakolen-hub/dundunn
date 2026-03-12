@@ -1,4 +1,4 @@
-<!-- v11.25.9 cache-bust 1772729951.8953855 -->
+<!-- v11.26.0 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1281,7 +1281,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.9</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.26.0</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -3323,55 +3323,56 @@ document.addEventListener('keydown',function(ev){
 // ═══ SETUP-SPECIFIC SMART BOXES ═══
 var SETUP_CHECKS = {
   'VWAP-Hold': [
-    {k:'VWAP',      fn:function(d){var v=d.vwapDist||0;return v>0?'GREEN':v>-0.3?'YELLOW':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP, within 0.5%'},
-    {k:'EMA Stack',  fn:function(d){var e9=parseFloat(d.ema9)||0,e20=parseFloat(d.ema20)||0;return e9>e20?'GREEN':'RED';}, fmt:function(d){return 'EMA9 '+(parseFloat(d.ema9)>parseFloat(d.ema20)?'>':'<')+' EMA20';}, need:'9 > 20 (bullish)'},
-    {k:'RSI Zone',   fn:function(d){var r=parseFloat(d.rsi)||50;return r>=40&&r<=60?'GREEN':r>=35&&r<=65?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'40-60 (neutral)'},
-    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1?'GREEN':r>=0.7?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.0x'}
+    {k:'VWAP',      fn:function(d,s){var v=d.vwapDist||0;return s==='SHORT'?(v<0?'GREEN':v<0.3?'YELLOW':'RED'):(v>0?'GREEN':v>-0.3?'YELLOW':'RED');}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:function(s){return s==='SHORT'?'Below VWAP, within 0.5%':'Above VWAP, within 0.5%';}},
+    {k:'EMA Stack',  fn:function(d,s){var e9=parseFloat(d.ema9)||0,e20=parseFloat(d.ema20)||0;return s==='SHORT'?(e9<e20?'GREEN':'RED'):(e9>e20?'GREEN':'RED');}, fmt:function(d){return 'EMA9 '+(parseFloat(d.ema9)>parseFloat(d.ema20)?'>':'<')+' EMA20';}, need:function(s){return s==='SHORT'?'9 < 20 (bearish)':'9 > 20 (bullish)';}},
+    {k:'RSI Zone',   fn:function(d,s){var r=parseFloat(d.rsi)||50;return r>=40&&r<=60?'GREEN':r>=35&&r<=65?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'40-60 (neutral)'},
+    {k:'RVOL',       fn:function(d,s){var r=parseFloat(d.rvol)||0;return r>=1?'GREEN':r>=0.7?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.0x'}
   ],
   'OR-Break': [
-    {k:'Above OR',   fn:function(d){var l=parseFloat(d.last)||0,h=d.orHigh||0;return l>h&&h>0?'GREEN':'RED';}, fmt:function(d){return '$'+(d.orHigh||0).toFixed(2);}, need:'Price > OR High'},
-    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
-    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1.5?'GREEN':r>=1?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.5x'},
-    {k:'RSI',        fn:function(d){var r=parseFloat(d.rsi)||50;return r<75?'GREEN':r<80?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'< 75 (not OB)'}
+    {k:'OR Level',   fn:function(d,s){var l=parseFloat(d.last)||0;if(s==='SHORT'){var o=d.orLow||0;return l<o&&o>0?'GREEN':'RED';}var h2=d.orHigh||0;return l>h2&&h2>0?'GREEN':'RED';}, fmt:function(d,s){return s==='SHORT'?'$'+(d.orLow||0).toFixed(2):'$'+(d.orHigh||0).toFixed(2);}, need:function(s){return s==='SHORT'?'Price < OR Low':'Price > OR High';}},
+    {k:'VWAP',       fn:function(d,s){var v=d.vwapDist||0;return s==='SHORT'?(v<0?'GREEN':'RED'):(v>0?'GREEN':'RED');}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:function(s){return s==='SHORT'?'Below VWAP':'Above VWAP';}},
+    {k:'RVOL',       fn:function(d,s){var r=parseFloat(d.rvol)||0;return r>=1.5?'GREEN':r>=1?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.5x'},
+    {k:'RSI',        fn:function(d,s){var r=parseFloat(d.rsi)||50;return s==='SHORT'?(r>25?'GREEN':r>20?'YELLOW':'RED'):(r<75?'GREEN':r<80?'YELLOW':'RED');}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:function(s){return s==='SHORT'?'> 25 (not OS)':'< 75 (not OB)';}}
   ],
   'Momentum': [
-    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
-    {k:'Above EMA9', fn:function(d){var l=parseFloat(d.last)||0,e=parseFloat(d.ema9)||0;return l>e?'GREEN':'RED';}, fmt:function(d){return '$'+(parseFloat(d.ema9)||0).toFixed(2);}, need:'Price > EMA9'},
-    {k:'Rel Str',    fn:function(d){var r=parseFloat(d.rs)||0;return r>=1?'GREEN':r>=0?'YELLOW':'RED';}, fmt:function(d){return (parseFloat(d.rs||0)>0?'+':'')+parseFloat(d.rs||0).toFixed(1)+'%';}, need:'\u2265 +1% vs SPY'},
-    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=2?'GREEN':r>=1.5?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 2.0x'},
-    {k:'RSI',        fn:function(d){var r=parseFloat(d.rsi)||50;return r>=55&&r<=75?'GREEN':r>=50&&r<=80?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'55-75 (strong)'}
+    {k:'VWAP',       fn:function(d,s){var v=d.vwapDist||0;return s==='SHORT'?(v<0?'GREEN':'RED'):(v>0?'GREEN':'RED');}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:function(s){return s==='SHORT'?'Below VWAP':'Above VWAP';}},
+    {k:'EMA9',       fn:function(d,s){var l=parseFloat(d.last)||0,e=parseFloat(d.ema9)||0;return s==='SHORT'?(l<e?'GREEN':'RED'):(l>e?'GREEN':'RED');}, fmt:function(d){return '$'+(parseFloat(d.ema9)||0).toFixed(2);}, need:function(s){return s==='SHORT'?'Price < EMA9':'Price > EMA9';}},
+    {k:'Rel Str',    fn:function(d,s){var r=parseFloat(d.rs)||0;return s==='SHORT'?(r<=-1?'GREEN':r<=0?'YELLOW':'RED'):(r>=1?'GREEN':r>=0?'YELLOW':'RED');}, fmt:function(d){return (parseFloat(d.rs||0)>0?'+':'')+parseFloat(d.rs||0).toFixed(1)+'%';}, need:function(s){return s==='SHORT'?'\u2264 -1% vs SPY':'\u2265 +1% vs SPY';}},
+    {k:'RVOL',       fn:function(d,s){var r=parseFloat(d.rvol)||0;return r>=2?'GREEN':r>=1.5?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 2.0x'},
+    {k:'RSI',        fn:function(d,s){var r=parseFloat(d.rsi)||50;return s==='SHORT'?(r>=25&&r<=45?'GREEN':r>=20&&r<=50?'YELLOW':'RED'):(r>=55&&r<=75?'GREEN':r>=50&&r<=80?'YELLOW':'RED');}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:function(s){return s==='SHORT'?'25-45 (weak)':'55-75 (strong)';}}
   ],
   'BigDog': [
-    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
-    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=3?'GREEN':r>=2?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 3.0x'},
-    {k:'Confluence',  fn:function(d){var c=d.conf||0;return c>=24?'GREEN':c>=20?'YELLOW':'RED';}, fmt:function(d){return d.conf||0;}, need:'\u2265 20'}
+    {k:'VWAP',       fn:function(d,s){var v=d.vwapDist||0;return s==='SHORT'?(v<0?'GREEN':'RED'):(v>0?'GREEN':'RED');}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:function(s){return s==='SHORT'?'Below VWAP':'Above VWAP';}},
+    {k:'RVOL',       fn:function(d,s){var r=parseFloat(d.rvol)||0;return r>=3?'GREEN':r>=2?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 3.0x'},
+    {k:'Confluence',  fn:function(d,s){var c=d.conf||0;return c>=24?'GREEN':c>=20?'YELLOW':'RED';}, fmt:function(d){return d.conf||0;}, need:'\u2265 20'}
   ],
   'GapGo': [
-    {k:'Gap %',      fn:function(d){var g=Math.abs(parseFloat(d.gap||d.chg||0));return g>=3?'GREEN':g>=2?'YELLOW':'RED';}, fmt:function(d){return (parseFloat(d.gap||d.chg||0)>0?'+':'')+parseFloat(d.gap||d.chg||0).toFixed(1)+'%';}, need:'\u2265 3%'},
-    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
-    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=2?'GREEN':r>=1.5?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 2.0x'}
+    {k:'Gap %',      fn:function(d,s){var g=parseFloat(d.gap||d.chg||0);return s==='SHORT'?(g<=-3?'GREEN':g<=-2?'YELLOW':'RED'):(g>=3?'GREEN':g>=2?'YELLOW':'RED');}, fmt:function(d){return (parseFloat(d.gap||d.chg||0)>0?'+':'')+parseFloat(d.gap||d.chg||0).toFixed(1)+'%';}, need:function(s){return s==='SHORT'?'\u2264 -3% gap down':'\u2265 +3% gap up';}},
+    {k:'VWAP',       fn:function(d,s){var v=d.vwapDist||0;return s==='SHORT'?(v<0?'GREEN':'RED'):(v>0?'GREEN':'RED');}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:function(s){return s==='SHORT'?'Below VWAP':'Above VWAP';}},
+    {k:'RVOL',       fn:function(d,s){var r=parseFloat(d.rvol)||0;return r>=2?'GREEN':r>=1.5?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 2.0x'}
   ],
   'Failed-BD': [
-    {k:'Above VWAP', fn:function(d){return (d.vwapDist||0)>0?'GREEN':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Reclaimed VWAP'},
-    {k:'Above OR Lo',fn:function(d){var l=parseFloat(d.last)||0,o=d.orLow||0;return l>o&&o>0?'GREEN':'RED';}, fmt:function(d){return '$'+(d.orLow||0).toFixed(2);}, need:'Price > OR Low'},
-    {k:'RVOL',       fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1?'GREEN':r>=0.7?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.0x'}
+    {k:'VWAP',       fn:function(d,s){var v=d.vwapDist||0;return s==='SHORT'?(v<0?'GREEN':'RED'):(v>0?'GREEN':'RED');}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:function(s){return s==='SHORT'?'Below VWAP (rejected)':'Reclaimed VWAP';}},
+    {k:'OR Level',   fn:function(d,s){var l=parseFloat(d.last)||0;if(s==='SHORT'){var h2=d.orHigh||0;return l<h2&&h2>0?'GREEN':'RED';}var o=d.orLow||0;return l>o&&o>0?'GREEN':'RED';}, fmt:function(d,s){return s==='SHORT'?'$'+(d.orHigh||0).toFixed(2):'$'+(d.orLow||0).toFixed(2);}, need:function(s){return s==='SHORT'?'Price < OR High':'Price > OR Low';}},
+    {k:'RVOL',       fn:function(d,s){var r=parseFloat(d.rvol)||0;return r>=1?'GREEN':r>=0.7?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.0x'}
   ],
   'Pullback-EMA': [
-    {k:'Near EMA20',  fn:function(d){var l=parseFloat(d.last)||0,e=parseFloat(d.ema20)||0;var pct=e>0?Math.abs(l-e)/e*100:99;return pct<0.5?'GREEN':pct<1?'YELLOW':'RED';}, fmt:function(d){return '$'+(parseFloat(d.ema20)||0).toFixed(2);}, need:'Within 0.5% of EMA20'},
-    {k:'EMA Stack',   fn:function(d){return parseFloat(d.ema9)>parseFloat(d.ema20)?'GREEN':'RED';}, fmt:function(d){return parseFloat(d.ema9)>parseFloat(d.ema20)?'Bullish':'Bearish';}, need:'9 > 20'},
-    {k:'RSI',         fn:function(d){var r=parseFloat(d.rsi)||50;return r>=35&&r<=55?'GREEN':r>=30&&r<=60?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'35-55 (pullback zone)'},
-    {k:'RVOL',        fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1?'GREEN':r>=0.7?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.0x'}
+    {k:'Near EMA20',  fn:function(d,s){var l=parseFloat(d.last)||0,e=parseFloat(d.ema20)||0;var pct=e>0?Math.abs(l-e)/e*100:99;return pct<0.5?'GREEN':pct<1?'YELLOW':'RED';}, fmt:function(d){return '$'+(parseFloat(d.ema20)||0).toFixed(2);}, need:'Within 0.5% of EMA20'},
+    {k:'EMA Stack',   fn:function(d,s){var e9=parseFloat(d.ema9)||0,e20=parseFloat(d.ema20)||0;return s==='SHORT'?(e9<e20?'GREEN':'RED'):(e9>e20?'GREEN':'RED');}, fmt:function(d,s){return s==='SHORT'?'Bearish':'Bullish';}, need:function(s){return s==='SHORT'?'9 < 20 (bearish)':'9 > 20 (bullish)';}},
+    {k:'RSI',         fn:function(d,s){var r=parseFloat(d.rsi)||50;return s==='SHORT'?(r>=45&&r<=65?'GREEN':r>=40&&r<=70?'YELLOW':'RED'):(r>=35&&r<=55?'GREEN':r>=30&&r<=60?'YELLOW':'RED');}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:function(s){return s==='SHORT'?'45-65 (pullback zone)':'35-55 (pullback zone)';}},
+    {k:'RVOL',        fn:function(d,s){var r=parseFloat(d.rvol)||0;return r>=1?'GREEN':r>=0.7?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.0x'}
   ]
 };
 // Fallback for setups without specific checks
 var SETUP_CHECKS_DEFAULT = [
-  {k:'VWAP',  fn:function(d){return (d.vwapDist||0)>0?'GREEN':(d.vwapDist||0)>-0.5?'YELLOW':'RED';}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:'Above VWAP'},
-  {k:'RVOL',  fn:function(d){var r=parseFloat(d.rvol)||0;return r>=1.5?'GREEN':r>=1?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.5x'},
-  {k:'Conf',  fn:function(d){var c=d.conf||0;return c>=24?'GREEN':c>=20?'YELLOW':'RED';}, fmt:function(d){return d.conf||0;}, need:'\u2265 24'},
-  {k:'RSI',   fn:function(d){var r=parseFloat(d.rsi)||50;return r>=35&&r<=75?'GREEN':'RED';}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:'35-75'}
+  {k:'VWAP',  fn:function(d,s){var v=d.vwapDist||0;return s==='SHORT'?(v<0?'GREEN':v<0.5?'YELLOW':'RED'):(v>0?'GREEN':v>-0.5?'YELLOW':'RED');}, fmt:function(d){return (d.vwapDist>0?'+':'')+d.vwapDist.toFixed(2)+'%';}, need:function(s){return s==='SHORT'?'Below VWAP':'Above VWAP';}},
+  {k:'RVOL',  fn:function(d,s){var r=parseFloat(d.rvol)||0;return r>=1.5?'GREEN':r>=1?'YELLOW':'RED';}, fmt:function(d){return parseFloat(d.rvol||0).toFixed(1)+'x';}, need:'\u2265 1.5x'},
+  {k:'Conf',  fn:function(d,s){var c=d.conf||0;return c>=24?'GREEN':c>=20?'YELLOW':'RED';}, fmt:function(d){return d.conf||0;}, need:'\u2265 24'},
+  {k:'RSI',   fn:function(d,s){var r=parseFloat(d.rsi)||50;return s==='SHORT'?(r>=25&&r<=65?'GREEN':'RED'):(r>=35&&r<=75?'GREEN':'RED');}, fmt:function(d){return parseFloat(d.rsi||50).toFixed(0);}, need:function(s){return s==='SHORT'?'25-65':'35-75';}}
 ];
 
-function renderSmartBoxes(d, setupKey) {
+function renderSmartBoxes(d, setupKey, side) {
+  side = side || 'LONG';
   var checks = SETUP_CHECKS[setupKey] || SETUP_CHECKS_DEFAULT;
   var reg = C_REGISTRY[setupKey] || {};
   var h = '<div style="margin:8px 0"><div style="font-size:10px;color:#7d8590;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">' + e(reg.label || setupKey || 'Setup') + ' Criteria</div>';
@@ -3596,9 +3597,10 @@ function buildScorecardHTML(d,setupKey,side){
   var setupChks=SETUP_CHECKS[setupKey]||SETUP_CHECKS_DEFAULT;
   for(var sci=0;sci<setupChks.length;sci++){
     var sc=setupChks[sci];
-    var result=sc.fn(d);
-    var val=sc.fmt(d);
-    checks.push({name:sc.k,val:result,tip:val,need:sc.need});
+    var result=sc.fn(d,side);
+    var val=typeof sc.fmt==='function'?sc.fmt(d,side):sc.fmt;
+    var needTxt=typeof sc.need==='function'?sc.need(side):sc.need;
+    checks.push({name:sc.k,val:result,tip:val,need:needTxt});
   }
 
   // ── MARKET CONTEXT (universal) ──
