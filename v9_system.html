@@ -672,4 +672,43 @@ window.addEventListener('scroll', function() {
 // Timestamp
 document.getElementById('lastUpdated').textContent = 'Updated: Mar 10, 2026';
 </script>
+
+<!-- Scanner Quota & Tiered Refresh (added v91.9 phase fix) -->
+<h2 id="scanner-quota">Scanner Quota Management</h2>
+<div class="info-box">
+<h3>Daily URL Fetch Budget (~10,400 / 20,000 limit)</h3>
+<table>
+<tr><th>Component</th><th>Fetches/Day</th><th>Notes</th></tr>
+<tr><td>Partial scans (78 cycles)</td><td>~6,500</td><td>Tiered bars + batched quotes</td></tr>
+<tr><td>Full scans (3-4/day)</td><td>~1,900</td><td>Every 60min during market</td></tr>
+<tr><td>Market tab (1-min internals)</td><td>~480</td><td>Breadth, VIX, sectors</td></tr>
+<tr><td>Dashboard requests</td><td>~480</td><td>Web app doGet</td></tr>
+<tr><td>After hours</td><td>~960</td><td>PM watchlist only</td></tr>
+<tr><td><strong>TOTAL</strong></td><td><strong>~10,400</strong></td><td><strong>48% headroom</strong></td></tr>
+</table>
+
+<h3>Three-Tier Partial Refresh (5-min cycles)</h3>
+<table>
+<tr><th>Tier</th><th>Frequency</th><th>Criteria</th><th>~Tickers</th></tr>
+<tr><td><strong>Tier 1</strong></td><td>Every 5min</td><td>Positions + PM Watchlist + CF &ge;20</td><td>~50</td></tr>
+<tr><td><strong>Tier 2</strong></td><td>Every 15min</td><td>CF &ge;15</td><td>~40</td></tr>
+<tr><td><strong>Tier 3</strong></td><td>Every 30min</td><td>CF &ge;10</td><td>~60</td></tr>
+<tr><td>Below 10</td><td>Full scan only</td><td>Quotes only between full scans</td><td>~300+</td></tr>
+</table>
+
+<h3>Full Scan Schedule</h3>
+<table>
+<tr><th>Phase</th><th>AZ Time (EDT)</th><th>Full Scan Interval</th></tr>
+<tr><td>Pre-Market</td><td>6:00-6:30</td><td>None (partial only)</td></tr>
+<tr><td>Market Open</td><td>6:30-7:30</td><td>Every 60min</td></tr>
+<tr><td>Core Session</td><td>7:30-1:00</td><td>Every 2hr</td></tr>
+<tr><td>After Hours</td><td>1:00-3:00</td><td>None (PM watch only)</td></tr>
+</table>
+
+<h3>Quote Batching</h3>
+<p>tsQuotes() auto-batches at 50 symbols per API call to stay under Google's 2KB URL length limit. 477 tickers = 10 batched calls vs 477 individual calls.</p>
+
+<h3>EDT/EST Handling</h3>
+<p>Market offset recomputed on every call (no stale cache). PHASE_CONFIG rebuilt at start of each scan and dashboard request. AZ market hours: EDT (Mar-Nov) = 6:30am-1:00pm, EST (Nov-Mar) = 7:30am-2:00pm.</p>
+</div>
 </body></html>
