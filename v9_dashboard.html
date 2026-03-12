@@ -1,4 +1,4 @@
-<!-- v11.22.2 cache-bust 1772729951.8953855 -->
+<!-- v11.22.3 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -975,6 +975,7 @@ function poll(){
   fetch(EP+'?mode=dashboard&t='+Date.now()).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(d){
     _d=d;_n++;_e=0;var ld=$('loader');if(ld)ld.remove();R(d);$('pl').className='pulse pulse-live';$('st').textContent='Live · #'+_n;
     $('lu').textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Phoenix'});
+    try{localStorage.setItem('v9_cache',JSON.stringify(d));localStorage.setItem('v9_cache_ts',String(Date.now()));}catch(e){}
   }).catch(function(err){_e++;var ld=$('loader');if(ld)ld.innerHTML='<div style="color:#f85149;padding:16px;font-size:13px">❌ '+err.message+'<br><br><span class="dim">Check: did you deploy a NEW version? The endpoint URL may have changed.<br>Current EP: '+EP.substring(0,60)+'...</span></div>';$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
 }
 
@@ -1353,7 +1354,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.2</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.3</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -3934,6 +3935,20 @@ poll=function(){
   _initialFetchDone=true;
   _origPoll();
 };
+// Load cached data instantly, then fetch fresh
+try{
+  var _cached=localStorage.getItem('v9_cache');
+  var _cachedTs=parseInt(localStorage.getItem('v9_cache_ts')||'0');
+  if(_cached&&(Date.now()-_cachedTs<3600000)){
+    var _cd=JSON.parse(_cached);
+    var ld=$('loader');if(ld)ld.remove();
+    R(_cd);
+    $('pl').className='pulse pulse-stale';
+    $('st').textContent='Cached';
+    var _cAge=Math.round((Date.now()-_cachedTs)/60000);
+    $('lu').textContent=_cAge+'m ago';
+  }
+}catch(e){}
 poll();setInterval(poll,60000);
 window.addEventListener('scroll',function(){var b=document.getElementById('backToTop');if(b)b.style.display=window.scrollY>300?'flex':'none';});
 // Card focus: click any pos-block to highlight it white, click again to unhighlight
