@@ -1,4 +1,4 @@
-<!-- v11.22.8 cache-bust 1772729951.8953855 -->
+<!-- v11.22.9 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1359,7 +1359,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.8</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.9</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1507,7 +1507,7 @@ function rAreteEmails(d){
   if(analysis){
     h+='<div class="info-box" style="border-color:#9e6a03;padding:10px 12px;margin-bottom:8px">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#e3b341;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">\ud83c\udfaf Arete Analysis</span>';
+    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#e3b341;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Arete Analysis</span>';
     // Market bias badge
     var biasCls=analysis.marketBias==='bullish'?'g':analysis.marketBias==='bearish'?'r':'y';
     h+='<span class="'+biasCls+'" style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600">'+(analysis.marketBias||'neutral').toUpperCase()+'</span>';
@@ -1570,7 +1570,7 @@ function rAreteEmails(d){
 
     h+='<div class="info-box" style="border-color:#30363d;padding:8px 12px;margin-bottom:8px">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
-    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#7d8590;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">\ud83d\udcca Track Record</span>';
+    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#7d8590;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Track Record</span>';
     var accCls=rollingAcc>=70?'g':rollingAcc>=50?'y':'r';
     h+='<span class="'+accCls+'" style="font-family:JetBrains Mono,monospace;font-size:12px;font-weight:700">'+rollingAcc+'% ('+last5.length+'d)</span>';
     h+='</div>';
@@ -1723,7 +1723,7 @@ function rToday(d){
       if(_stFSt){
         _stRetro=_stFSt;var _stFTs=d.firstNarrativeTs||'',_stFSe=d.firstNarrativeSession||'';
         h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6">';
-        h+='<p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb First Story of Day <span class="dim" style="font-weight:400;font-size:10px">'+e(_stFTs)+(_stFSe?' \u00b7 '+e(_stFSe):'')+'</span></p>';
+        h+='<p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb Previous Read (Retrospective) <span class="dim" style="font-weight:400;font-size:10px">'+e(_stFTs)+(_stFSe?' \u00b7 '+e(_stFSe):'')+'</span></p>';
         h+=fmt(_stRetro)+'</div>';_stRetro=null;
       }
     }
@@ -1731,7 +1731,7 @@ function rToday(d){
     h+='</div>';
   } else {
     hasContent=true;
-    h+='<div class="info-box"><p class="dim">No Opus narrative yet. Run \ud83d\udce1 Dashboard Now.</p></div>';
+    h+='<div class="info-box"><p class="dim">No Opus narrative yet. Run Dashboard Now.</p></div>';
   }
 
 
@@ -2225,7 +2225,7 @@ function rInPlay(d){
   var items=d.inPlayToday;
   if(!items||items.length===0){$('sInPlay').innerHTML='';return;}
   var isCol=false;try{var _v=localStorage.getItem('sec_col_inplay');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="color:#d2a8ff;cursor:pointer;user-select:none" onclick="toggleSec(\'inplay\')"><span id="secArrow_inplay" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 🔥 In Play Today <span class="dim" style="font-size:11px;font-weight:400">('+items.length+' tickers)</span></h2>';
+  var h='<h2 style="color:#d2a8ff;cursor:pointer;user-select:none" onclick="toggleSec(\'inplay\')"><span id="secArrow_inplay" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> In Play Today <span class="dim" style="font-size:11px;font-weight:400">('+items.length+' tickers)</span></h2>';
   h+='<div id="secBody_inplay" style="'+(isCol?'display:none':'')+'">';
   var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
   for(var i=0;i<Math.min(items.length,20);i++){
@@ -2488,11 +2488,12 @@ function rEarnings(d){
     var dayKey=dk.replace(/[^a-zA-Z]/g,'');
     // Auto-collapse: past days collapsed by default, today+ open
     var isPast=!pastToday&&dk!==todayName&&dayOrder.indexOf(todayName)>di;
+    var isDayToday=dk===todayName;
     var dayCol=isPast;
-    try{var sv=localStorage.getItem('earn_day_'+dayKey);if(sv!==null)dayCol=sv==='1';}catch(e){}
+    if(!isDayToday){try{var sv=localStorage.getItem('earn_day_'+dayKey);if(sv!==null)dayCol=sv==='1';}catch(e){}}
+    else{dayCol=false;}
     if(dk===todayName)pastToday=true;
     var items=dayMap[dk];
-    var isDayToday=dk===todayName;
     h+='<div style="margin-bottom:2px">';
     h+='<div style="background:'+(isDayToday?'#0d1a2e':'#161b22')+';padding:5px 8px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;border-radius:4px'+(isDayToday?';border-left:2px solid #58a6ff':'')+'" onclick="toggleEarnDay(\''+dayKey+'\')">';
     h+='<span id="earnDayArrow_'+dayKey+'" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(dayCol?'-90':'0')+'deg);font-size:10px;color:#7d8590">▼</span>';
@@ -3121,7 +3122,7 @@ function _loadPTModal(symbol){
   if(body){
     var refreshBar=document.createElement('div');
     refreshBar.style.cssText='text-align:center;padding:4px;margin-top:-4px;margin-bottom:4px';
-    refreshBar.innerHTML='<span class="dim" style="font-size:9px">\u26a1 Instant from cache</span> <span style="font-size:10px;color:#ffc107;cursor:pointer;border:1px solid #9e6a03;border-radius:4px;padding:2px 10px;margin-left:4px" onclick="sendToWall(\''+symbol+'\')">\u279c Wall</span> <span style="font-size:10px;color:#58a6ff;cursor:pointer;border:1px solid #1f6feb;border-radius:4px;padding:2px 10px;margin-left:8px" onclick="_refreshPTFromServer(\''+symbol+'\')">\u21bb Refresh from server</span>';
+    refreshBar.innerHTML='<span class="dim" style="font-size:9px">Instant from cache</span> <span style="font-size:10px;color:#ffc107;cursor:pointer;border:1px solid #9e6a03;border-radius:4px;padding:2px 10px;margin-left:4px" onclick="sendToWall(\''+symbol+'\')">\u279c Wall</span> <span style="font-size:10px;color:#58a6ff;cursor:pointer;border:1px solid #1f6feb;border-radius:4px;padding:2px 10px;margin-left:8px" onclick="_refreshPTFromServer(\''+symbol+'\')">\u21bb Refresh from server</span>';
     body.insertBefore(refreshBar,body.firstChild);
   }
 }
@@ -4049,7 +4050,7 @@ function _wireInstToggles(){
   for(var hi=0;hi<headers.length&&hi<keys.length;hi++){
     var p=headers[hi],key=keys[hi];
     if(key==='combined')continue;
-    var isCol=false;try{isCol=localStorage.getItem('inst_col_'+key)==='1';}catch(e){}
+    var isCol=true;try{var _iv=localStorage.getItem('inst_col_'+key);if(_iv!==null)isCol=_iv==='1';}catch(e){}
     // Add toggle arrow
     var arrow=document.createElement('span');arrow.id='instArrow_'+key;
     arrow.textContent=isCol?'\u25b6':'\u25bc';
@@ -4134,4 +4135,42 @@ function _extractInstMetrics(key,content){
 }
 </script>
 </body>
-</html>
+</html>  // ── MARKET NEWS (full logic, uses nTags + newsItem) ──
+  var _nwNews=d.news||[];
+  if(_nwNews.length){
+    hasContent=true;
+    var _nwWlData=d.watchlistSymbols||{};
+    var _nwAutoPass={},_nwConf22={},_nwAllWL={};
+    var _nwAp=_nwWlData.autoPass||[];for(var _ni=0;_ni<_nwAp.length;_ni++){_nwAutoPass[_nwAp[_ni]]=1;_nwAllWL[_nwAp[_ni]]=1;}
+    var _nwC2=_nwWlData.conf22||[];for(var _ni=0;_ni<_nwC2.length;_ni++){_nwConf22[_nwC2[_ni]]=1;_nwAllWL[_nwC2[_ni]]=1;}
+    var _nwAll=_nwWlData.all||[];for(var _ni=0;_ni<_nwAll.length;_ni++)_nwAllWL[_nwAll[_ni]]=1;
+    var _nwPos=d.positions||[];for(var _ni=0;_ni<_nwPos.length;_ni++)if(_nwPos[_ni].ticker){_nwAutoPass[_nwPos[_ni].ticker]=1;_nwAllWL[_nwPos[_ni].ticker]=1;}
+    var macroTags={Tariffs:1,Fed:1,Inflation:1,Jobs:1,China:1,Geopolitical:1,Rates:1,Debt:1,Macro:1,Oil:1,Bonds:1,Gold:1,Dollar:1};
+    var _nwPri=[],_nwSec=[];
+    for(var _ni=0;_ni<_nwNews.length;_ni++){
+      var _nn=_nwNews[_ni],_nnt=nTags(_nn.headline||'',_nn.related||'');
+      var hasMacro=false;for(var _nt=0;_nt<_nnt.tags.length;_nt++)if(macroTags[_nnt.tags[_nt].l])hasMacro=true;
+      var inAuto=false;for(var _nk=0;_nk<_nnt.tickers.length;_nk++)if(_nwAutoPass[_nnt.tickers[_nk]])inAuto=true;
+      var inConf=false;for(var _nk=0;_nk<_nnt.tickers.length;_nk++)if(_nwConf22[_nnt.tickers[_nk]])inConf=true;
+      var inWL=false;for(var _nk=0;_nk<_nnt.tickers.length;_nk++)if(_nwAllWL[_nnt.tickers[_nk]])inWL=true;
+      if(hasMacro||inAuto||inConf){_nwPri.push({n:_nn,nt:_nnt,inPos:inAuto});}
+      else if(inWL){_nwSec.push({n:_nn,nt:_nnt});}
+    }
+    _nwPri.sort(function(a,b){return(b.inPos?1:0)-(a.inPos?1:0);});
+    var _nwTotal=_nwPri.length+_nwSec.length;
+    var _nwIsCol=true;try{var _nv=localStorage.getItem('sec_col_news');if(_nv!==null)_nwIsCol=_nv==='1';}catch(e){}
+    h+='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'news\')"><span id="secArrow_news" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(_nwIsCol?'-90':'0')+'deg)">\u25bc</span> Market News <span class="dim" style="font-size:12px;font-weight:400">('+_nwTotal+' of '+_nwNews.length+')</span></h2>';
+    h+='<div id="secBody_news" style="'+(_nwIsCol?'display:none':'')+'">';
+    h+='<div class="info-box" style="padding:0">';
+    if(!_nwPri.length)h+='<p class="dim" style="padding:10px;font-size:12px">No relevant news matching filters.</p>';
+    for(var _ni=0;_ni<Math.min(_nwPri.length,30);_ni++)h+=newsItem(_nwPri[_ni].n,_nwPri[_ni].nt,_nwAutoPass,_nwConf22);
+    h+='</div>';
+    if(_nwSec.length){
+      h+='<div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px"><div style="flex:1;height:1px;background:#21262d"></div><span style="font-size:10px;font-weight:700;color:#7d8590;white-space:nowrap">WATCHLIST \u2014 ALL TICKERS</span><div style="flex:1;height:1px;background:#21262d"></div></div>';
+      h+='<div class="info-box" style="padding:0">';
+      for(var _ni=0;_ni<Math.min(_nwSec.length,20);_ni++)h+=newsItem(_nwSec[_ni].n,_nwSec[_ni].nt,_nwAutoPass,_nwConf22);
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
