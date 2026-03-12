@@ -1236,7 +1236,7 @@ function toggleAll(collapse){
     try{localStorage.setItem('sec_col_'+keys[i],collapse?'1':'0');}catch(e){}
   }
   var gKeys=['market','stocks','intel','positions','reference'];for(var i=0;i<gKeys.length;i++){var gb=document.getElementById('grpBody_'+gKeys[i]);var ga=document.getElementById('grpArrow_'+gKeys[i]);if(!gb)continue;gb.style.display=collapse?'none':'';if(ga)ga.textContent=collapse?'\u25b6':'\u25bc';try{localStorage.setItem('v9_grp_'+gKeys[i],collapse?'0':'1');}catch(e){}}
-  if(!collapse){var sc2=['inter','intertk','focused','pulse'];for(var i=0;i<sc2.length;i++){var sb=document.getElementById('secBody_'+sc2[i]);var sa=document.getElementById('secArrow_'+sc2[i]);if(sb){sb.style.display='none';if(sa)sa.style.transform='rotate(-90deg)';try{localStorage.setItem('sec_col_'+sc2[i],'1');}catch(e){}}}}
+  if(!collapse){var sc2=['inter','intertk','focused'];for(var i=0;i<sc2.length;i++){var sb=document.getElementById('secBody_'+sc2[i]);var sa=document.getElementById('secArrow_'+sc2[i]);if(sb){sb.style.display='none';if(sa)sa.style.transform='rotate(-90deg)';try{localStorage.setItem('sec_col_'+sc2[i],'1');}catch(e){}}}}
   // Inst toggles — only collapse, never auto-expand
   if(collapse){var iKeys=['volreg','iv5d','termstruct','expmove','sentiment'];for(var i=0;i<iKeys.length;i++){var ib=document.getElementById('instBody_'+iKeys[i]);var ia=document.getElementById('instArrow_'+iKeys[i]);if(ib){ib.style.display='none';if(ia)ia.textContent='\u25b6';try{localStorage.setItem('inst_col_'+iKeys[i],'1');}catch(e){}}}}
   var aKeys=['outer','Swing','DTC','Option','Long','Watching'];
@@ -1440,7 +1440,9 @@ function rGP(d){
   var mkt='';
   if(spy)mkt+='SPY '+e(spy.val)+' '+pct(spy.chg)+_gpSR('SPY');
   if(qqq)mkt+=' \u00b7 QQQ '+e(qqq.val)+' '+pct(qqq.chg)+_gpSR('QQQ');
-  if(vix)mkt+=' \u00b7 VIX '+e(vix.val);
+  var _vixGP=(d.instPulse&&d.instPulse.data&&d.instPulse.data.vol_regime)?d.instPulse.data.vol_regime.vix:null;
+  if(_vixGP)mkt+=' \u00b7 VIX '+_vixGP;
+  else if(vix)mkt+=' \u00b7 VIX '+e(vix.val);
   if(_btcGP)mkt+=' \u00b7 BTC '+e(_btcGP.val)+' '+pct(_btcGP.chg);
   for(var _fgi=0;_fgi<Math.min(_futGP.length,2);_fgi++){mkt+=' \u00b7 '+e(_futGP[_fgi].sym)+' '+pct(_futGP[_fgi].chg);}
   if(mkt)h+='<div style="width:100%;text-align:center;margin-top:4px;font-size:10px;color:#8b949e;line-height:1.5">'+mkt+'</div>';
@@ -1686,6 +1688,7 @@ function rToday(d){
   h+='<span id="secArrow_today" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span>';
   h+=' TODAY';
   h+='<span style="font-size:11px;font-weight:400;color:#7d8590;margin-left:8px">'+todayName+' '+todayDate+'</span>';
+  h+='<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleTodaySections(true)" style="color:#7d8590;text-decoration:none">\u25be all</a> \u00b7 <a href="javascript:void(0)" onclick="event.stopPropagation();toggleTodaySections(false)" style="color:#7d8590;text-decoration:none">\u25b8 all</a></span>';
   h+='</div>';
   h+='<div id="secBody_today" style="'+(isCol?'display:none;':'')+'padding:0 8px 8px 8px">';
 
@@ -2879,14 +2882,14 @@ function rInst(d){
     h+='<p style="color:'+tsCol+';font-weight:700;font-size:13px;margin-bottom:8px">📐 VIX Term Structure: <span>'+
       (term.state||'UNKNOWN').replace(/_/g,' ')+'</span></p>';
     // Mini term structure visualization
-    h+='<div style="display:flex;align-items:flex-end;gap:4px;margin:8px 0 12px;height:60px">';
+    h+='<div style="display:flex;align-items:flex-end;gap:8px;margin:8px 0 12px;height:70px">';
     var tsVals=[{l:'1D',v:term.vix1d},{l:'9D',v:term.vix9d},{l:'VIX',v:term.vix},{l:'3M',v:term.vix3m},{l:'6M',v:term.vix6m}];
     var tsMax=0;for(var ti=0;ti<tsVals.length;ti++){if(tsVals[ti].v&&tsVals[ti].v>tsMax)tsMax=tsVals[ti].v;}
     if(tsMax>0){for(var ti=0;ti<tsVals.length;ti++){
       var tv=tsVals[ti];if(!tv.v)continue;
       var barH=Math.max(8,Math.round((tv.v/tsMax)*55));
       var barCol=ti<=2?tsCol:'#30363d';
-      h+='<div style="display:flex;flex-direction:column;align-items:center;flex:1">';
+      h+='<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:40px">';
       h+='<span style="font-size:10px;color:#c9d1d9;margin-bottom:2px">'+tv.v+'</span>';
       h+='<div style="width:100%;height:'+barH+'px;background:'+barCol+';border-radius:3px 3px 0 0"></div>';
       h+='<span style="font-size:9px;color:#7d8590;margin-top:2px">'+tv.l+'</span></div>';
@@ -4021,6 +4024,18 @@ function toggleAreteWatch(id,el){
 function _isAreteChecked(id){return !!_areteChecks()[id];}
 
 var _isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+function toggleTodaySections(collapse){
+  var ks=['story','retro','news','econtoday','earntoday','aretecalls'];
+  for(var i=0;i<ks.length;i++){
+    var b=document.getElementById('secBody_'+ks[i]);
+    var a=document.getElementById('secArrow_'+ks[i]);
+    if(!b)continue;
+    b.style.display=collapse?'none':'';
+    if(a)a.style.transform=collapse?'rotate(-90deg)':'rotate(0deg)';
+    try{localStorage.setItem('sec_col_'+ks[i],collapse?'1':'0');}catch(e){}
+  }
+}
 function toggleGroup(name){var body=document.getElementById('grpBody_'+name);var arrow=document.getElementById('grpArrow_'+name);if(!body)return;var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';if(arrow)arrow.textContent=isHidden?'\u25bc':'\u25b6';try{localStorage.setItem('v9_grp_'+name,isHidden?'1':'0');}catch(e){}}
 
 function toggleGroupSections(grp,collapse){
@@ -4094,24 +4109,28 @@ function _wireInstToggles(){
   }
 }
 function _extractInstMetrics(key,content){
-  // Extract key numbers from the rendered content elements
+  // Use actual data from _lastD for accurate header metrics
+  var ip=_lastD&&_lastD.instPulse;
+  if(!ip||!ip.data)return null;
+  var vol=ip.data.vol_regime||{},fg=ip.data.fear_greed||{},
+      pc=(ip.data.put_call&&ip.data.put_call.cboe)?ip.data.put_call.cboe:{},
+      em=ip.data.expected_move||{},term=ip.data.term_structure||{};
   var text='';for(var i=0;i<content.length;i++)text+=content[i].textContent+' ';
   if(key==='volreg'){
-    // Find IVR values: "SPY IVR XX" pattern or just the big number
-    var m=text.match(/(\d+\.?\d*)\s*(?:IVR|ivr)/);
-    if(m)return'<span style="color:#e3b341">IVR '+m[1]+'</span>';
-    // Try to find the IVR number from inst-item spans
-    for(var i=0;i<content.length;i++){
-      var spans=content[i].querySelectorAll&&content[i].querySelectorAll('[style*="font-size:2"]');
-      if(spans&&spans.length>0)return'<span style="color:#e3b341">IVR '+spans[0].textContent.trim()+'</span>';
-    }
+    var regime=(vol.regime||'').replace(/_/g,' ');
+    var vix=vol.vix;
+    var rc=regime==='ELEVATED'||regime==='HIGH FEAR'?'#f85149':regime==='COMPLACENT'?'#3fb950':'#e3b341';
+    var parts=[];
+    if(regime)parts.push('<span style="color:'+rc+'">'+regime+'</span>');
+    if(vix)parts.push('VIX <span style="color:'+rc+'">'+vix+'</span>');
+    if(vol.spy_ivr!=null)parts.push('SPY IVR '+Math.round(vol.spy_ivr)+'%');
+    return parts.join(' · ')||null;
   }
   if(key==='iv5d'){
-    // Find SPY/QQQ change percentages
-    var vals=[];
-    var ms=text.match(/([\u25b2\u25bc][+\-]?\d+\.?\d*%)/g);
-    if(ms)for(var i=0;i<Math.min(ms.length,3);i++)vals.push(ms[i]);
-    if(vals.length)return vals.join(' ');
+    var parts=[];
+    function _iv5(lbl,v){if(v==null)return;var c=v>0?'#f85149':'#3fb950';parts.push(lbl+' <span style="color:'+c+'">'+(v>0?'+':'')+v+'%</span>');}
+    _iv5('SPY',vol.spy_iv_5d_chg);_iv5('QQQ',vol.qqq_iv_5d_chg);_iv5('IWM',vol.iwm_iv_5d_chg);
+    return parts.join(' · ')||null;
   }
   if(key==='termstruct'){
     // Find VIX/VIX3M ratio
@@ -4122,21 +4141,21 @@ function _extractInstMetrics(key,content){
     // Already in header, skip
   }
   if(key==='expmove'){
-    // Find ±$X.XX
-    var m=text.match(/[\u00b1\xb1]\$([\d.]+)/);
-    if(m)return'<span style="color:#58a6ff">\u00b1$'+m[1]+'</span>';
-    var m2=text.match(/(\d+\.\d+)%\s*expected/);
-    if(m2)return'<span style="color:#58a6ff">\u00b1'+m2[1]+'%</span>';
+    if(em.status==='ok'){
+      var dPts=em.daily_pts?Math.round(parseFloat(em.daily_pts)):null;
+      var wPts=em.weekly_pts?Math.round(parseFloat(em.weekly_pts)):null;
+      var parts=[];
+      if(dPts)parts.push('Daily \u00b1$'+dPts);
+      if(wPts)parts.push('Weekly \u00b1$'+wPts);
+      return'<span style="color:#58a6ff">'+parts.join(' · ')+'</span>';
+    }
   }
   if(key==='sentiment'){
-    // Find F&G score and NAAIM
     var parts=[];
-    var fg=text.match(/(\d+)\s*(?:Ext|Extreme|Fear|Greed)/);
-    if(fg)parts.push('F&G <span style="color:'+(parseInt(fg[1])<25?'#f85149':parseInt(fg[1])>75?'#3fb950':'#e3b341')+'">'+fg[1]+'</span>');
-    var nm=text.match(/(\d+\.?\d*)%\s*(?:neutral|bullish|bearish)/i);
-    if(nm)parts.push('NAAIM '+nm[1]+'%');
-    var pc=text.match(/(\d+\.\d+)\s*(?:bearish|bullish|neutral)/);
-    if(pc&&!nm)parts.push('P/C '+pc[1]);
+    var fgScore=fg.score!=null?parseFloat(fg.score):null;
+    if(fgScore!=null)parts.push('F&G <span style="color:'+(fgScore<25?'#f85149':fgScore>75?'#3fb950':'#e3b341')+'">'+Math.round(fgScore)+'</span>');
+    var pcVal=pc.total_pc!=null?parseFloat(pc.total_pc):null;
+    if(pcVal!=null){var pcc=pcVal>1.1?'#f85149':pcVal<0.7?'#3fb950':'#e3b341';parts.push('P/C <span style="color:'+pcc+'">'+pcVal.toFixed(2)+'</span>');}
     if(parts.length)return parts.join(' \u00b7 ');
   }
   return null;
