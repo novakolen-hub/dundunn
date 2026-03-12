@@ -1,4 +1,4 @@
-<!-- v11.24.9 cache-bust 1772729951.8953855 -->
+<!-- v11.25.0 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1249,7 +1249,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.9</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.0</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2752,31 +2752,22 @@ function rWatching(d){
   var mw=d.myWatching||[];
   if(!mw.length){$('sWatching').innerHTML='';return;}
   var isCol=true;try{var _v=localStorage.getItem('sec_col_watch');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> \U0001f440 Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span>'+sortPills('watch')+'</h2>';
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span></h2>';
   h+='<div id="secBody_watch" style="'+(isCol?'display:none':'')+'">';
-  // Build Opus map
-  var opusMap={};
-  var nar=d.dashboardNarrative||'',sec=parseN(nar);
-  var wn=gN(sec,['WATCHING NOTES']);
-  if(wn){wn.split('\n').forEach(function(ln){ln=ln.trim();if(!ln||ln.indexOf('\u2014')<0)return;var parts=ln.split('\u2014'),tk=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim().toUpperCase();var rest=(parts[1]||'').trim(),segs=rest.split('|');opusMap[tk]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};});}
-  var cm_map={};if(d.confluence){for(var ci=0;ci<d.confluence.length;ci++){var cc=d.confluence[ci];if(cc.ticker)cm_map[cc.ticker]=cc;}}
-  mw=sortTickers(mw,cm_map,'watch');
-  // Build In Play reasons map
-  var ipMap={};if(d.inPlayToday)for(var ip=0;ip<d.inPlayToday.length;ip++){var ipt=d.inPlayToday[ip];if(ipt.symbol)ipMap[ipt.symbol]=ipt;}
-  // Arete map
-  var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
+  h+='<div class="info-box" style="padding:0"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg</th><th>CF</th><th>Setup</th><th>RVOL</th><th>RS</th></tr>';
   for(var i=0;i<mw.length;i++){
-    var tk=mw[i];
-    var ipInfo=ipMap[tk];
-    h+=uCard(tk,'compact',{
-      reasons:ipInfo?ipInfo.reasons:[],
-      opus:opusMap[tk]||null,
-      areteInfo:areteMap[tk]||null,
-      showFocus:true,
-      showModal:true
-    });
+    var tk=mw[i],q=_tq[tk]||{};
+    var cf=q.conf?parseFloat(q.conf):0;
+    var cc=cf>=28?'g':cf>=24?'b':cf>=20?'y':cf>=16?'dim':'r';
+    h+='<tr><td class="tc white bold">'+tkLink(tk)+focusWallBtns(tk)+'</td>';
+    h+='<td class="mono">'+(q.last||'')+'</td>';
+    h+='<td>'+pct(q.chg||'')+'</td>';
+    h+='<td class="'+cc+' bold mono">'+(cf?cf.toFixed(1):'')+'</td>';
+    h+='<td class="dim" style="font-size:10px">'+(q.setup||'')+'</td>';
+    h+='<td class="dim">'+(q.rvol||'')+'</td>';
+    h+='<td class="dim">'+(q.rs||'')+'</td></tr>';
   }
-  h+='</div>';
+  h+='</table></div></div>';
   $('sWatching').innerHTML=h;
 }
 
@@ -2811,7 +2802,7 @@ function rSetups(d){
   
   // Table view
   h+='<div class="info-box" style="padding:0"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg</th><th>CF</th><th>Qual</th><th>Setup</th><th style="font-size:9px">Section</th></tr>';
-  var _setupMax=30;
+  var _setupMax=20;
   var _showAll=false;try{_showAll=localStorage.getItem('v9_setups_showall')==='1';}catch(e){}
   var _dispCount=_showAll?merged.length:Math.min(merged.length,_setupMax);
   for(var i=0;i<_dispCount;i++){
