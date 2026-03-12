@@ -1,4 +1,4 @@
-<!-- v11.23.6 cache-bust 1772729951.8953855 -->
+<!-- v11.23.7 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1358,7 +1358,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.6</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.7</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1619,10 +1619,18 @@ function rAreteEmails(d){
         var emailOpenState=dayOpen&&!emailIsRead;h+='<div class="ae-body" id="'+uid+'" style="'+(emailOpenState?'':'display:none')+'">';
         var _raw=em.body||'';
         // Split into paragraphs (double newline, or sentences ending with period + space + capital)
+        // Smart paragraph splitting
         var _paras=_raw.split(/\n\n+/);
-        // If only 1 paragraph, try splitting on ". " followed by a topic shift
-        if(_paras.length<=1&&_raw.length>300){
-          _paras=_raw.split(/(?<=\.)\s{2,}/);
+        if(_paras.length<=2&&_raw.length>300){
+          // No real paragraph breaks — split on sentence boundaries at topic shifts
+          var _newParas=[];var _cur='';
+          var _sentences=_raw.replace(/\n/g,' ').split(/(?<=\.)\s+(?=[A-Z])/);
+          for(var _si=0;_si<_sentences.length;_si++){
+            _cur+=(_cur?' ':'')+_sentences[_si];
+            if(_cur.length>200||_si===_sentences.length-1){_newParas.push(_cur);_cur='';}
+          }
+          if(_cur)_newParas.push(_cur);
+          if(_newParas.length>_paras.length)_paras=_newParas;
         }
         var body='<div style="font-size:12px;line-height:1.7">';
         for(var _pi=0;_pi<_paras.length;_pi++){
