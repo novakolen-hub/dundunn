@@ -1,4 +1,4 @@
-<!-- v11.23.8 cache-bust 1772729951.8953855 -->
+<!-- v11.23.9 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1358,7 +1358,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.8</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.9</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1617,46 +1617,44 @@ function rAreteEmails(d){
         h+='<span class="ae-arrow">'+(emailOpenState?'\u25bc':'\u25b6')+'</span>';
         h+='</div>';
         var emailOpenState=dayOpen&&!emailIsRead;h+='<div class="ae-body" id="'+uid+'" style="'+(emailOpenState?'':'display:none')+'">';
+        // Render email body — if HTML, render directly; if plain text, format
         var _raw=em.body||'';
-        // Split into paragraphs (double newline, or sentences ending with period + space + capital)
-        // Smart paragraph splitting
-        var _paras=_raw.split(/\n\n+/);
-        if(_paras.length<=2&&_raw.length>300){
-          // No real paragraph breaks — split on sentence boundaries at topic shifts
-          var _newParas=[];var _cur='';
-          var _sentences=_raw.replace(/\n/g,' ').split(/(?<=\.)\s+(?=[A-Z])/);
-          for(var _si=0;_si<_sentences.length;_si++){
-            _cur+=(_cur?' ':'')+_sentences[_si];
-            if(_cur.length>200||_si===_sentences.length-1){_newParas.push(_cur);_cur='';}
+        var _isHtml=_raw.indexOf('<')>=0&&(_raw.indexOf('<p')>=0||_raw.indexOf('<div')>=0||_raw.indexOf('<br')>=0);
+        var body='';
+        if(_isHtml){
+          // Raw HTML from email — sanitize then render
+          body=_raw
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi,'')
+            .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi,'')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi,'')
+            .replace(/on\w+="[^"]*"/gi,'')
+            .replace(/on\w+='[^']*'/gi,'');
+          // Wrap in a styled container
+          body='<div style="font-size:12px;line-height:1.7;color:#c9d1d9;max-width:100%;overflow:hidden">'+body+'</div>';
+        } else {
+          // Plain text — paragraph split + format
+          var _paras=_raw.split(/\n\n+/);
+          if(_paras.length<=2&&_raw.length>300){
+            var _newParas=[];var _cur='';
+            var _sentences=_raw.replace(/\n/g,' ').split(/(?<=\.)\s+(?=[A-Z])/);
+            for(var _si=0;_si<_sentences.length;_si++){
+              _cur+=(_cur?' ':'')+_sentences[_si];
+              if(_cur.length>200||_si===_sentences.length-1){_newParas.push(_cur);_cur='';}
+            }
+            if(_cur)_newParas.push(_cur);
+            if(_newParas.length>_paras.length)_paras=_newParas;
           }
-          if(_cur)_newParas.push(_cur);
-          if(_newParas.length>_paras.length)_paras=_newParas;
-        }
-        var body='<div style="font-size:12px;line-height:1.7">';
-        for(var _pi=0;_pi<_paras.length;_pi++){
-          var _p=e(_paras[_pi].trim());if(!_p)continue;
-          // ALL CAPS lines = section headers
-          _p=_p.replace(/^([A-Z][A-Z ]{2,}[A-Z])$/gm,'<strong style="color:#e3b341;font-size:13px;display:block;margin:14px 0 6px">$1</strong>');
-          // Convert **bold** markers to <b> tags
-          _p=_p.replace(/\*\*([^*]+)\*\*/g,'<b style="color:#e6edf3">$1</b>');
-          // Convert bullet points (• from scanner)
-          if(_p.indexOf('\u2022')>=0){
-            var _bullets=_p.split('\u2022');
-            _p=_bullets[0];
-            for(var _bi=1;_bi<_bullets.length;_bi++){_p+='<div style="padding-left:16px;margin:3px 0"><span style="color:#e3b341;margin-right:4px">\u2022</span>'+_bullets[_bi].trim()+'</div>';}
+          body='<div style="font-size:12px;line-height:1.7">';
+          for(var _pi=0;_pi<_paras.length;_pi++){
+            var _p=e(_paras[_pi].trim());if(!_p)continue;
+            _p=_p.replace(/\*\*([^*]+)\*\*/g,'<b style="color:#e6edf3">$1</b>');
+            _p=_p.replace(/\n/g,'<br>');
+            body+='<p style="margin:10px 0">'+_p+'</p>';
           }
-          // Price levels: $XXX patterns = gold mono
-          _p=_p.replace(/\$(\d[\d,]*\.?\d*)/g,'<span style="color:#e3b341;font-weight:600;font-family:JetBrains Mono,monospace">$$$1</span>');
-          // Tickers: $AAOI or known standalone
-          _p=_p.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){return '<b class="ae-ticker" style="cursor:pointer" onclick="openPT(\''+tk+'\')">$'+tk+'</b>';});
-          _p=_p.replace(/(^|[\s,;:(])([A-Z]{2,5})(\s|[,;:).\!]|$)/g,function(m,pre,tk,post){if(_tq[tk])return pre+'<b class="ae-ticker" style="cursor:pointer" onclick="openPT(\''+tk+'\')">'+tk+'</b>'+post;return m;});
-          // SPY/QQQ key level lines
-          _p=_p.replace(/((?:SPY|QQQ|IWM|DIA)\s*(?:then|is now|put wall|support|resistance)[^<.]*)/gi,'<span style="font-family:JetBrains Mono,monospace;color:#58a6ff">$1</span>');
-          // Line breaks within paragraph
-          _p=_p.replace(/\n/g,'<br>');
-          body+='<p style="margin:10px 0">'+_p+'</p>';
+          body+='</div>';
         }
-        body+='</div>';
+        // Highlight tickers in either mode
+        body=body.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){return '<b class="ae-ticker" style="cursor:pointer;color:#58a6ff" onclick="openPT(\''+tk+'\')">$'+tk+'</b>';});
         h+=body;
         h+='</div></div>';
       }
