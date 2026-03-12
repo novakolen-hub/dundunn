@@ -1,4 +1,4 @@
-<!-- v11.25.4 cache-bust 1772729951.8953855 -->
+<!-- v11.25.5 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -481,6 +481,10 @@ function uCard(tk, mode, opts) {
 
   // Ticker link (stopPropagation so links don't toggle)
   h += '<span class="uc-tk" onclick="event.stopPropagation()">' + tkLink(tk);
+  // Focus star + Wall square
+  var _isFoc=isFocused(tk),_isWall=isOnWall(tk);
+  h += ' <span style="font-size:10px;cursor:pointer;color:'+(_isFoc?'#d2a8ff':'#30363d')+'" onclick="event.stopPropagation();toggleFocus(\''+tk+'\')" title="'+(_isFoc?'Unfocus':'Focus')+'">'+(_isFoc?'\u2605':'\u2606')+'</span>';
+  h += '<span style="font-size:10px;cursor:pointer;color:'+(_isWall?'#58a6ff':'#30363d')+';margin-left:2px" onclick="event.stopPropagation();toggleWall(\''+tk+'\')" title="'+(_isWall?'Remove from Wall':'Send to Wall')+'">'+(_isWall?'\u25a3':'\u25a1')+'</span>';
   // Position dot
   if (pos) h += ' <span style="font-size:8px;color:#3fb950;vertical-align:middle">\u25cf</span>';
   // Dynamic badge
@@ -1253,7 +1257,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.4</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.5</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
