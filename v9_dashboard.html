@@ -1617,17 +1617,30 @@ function rAreteEmails(d){
         h+='<span class="ae-arrow">'+(emailOpenState?'\u25bc':'\u25b6')+'</span>';
         h+='</div>';
         var emailOpenState=dayOpen&&!emailIsRead;h+='<div class="ae-body" id="'+uid+'" style="'+(emailOpenState?'':'display:none')+'">';
-        var body=e(em.body||'');
-        // Format ALL CAPS lines as headers (min 3 chars, entire line uppercase)
-        body=body.replace(/^([A-Z][A-Z ]{2,}[A-Z])$/gm, '<strong style="color:#e3b341;font-size:13px;display:block;margin:12px 0 6px">$1</strong>');
-        // Format lines with SPY/QQQ $ levels as monospace
-        body=body.replace(/((?:SPY|QQQ|IWM|DIA)\s*\$[\d,.]+[^<]*)/g, '<span style="font-family:JetBrains Mono,monospace;color:#58a6ff">$1</span>');
-        // Paragraph breaks
-        body=body.replace(/\n\n/g, '</p><p style="margin:8px 0;line-height:1.6">');
-        body=body.replace(/\n/g, '<br>');
-        body='<div style="font-size:12px;line-height:1.6"><p style="margin:8px 0;line-height:1.6">'+body+'</p></div>';
-        body=body.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){return '<span class="ae-ticker" onclick="openPT(\''+tk+'\')">$'+tk+'</span>';});
-        body=body.replace(/(^|[\s,;:(])([A-Z]{2,5})(\s|[,;:)\.]|$)/g,function(m,pre,tk,post){if(_tq[tk])return pre+'<span class="ae-ticker" onclick="openPT(\''+tk+'\')">'+tk+'</span>'+post;return m;});
+        var _raw=em.body||'';
+        // Split into paragraphs (double newline, or sentences ending with period + space + capital)
+        var _paras=_raw.split(/\n\n+/);
+        // If only 1 paragraph, try splitting on ". " followed by a topic shift
+        if(_paras.length<=1&&_raw.length>300){
+          _paras=_raw.split(/(?<=\.)\s{2,}/);
+        }
+        var body='<div style="font-size:12px;line-height:1.7">';
+        for(var _pi=0;_pi<_paras.length;_pi++){
+          var _p=e(_paras[_pi].trim());if(!_p)continue;
+          // ALL CAPS lines = section headers
+          _p=_p.replace(/^([A-Z][A-Z ]{2,}[A-Z])$/gm,'<strong style="color:#e3b341;font-size:13px;display:block;margin:14px 0 6px">$1</strong>');
+          // Price levels: $XXX patterns = gold mono
+          _p=_p.replace(/\$(\d[\d,]*\.?\d*)/g,'<span style="color:#e3b341;font-weight:600;font-family:JetBrains Mono,monospace">$$$1</span>');
+          // Tickers: $AAOI or known standalone
+          _p=_p.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){return '<b class="ae-ticker" style="cursor:pointer" onclick="openPT(\''+tk+'\')">$'+tk+'</b>';});
+          _p=_p.replace(/(^|[\s,;:(])([A-Z]{2,5})(\s|[,;:).\!]|$)/g,function(m,pre,tk,post){if(_tq[tk])return pre+'<b class="ae-ticker" style="cursor:pointer" onclick="openPT(\''+tk+'\')">'+tk+'</b>'+post;return m;});
+          // SPY/QQQ key level lines
+          _p=_p.replace(/((?:SPY|QQQ|IWM|DIA)\s*(?:then|is now|put wall|support|resistance)[^<.]*)/gi,'<span style="font-family:JetBrains Mono,monospace;color:#58a6ff">$1</span>');
+          // Line breaks within paragraph
+          _p=_p.replace(/\n/g,'<br>');
+          body+='<p style="margin:10px 0">'+_p+'</p>';
+        }
+        body+='</div>';
         h+=body;
         h+='</div></div>';
       }
