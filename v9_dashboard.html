@@ -1,4 +1,4 @@
-<!-- v11.23.9 cache-bust 1772729951.8953855 -->
+<!-- v11.24.0 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1358,7 +1358,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.9</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.0</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1617,44 +1617,15 @@ function rAreteEmails(d){
         h+='<span class="ae-arrow">'+(emailOpenState?'\u25bc':'\u25b6')+'</span>';
         h+='</div>';
         var emailOpenState=dayOpen&&!emailIsRead;h+='<div class="ae-body" id="'+uid+'" style="'+(emailOpenState?'':'display:none')+'">';
-        // Render email body — if HTML, render directly; if plain text, format
-        var _raw=em.body||'';
-        var _isHtml=_raw.indexOf('<')>=0&&(_raw.indexOf('<p')>=0||_raw.indexOf('<div')>=0||_raw.indexOf('<br')>=0);
-        var body='';
-        if(_isHtml){
-          // Raw HTML from email — sanitize then render
-          body=_raw
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi,'')
-            .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi,'')
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi,'')
-            .replace(/on\w+="[^"]*"/gi,'')
-            .replace(/on\w+='[^']*'/gi,'');
-          // Wrap in a styled container
-          body='<div style="font-size:12px;line-height:1.7;color:#c9d1d9;max-width:100%;overflow:hidden">'+body+'</div>';
-        } else {
-          // Plain text — paragraph split + format
-          var _paras=_raw.split(/\n\n+/);
-          if(_paras.length<=2&&_raw.length>300){
-            var _newParas=[];var _cur='';
-            var _sentences=_raw.replace(/\n/g,' ').split(/(?<=\.)\s+(?=[A-Z])/);
-            for(var _si=0;_si<_sentences.length;_si++){
-              _cur+=(_cur?' ':'')+_sentences[_si];
-              if(_cur.length>200||_si===_sentences.length-1){_newParas.push(_cur);_cur='';}
-            }
-            if(_cur)_newParas.push(_cur);
-            if(_newParas.length>_paras.length)_paras=_newParas;
-          }
-          body='<div style="font-size:12px;line-height:1.7">';
-          for(var _pi=0;_pi<_paras.length;_pi++){
-            var _p=e(_paras[_pi].trim());if(!_p)continue;
-            _p=_p.replace(/\*\*([^*]+)\*\*/g,'<b style="color:#e6edf3">$1</b>');
-            _p=_p.replace(/\n/g,'<br>');
-            body+='<p style="margin:10px 0">'+_p+'</p>';
-          }
-          body+='</div>';
-        }
-        // Highlight tickers in either mode
+        // Simple clean text block with ticker highlighting
+        var body=e(em.body||'').replace(/\n/g,'<br>');
+        // Highlight $TICKER patterns
         body=body.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){return '<b class="ae-ticker" style="cursor:pointer;color:#58a6ff" onclick="openPT(\''+tk+'\')">$'+tk+'</b>';});
+        // Highlight known tickers
+        body=body.replace(/(^|[\s,;:(])([A-Z]{2,5})([\s,;:).!]|$)/g,function(m,pre,tk,post){if(_tq[tk])return pre+'<b class="ae-ticker" style="cursor:pointer;color:#58a6ff" onclick="openPT(\''+tk+'\')">'+tk+'</b>'+post;return m;});
+        // Gold price levels
+        body=body.replace(/\$(\d[\d,]*\.?\d*)/g,'<span style="color:#e3b341;font-weight:600;font-family:JetBrains Mono,monospace">$$$1</span>');
+        body='<div style="font-size:12px;line-height:1.7;color:#c9d1d9;white-space:pre-wrap">'+body+'</div>';
         h+=body;
         h+='</div></div>';
       }
