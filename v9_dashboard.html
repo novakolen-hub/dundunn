@@ -1,4 +1,4 @@
-<!-- v11.24.3 cache-bust 1772729951.8953855 -->
+<!-- v11.24.4 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -283,6 +283,7 @@
 <div id="sInPlay"></div>
 <div id="sActiveSetups"></div>
 <div id="sWatching"></div>
+<div id="sAreteBook"></div>
 <div id="sSetups"></div>
 </div></div>
 <div class="sec-group">
@@ -1359,7 +1360,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.3</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.4</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2732,7 +2733,154 @@ function areteCard(p){
   });
 }
 
-function rAreteBook(d){return;}
+function rAreteBook(d){
+  var all=d.aretePositions||[];
+  var aw=d.areteWatching||[];
+  var totalCount=all.length+aw.length;
+  if(!all.length&&!aw.length){$('sAreteBook').innerHTML='';return}
+  var outerCol=true;try{var _ov=localStorage.getItem('arete_col_outer');if(_ov!==null)outerCol=_ov==='1';}catch(e){}
+  var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\'outer\')">';
+  h+='<span id="areteArrow_outer" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(outerCol?'-90':'0')+'deg)">▼</span> ';
+  h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book ('+totalCount+')'+sortPills('arete');
+  if(d.areteUpdated)h+=' <span class="dim" style="font-size:10px;font-weight:400">Updated '+e(d.areteUpdated)+'</span>';
+  h+='</h2>';
+  h+='<div id="areteBody_outer" style="'+(outerCol?'display:none':'')+'">';
+  h+='<p class="dim" style="font-size:11px;margin-bottom:6px">Arete Discord positions — reference only, not your trades.</p>';
+  var groups={};var order=['Swing','DTC','Option','Long'];
+  for(var i=0;i<all.length;i++){var t=all[i].tag||'Other';if(!groups[t])groups[t]=[];groups[t].push(all[i]);}
+  for(var g=0;g<order.length;g++){var k=order[g];if(!groups[k])continue;
+    // Sort group tickers by selected mode
+    var gTks=groups[k].map(function(x){return x.ticker||x.sym||'';});
+    var gConf={};for(var gi=0;gi<groups[k].length;gi++){var gt=groups[k][gi].ticker||groups[k][gi].sym||'';gConf[gt]={conf:parseFloat((_tq[gt]||{}).conf||0)};}
+    var sortedGTks=sortTickers(gTks,gConf,'arete_'+k);
+    var gSorted=[];for(var si2=0;si2<sortedGTks.length;si2++){for(var gi2=0;gi2<groups[k].length;gi2++){if((groups[k][gi2].ticker||groups[k][gi2].sym)===sortedGTks[si2]){gSorted.push(groups[k][gi2]);break;}}}
+    if(gSorted.length)groups[k]=gSorted;
+    var colKey='arete_col_'+k;var isCol=true;try{var _sv=localStorage.getItem(colKey);if(_sv!==null)isCol=_sv==='1';}catch(e){}
+    h+='<h3 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\''+k+'\')">';
+    h+='<span id="areteArrow_'+k+'" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> ';
+    h+=e(k)+' ('+groups[k].length+')'+sortPills('arete_'+k)+'</h3>';
+    h+='<div id="areteBody_'+k+'" class="info-box" style="border-color:#9e6a03;'+(isCol?'display:none':'')+'">';
+    for(var i=0;i<groups[k].length;i++)h+=areteCard(groups[k][i]);h+='</div>';}
+  if(aw.length){
+    var awCol=true;try{var _awv=localStorage.getItem('arete_col_Watching');if(_awv!==null)awCol=_awv==='1';}catch(e){}
+    h+='<h3 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleAreteSection(\'Watching\')">';
+    h+='<span id="areteArrow_Watching" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(awCol?'-90':'0')+'deg)">▼</span> ';
+    h+='Watching ('+aw.length+')'+sortPills('arete_watch')+'</h3>';
+    h+='<div id="areteBody_Watching" style="'+(awCol?'display:none':'')+'">';
+    // Build confluence lookup from watchlistTop
+    var _confMap={};var wt=d.watchlistTop||[];
+    for(var ci=0;ci<wt.length;ci++){if(wt[ci].ticker)_confMap[wt[ci].ticker]={conf:wt[ci].confluence,qual:wt[ci].quality,setup:wt[ci].setup,sect:wt[ci].sector};}
+    // Sort tickers before grouping
+    aw=sortTickers(aw,_confMap,'arete_watch');
+    // Group by sector
+    var secGroups={},secOrder=[];
+    for(var i=0;i<aw.length;i++){var tk=aw[i];var sec=_SEC[tk]||(_confMap[tk]&&_confMap[tk].sect?_confMap[tk].sect:'')||'Other';
+      if(!secGroups[sec]){secGroups[sec]=[];secOrder.push(sec);}secGroups[sec].push(tk);}
+    // Build overlap lookup (positions + my watching)
+    var _myTk={};
+    var myPos=d.positions||[];for(var pi=0;pi<myPos.length;pi++)_myTk[myPos[pi].ticker]='pos';
+    var myW=d.myWatching||[];for(var wi=0;wi<myW.length;wi++){if(!_myTk[myW[wi]])_myTk[myW[wi]]='watch';}
+    // Sort sector groups: sectors with more tickers first, 'Other' last
+    secOrder.sort(function(a,b){if(a==='Other')return 1;if(b==='Other')return -1;return secGroups[b].length-secGroups[a].length;});
+    for(var si=0;si<secOrder.length;si++){
+      var sec=secOrder[si],tks=secGroups[sec];
+      // Sort within sector by confluence descending
+      tks.sort(function(a,b){var ca=(_confMap[a]||{}).conf||0,cb=(_confMap[b]||{}).conf||0;return cb-ca;});
+      // Sector avg change
+      var secSum=0,secCnt=0;
+      for(var ti=0;ti<tks.length;ti++){var sq=_tq[tks[ti]];if(sq&&sq.chg){var sv=parseFloat(String(sq.chg).replace('%',''));if(!isNaN(sv)){secSum+=sv;secCnt++;}}}
+      var secAvg=secCnt?secSum/secCnt:0;var secAvgC=secAvg>0.01?'g':secAvg<-0.01?'r':'dim';
+      h+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:#7d8590;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid #21262d;padding-bottom:2px">'+e(sec)+' ('+tks.length+') <span class="'+secAvgC+'" style="font-weight:400">avg '+(secAvg>0?'+':'')+secAvg.toFixed(2)+'%</span></div>';
+      for(var ti=0;ti<tks.length;ti++){
+        var tk=tks[ti],q=_tq[tk]||{},op=_to[tk]||{},cm=_confMap[tk]||{},nws=_tkNews[tk]||[];
+        // Border color by change
+        var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
+        var bCol=chgN>0.05?'#238636':chgN<-0.05?'#da3633':'#9e6a03';
+        // Card
+        h+='<div class="pos-block" style="border-left:3px solid '+bCol+';padding:8px 10px;margin-bottom:4px">';
+        // Row 1: ticker, overlap badge, confluence, price, change
+        h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+        h+='<span>'+tkLink(tk,1);
+        if(_myTk[tk]==='pos')h+=' <span style="font-size:9px;background:#238636;color:#fff;padding:1px 4px;border-radius:3px">IN BOOK</span>';
+        else if(_myTk[tk]==='watch')h+=' <span style="font-size:9px;background:#1f6feb;color:#fff;padding:1px 4px;border-radius:3px">WATCHING</span>';
+        if(cm.conf){var cc=cm.conf>=28?'g':cm.conf>=24?'y':'dim';h+=' <span class="mono '+cc+'" style="font-size:11px" title="Confluence">⚡'+cm.conf.toFixed(0)+'</span>';}
+        if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
+        h+='</span>';
+        h+='<span class="mono" style="font-size:12px">';
+        if(q.last)h+=e(q.last)+' ';
+        if(q.chg)h+=pct(q.chg);
+        h+=sparkSvg(tk)+'</span></div>';
+        // Row 2: options data (if available from tastytrade bridge)
+        var oH='';
+        if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';
+        if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';
+        if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';
+        if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';
+        if(oH)h+='<div style="font-size:11px;margin-top:2px">📊 '+oH+'</div>';
+        // Row 2b: enriched data from watchlist
+        var eH='';
+        if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
+        if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
+        if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
+        if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
+        // Flags
+        var _fl=[];
+        if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');
+        if(q.rsF&&q.rsF!=='—')_fl.push('RS');
+        if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');
+        if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
+        if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
+        if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
+        h+=levelsHtml(tk);
+        // Row 3: confluence setup if present
+        if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
+        // Row 4: news
+        h+=posNewsHtml(tk);
+        // Row 5: Bias signal summary
+        var bull=0,bear=0,reasons=[];
+        var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;
+        var _rv=q.rvol?parseFloat(q.rvol):NaN;
+        var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;
+        var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;
+        var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
+        if(!isNaN(_rs)){if(_rs>1){bull++;reasons.push('RS+');}else if(_rs<-1){bear++;reasons.push('RS−');}}
+        if(!isNaN(_rv)&&_rv>=1.5){bull++;reasons.push('RVOL '+_rv.toFixed(1)+'x');}
+        if(!isNaN(_gp)){if(_gp>0.3){bull++;reasons.push('gap↑');}else if(_gp<-0.3){bear++;reasons.push('gap↓');}}
+        if(!isNaN(_w5)){if(_w5>70){bull++;reasons.push('near 52wH');}else if(_w5<30){bear++;reasons.push('near 52wL');}}
+        if(!isNaN(_ed)){if(_ed>0){bull++;reasons.push('>EMA50');}else if(_ed<-2){bear++;reasons.push('<EMA50');}}
+        if(q.vwapF&&q.vwapF!=='—'){bull++;reasons.push('VWAP✓');}
+        if(q.rsF&&q.rsF!=='—'){bull++;reasons.push('RSflag');}
+        if(chgN>0.5){bull++;reasons.push('price↑');}else if(chgN<-0.5){bear++;reasons.push('price↓');}
+        if(bull>0||bear>0){
+          var net=bull-bear;
+          var biasIcon=net>=2?'🟢 ↑':net<=-2?'🔴 ↓':'⚪ →';
+          var biasCol=net>=2?'#238636':net<=-2?'#da3633':'#7d8590';
+          // Verdict
+          var verd='';
+          if(net>=3)verd='Strong bullish stack — watch for entry';
+          else if(net===2)verd='Leaning bullish — needs catalyst';
+          else if(net===1)verd='Slight bullish lean — be selective';
+          else if(net===0)verd='Mixed signals — wait for clarity';
+          else if(net===-1)verd='Slight bearish lean — caution';
+          else if(net===-2)verd='Leaning bearish — avoid or short setup';
+          else verd='Strong bearish stack — short or avoid';
+          h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid '+biasCol+';border-radius:4px;font-size:11px">';
+          h+='<span style="font-size:13px">'+biasIcon+'</span> ';
+          h+='<span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> ';
+          h+='<span class="dim">'+reasons.join(' · ')+'</span>';
+          h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div>';
+          h+='</div>';
+        }
+        h+=cardNotes(tk);
+        h+='</div>';
+      }
+      h+='</div>';
+    }
+    h+='</div>';}
+  h+='</div>';
+  $('sAreteBook').innerHTML=h;
+}
+// ═══ WATCHING (Config tab: my watching + arete watching) ═══
 // ═══ WATCHING (Config tab: my watching + arete watching) ═══
 function rWatching(d){
   var mw=d.myWatching||[];
