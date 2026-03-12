@@ -1,4 +1,4 @@
-<!-- v11.23.7 cache-bust 1772729951.8953855 -->
+<!-- v11.23.8 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1358,7 +1358,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.7</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.8</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1637,6 +1637,14 @@ function rAreteEmails(d){
           var _p=e(_paras[_pi].trim());if(!_p)continue;
           // ALL CAPS lines = section headers
           _p=_p.replace(/^([A-Z][A-Z ]{2,}[A-Z])$/gm,'<strong style="color:#e3b341;font-size:13px;display:block;margin:14px 0 6px">$1</strong>');
+          // Convert **bold** markers to <b> tags
+          _p=_p.replace(/\*\*([^*]+)\*\*/g,'<b style="color:#e6edf3">$1</b>');
+          // Convert bullet points (• from scanner)
+          if(_p.indexOf('\u2022')>=0){
+            var _bullets=_p.split('\u2022');
+            _p=_bullets[0];
+            for(var _bi=1;_bi<_bullets.length;_bi++){_p+='<div style="padding-left:16px;margin:3px 0"><span style="color:#e3b341;margin-right:4px">\u2022</span>'+_bullets[_bi].trim()+'</div>';}
+          }
           // Price levels: $XXX patterns = gold mono
           _p=_p.replace(/\$(\d[\d,]*\.?\d*)/g,'<span style="color:#e3b341;font-weight:600;font-family:JetBrains Mono,monospace">$$$1</span>');
           // Tickers: $AAOI or known standalone
