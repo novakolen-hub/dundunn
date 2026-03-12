@@ -1,4 +1,4 @@
-<!-- v11.24.0 cache-bust 1772729951.8953855 -->
+<!-- v11.24.1 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1358,7 +1358,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.0</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.1</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1525,12 +1525,13 @@ function rAreteEmails(d){
     }
     // Calls table
     if(analysis.calls&&analysis.calls.length){
-      h+='<table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th style="text-align:left">Bias</th><th style="text-align:left">Level</th><th style="text-align:right">Scanner</th></tr>';
+            // Enriched calls with live data + pills
       for(var ci=0;ci<analysis.calls.length;ci++){
         var call=analysis.calls[ci];
         var tk=(call.ticker||'').toUpperCase();
         var bias=call.bias||'';
         var bCls2=bias.toLowerCase().indexOf('long')>=0||bias.toLowerCase().indexOf('bull')>=0?'g':bias.toLowerCase().indexOf('short')>=0||bias.toLowerCase().indexOf('bear')>=0?'r':'dim';
+        var qt=_tq[tk]||{};
         // Check alignment status
         var aStatus='',aStatusCls='dim';
         if(alignment&&alignment.alignments){
@@ -1542,13 +1543,56 @@ function rAreteEmails(d){
             }
           }
         }
-        var statusIcon=aStatus==='ALIGNED'?'\u2705':aStatus==='PARTIAL'?'\u26a0\ufe0f':aStatus==='DIVERGENT'?'\u274c':'';
-        h+='<tr><td><span class="ae-ticker" style="cursor:pointer" onclick="openPT(\''+e(tk)+'\')">'+e(tk)+'</span></td>';
-        h+='<td class="'+bCls2+'">'+e(bias)+'</td>';
-        h+='<td class="dim">'+e(call.level||'')+'</td>';
-        h+='<td style="text-align:right" class="'+aStatusCls+'">'+statusIcon+' '+e(aStatus.toLowerCase().replace('_',' '))+'</td></tr>';
+        // Check if it's a position
+        var isPos=false;var posDir='';
+        var positions=d.positions||[];
+        for(var pi=0;pi<positions.length;pi++){if(positions[pi].ticker===tk){isPos=true;posDir=positions[pi].direction||'';break;}}
+        // Check watchlist
+        var wl=d.watchlistSymbols||{};
+        var inWL=false;
+        if(wl.all){for(var wi=0;wi<wl.all.length;wi++){if(wl.all[wi]===tk){inWL=true;break;}}}
+
+        h+='<div class="info-box" style="padding:8px 10px;margin-bottom:4px;border-left:3px solid '+(bCls2==='g'?'#3fb950':bCls2==='r'?'#f85149':'#30363d')+'">';
+        // Header row: ticker + pills + price
+        h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
+        h+='<span class="ae-ticker" style="cursor:pointer;font-size:13px;font-weight:700" onclick="openPT(\''+e(tk)+'\')">'+e(tk)+'</span>';
+        h+='<span class="tag tag-gp" style="background:'+(bCls2==='g'?'#0d2818;color:#3fb950;border-color:#3fb950':bCls2==='r'?'#2d1215;color:#f85149;border-color:#f85149':'#21262d;color:#7d8590;border-color:#30363d')+'">'+e(bias)+'</span>';
+        if(isPos)h+='<span class="tag" style="background:#0d2818;color:#3fb950;border-color:#3fb950;font-size:9px">POSITION</span>';
+        if(inWL&&!isPos)h+='<span class="tag" style="background:#0d1a2e;color:#58a6ff;border-color:#58a6ff;font-size:9px">WATCHLIST</span>';
+        if(aStatus)h+='<span class="tag" style="font-size:9px" class="'+aStatusCls+'">'+e(aStatus)+'</span>';
+        // Price + change on right
+        if(qt.last||qt.chg){
+          h+='<span style="margin-left:auto;font-family:JetBrains Mono,monospace;font-size:11px">';
+          if(qt.last)h+=e(qt.last)+' ';
+          if(qt.chg)h+=pct(qt.chg);
+          h+='</span>';
+        }
+        h+='</div>';
+        // Detail row: level + confluence + RVOL
+        h+='<div style="display:flex;gap:12px;margin-top:4px;font-size:10px;color:#7d8590">';
+        if(call.level)h+='<span>Level: <span style="color:#e3b341;font-family:JetBrains Mono,monospace">'+e(call.level)+'</span></span>';
+        if(qt.conf)h+='<span>CF: <span style="color:#58a6ff">'+e(qt.conf)+'</span></span>';
+        if(qt.rvol)h+='<span>RVOL: <span style="color:'+(parseFloat(qt.rvol)>=2?'#3fb950':parseFloat(qt.rvol)>=1?'#e3b341':'#7d8590')+'">'+e(qt.rvol)+'</span></span>';
+        if(qt.setup)h+='<span>Setup: <span style="color:#d2a8ff">'+e(qt.setup)+'</span></span>';
+        h+='</div>';
+        h+='</div>';
       }
-      h+='</table>';
+    }
+    // Index S/R levels from Arete
+    if(analysis.keyLevels&&analysis.keyLevels.length){
+      h+='<div style="margin-top:8px;margin-bottom:8px">';
+      h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#7d8590;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Index S/R Levels</span>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">';
+      for(var ki=0;ki<analysis.keyLevels.length;ki++){
+        var kl=analysis.keyLevels[ki];
+        var klType=(kl.type||'').toLowerCase();
+        var klCol=klType.indexOf('support')>=0?'#3fb950':klType.indexOf('resist')>=0?'#f85149':'#e3b341';
+        h+='<div style="font-family:JetBrains Mono,monospace;font-size:11px;padding:3px 8px;border-radius:4px;background:#161b22;border:1px solid #21262d">';
+        h+='<span style="color:#c9d1d9">'+e(kl.ticker||'')+'</span> ';
+        h+='<span style="color:'+klCol+'">'+e(klType.indexOf('support')>=0?'S':klType.indexOf('resist')>=0?'R':'Lvl')+': '+e(kl.level||'')+'</span>';
+        h+='</div>';
+      }
+      h+='</div></div>';
     }
     // GP alignment
     if(alignment){
