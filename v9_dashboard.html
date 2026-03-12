@@ -1,4 +1,4 @@
-<!-- v11.23.0 cache-bust 1772729951.8953855 -->
+<!-- v11.23.1 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -626,7 +626,7 @@ function uCard(tk, mode, opts) {
   if (op.iv != null) oH += ' <span class="dim">IV ' + op.iv + '%</span>';
   if (op.expMove) oH += ' <span class="b">\u00b1' + op.expMove + '</span>';
   if (op.beta) oH += ' <span class="dim">\u03b2' + op.beta + '</span>';
-  if (oH) h += '<div class="uc-opts">📊 ' + oH + '</div>';
+  if (oH) h += '<div class="uc-opts">' + oH + '</div>';
 
   // Arete cross-reference
   if (opts.areteInfo) {
@@ -1359,7 +1359,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.0</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.1</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1722,12 +1722,16 @@ function rToday(d){
       var _stFSt=gN(_stFS,['THE STORY','STORY','MARKET STORY']);
       if(_stFSt){
         _stRetro=_stFSt;var _stFTs=d.firstNarrativeTs||'',_stFSe=d.firstNarrativeSession||'';
-        h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6">';
-        h+='<p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb Previous Read (Retrospective) <span class="dim" style="font-weight:400;font-size:10px">'+e(_stFTs)+(_stFSe?' \u00b7 '+e(_stFSe):'')+'</span></p>';
-        h+=fmt(_stRetro)+'</div>';_stRetro=null;
+        var _rtCol2=true;try{var _rv2=localStorage.getItem('sec_col_retro');if(_rv2!==null)_rtCol2=_rv2==='1';}catch(e){}
+        h+='<div style="margin-top:6px"><h2 style="cursor:pointer;user-select:none;font-size:13px" onclick="toggleSec(\'retro\')"><span id="secArrow_retro" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(_rtCol2?'-90':'0')+'deg)">\u25bc</span> Previous Read (Retrospective) <span class="dim" style="font-size:10px;font-weight:400">'+e(_stFTs)+(_stFSe?' \u00b7 '+e(_stFSe):'')+'</span></h2>';
+        h+='<div id="secBody_retro" style="'+(_rtCol2?'display:none':'')+'"><div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6">'+fmt(_stRetro)+'</div></div></div>';_stRetro=null;
       }
     }
-    if(_stRetro)h+='<div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6"><p style="color:#d29922;font-weight:700;font-size:12px;margin-bottom:4px">\ud83d\udccb Previous Story Update</p>'+fmt(_stRetro)+'</div>';
+    if(_stRetro){
+      var _rtCol3=true;try{var _rv3=localStorage.getItem('sec_col_retro');if(_rv3!==null)_rtCol3=_rv3==='1';}catch(e){}
+      h+='<div style="margin-top:6px"><h2 style="cursor:pointer;user-select:none;font-size:13px" onclick="toggleSec(\'retro\')"><span id="secArrow_retro" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(_rtCol3?'-90':'0')+'deg)">\u25bc</span> Previous Read (Retrospective)</h2>';
+      h+='<div id="secBody_retro" style="'+(_rtCol3?'display:none':'')+'"><div class="info-box" style="border-left:3px solid #d29922;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6">'+fmt(_stRetro)+'</div></div></div>';
+    }
     h+='</div>';
   } else {
     hasContent=true;
@@ -1775,6 +1779,147 @@ function rToday(d){
     h+='</div>';
   }
 
+
+// ── Today's Econ Events — HIGH IMPACT, reported/pending state ──
+  var eco=d.ecoEvents||[];
+  var inTodayBlock=false;
+  var todayEco=[];
+  for(var ei=0;ei<eco.length;ei++){
+    var ev=eco[ei];
+    if(ev.isSep){
+      var titleUp=(ev.title||'').toUpperCase();
+      inTodayBlock=titleUp.indexOf(todayName.toUpperCase())>=0||titleUp.indexOf('TODAY')>=0;
+      continue;
+    }
+    if(inTodayBlock && ev.impact==='High'){
+      todayEco.push(ev);
+    }
+  }
+  if(todayEco.length){
+    hasContent=true;
+    h+='<div style="margin-top:8px">';
+    var isColEcT=false;try{isColEcT=localStorage.getItem('sec_col_econtoday')==='1';}catch(e){}
+    h+='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'econtoday\')"><span id="secArrow_econtoday" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColEcT?'-90':'0')+'deg)">\u25bc</span> Key Economic Data <span class="dim" style="font-size:12px;font-weight:400">('+todayEco.length+')</span></h2>';
+    h+='<div id="secBody_econtoday" style="'+(isColEcT?'display:none':'')+'">';
+    h+='<div class="info-box" style="padding:0;margin:0">';
+    for(var tei=0;tei<todayEco.length;tei++){
+      var ev=todayEco[tei];
+      var ic=impactColor[ev.impact]||'#7d8590';
+      var id=impactDot[ev.impact]||'';
+      var hasReported=!!(ev.actual&&String(ev.actual).trim());
+      var rowBg=hasReported?'background:#0d1a0d':'';
+      h+='<div style="padding:7px 10px;border-bottom:1px solid #161b22;display:flex;gap:8px;align-items:flex-start;'+rowBg+'">';
+      h+='<div style="width:3px;min-height:32px;background:'+(hasReported?'#238636':ic)+';border-radius:2px;flex-shrink:0;margin-top:2px"></div>';
+      h+='<div style="flex:1;min-width:0">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+      h+='<span style="font-size:12px;font-weight:700;color:#e6edf3">'+e(ev.title)+'</span>';
+      if(hasReported)h+='<span style="font-size:9px;background:#238636;color:#fff;padding:1px 6px;border-radius:3px;font-weight:700">REPORTED</span>';
+      else h+='<span style="font-size:9px;background:#30363d;color:#7d8590;padding:1px 6px;border-radius:3px">PENDING</span>';
+      h+='</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:3px;font-size:11px;color:#7d8590">';
+      if(ev.time) h+='<span>\ud83d\udd50 '+e(ev.time)+'</span>';
+      if(ev.previous) h+='<span>Prev: <span class="white">'+e(ev.previous)+'</span></span>';
+      if(ev.forecast) h+='<span>Fcst: <span class="white">'+e(ev.forecast)+'</span></span>';
+      if(ev.actual){var _actN=parseFloat(String(ev.actual).replace(/[^0-9.\-]/g,'')),_fctN=parseFloat(String(ev.forecast||'').replace(/[^0-9.\-]/g,''));var _actCol='#3fb950';if(!isNaN(_actN)&&!isNaN(_fctN)){_actCol=_actN>_fctN?'#3fb950':_actN<_fctN?'#f85149':'#e3b341';}h+='<span>Act: <span style="color:'+_actCol+';font-weight:700">'+e(ev.actual)+((!isNaN(_actN)&&!isNaN(_fctN))?(_actN>_fctN?' \u2713':_actN<_fctN?' \u2717':''):'')+'</span></span>';}
+      if(ev.tickers) h+='<span class="b">\u2192 '+e(ev.tickers)+'</span>';
+      h+='</div></div></div>';
+    }
+    h+='</div></div></div>';
+  }
+
+  // ── Today's Earnings — table with tier pills ──
+  var earn=d.earnings||[];
+  var todayEarn=[];
+  for(var eri=0;eri<earn.length;eri++){
+    var er=earn[eri];
+    var erDay=(er.day||er.period||'').toUpperCase();
+    var isEarnToday=erDay.indexOf(todayName.toUpperCase())>=0;
+    if(!isEarnToday&&er.date){isEarnToday=er.date===todayDate;}
+    if(isEarnToday) todayEarn.push(er);
+  }
+  if(todayEarn.length){
+    hasContent=true;
+    h+='<div style="margin-top:8px">';
+    var isColErT=false;try{isColErT=localStorage.getItem('sec_col_earntoday')==='1';}catch(e){}
+    h+='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'earntoday\')"><span id="secArrow_earntoday" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColErT?'-90':'0')+'deg)">\u25bc</span> Earnings Today <span class="dim" style="font-size:12px;font-weight:400">('+todayEarn.length+')</span></h2>';
+    h+='<div id="secBody_earntoday" style="'+(isColErT?'display:none':'')+'">';
+    h+='<div class="info-box" style="padding:0;margin:0"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>When</th><th>Est</th><th>Actual</th><th style="font-size:9px">Tier</th></tr>';
+    for(var tei2=0;tei2<todayEarn.length;tei2++){
+      var er=todayEarn[tei2];
+      var tk=(er.symbol||er.ticker||er.sym||'').toUpperCase();
+      var tier=er.tier||'market';
+      var tierCol=tier==='mine'?'#3fb950':tier==='watchlist'?'#58a6ff':'#7d8590';
+      var tierLabel=tier==='mine'?'\u2b50 Position':tier==='watchlist'?'\ud83d\udc41 Watch':'Market';
+      var rowBg2=tier==='mine'?'background:#0d2010':tier==='watchlist'?'background:#0d1a2a':'';
+      var when=er.time||'';
+      var actStr='';
+      if(er.epsActual!=null){
+        var estNum=er.note?parseFloat(String(er.note).replace(/.*Est: \\$/,'').replace(/ .*/,'')):NaN;
+        var beat=!isNaN(estNum)&&er.epsActual>estNum;
+        var miss=!isNaN(estNum)&&er.epsActual<estNum;
+        var ac=beat?'#3fb950':miss?'#f85149':'#c9d1d9';
+        actStr='<span style="color:'+ac+';font-weight:700">$'+er.epsActual+'</span>';
+        if(beat)actStr+=' \u2713';
+        if(miss)actStr+=' \u2717';
+      }
+      var _earnBeatMiss='';if(er.epsActual!=null){var _eNum=er.note?parseFloat(String(er.note).replace(/.*Est: \$/,'').replace(/ .*/,'')):NaN;if(!isNaN(_eNum)){_earnBeatMiss=er.epsActual>_eNum?'background:#0d2818':er.epsActual<_eNum?'background:#2d0a0a':'';}}h+='<tr style="'+(rowBg2||_earnBeatMiss)+'">';
+      h+='<td style="font-weight:700;color:'+tierCol+';cursor:pointer" onclick="openPT(\''+e(tk)+'\')">'+e(tk)+'</td>';
+      h+='<td class="dim" style="text-align:center;white-space:nowrap">'+e(when)+'</td>';
+      h+='<td class="dim" style="text-align:center">'+e(er.note||'')+'</td>';
+      h+='<td style="text-align:center">'+actStr+'</td>';
+      h+='<td style="text-align:center"><span style="font-size:9px;padding:1px 5px;border-radius:3px;background:'+tierCol+'22;color:'+tierCol+';border:1px solid '+tierCol+'44">'+tierLabel+'</span></td>';
+      h+='</tr>';
+    }
+    h+='</table></div></div></div>';
+  }
+
+  // ── Arete Calls (enriched from today's email + scanner data) ──
+  var analysis=d.areteAnalysis||null;
+  if(analysis&&analysis.calls&&analysis.calls.length){
+    hasContent=true;
+    h+='<div style="margin-top:8px">';
+    var isColArT=false;try{isColArT=localStorage.getItem('sec_col_aretecalls')==='1';}catch(e){}
+    h+='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'aretecalls\')"><span id="secArrow_aretecalls" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isColArT?'-90':'0')+'deg)">\u25bc</span> Arete Calls <span class="dim" style="font-size:12px;font-weight:400">('+Math.min(analysis.calls.length,8)+' from today\'s email)</span></h2>';
+    h+='<div id="secBody_aretecalls" style="'+(isColArT?'display:none':'')+'">';
+    for(var aci=0;aci<Math.min(analysis.calls.length,8);aci++){
+      var ac=analysis.calls[aci];
+      var atk=(ac.ticker||'').toUpperCase();
+      var abias=ac.bias||'';
+      var abCls=abias.toLowerCase().indexOf('long')>=0||abias.toLowerCase().indexOf('bull')>=0?'g':abias.toLowerCase().indexOf('short')>=0||abias.toLowerCase().indexOf('bear')>=0?'r':'dim';
+      // Enrich from _tq (scanner live data)
+      var aq=_tq[atk]||{};
+      var aLast=aq.last||'';
+      var aChg=aq.chg||'';
+      var aConf=aq.conf?parseFloat(aq.conf):NaN;
+      var aRvol=aq.rvol?parseFloat(aq.rvol):NaN;
+      var aSetup=aq.setup||'';
+      var aGap=aq.gap?parseFloat(String(aq.gap).replace('%',''))  :NaN;
+      var aRs=aq.rs?parseFloat(aq.rs):NaN;
+      h+='<div style="border-bottom:1px solid #21262d;padding:6px 0">';
+      // Row 1: ticker, bias, level, price, change
+      h+='<div style="display:flex;gap:8px;align-items:center;font-size:12px">';
+      h+=tkLink(atk)+' ';
+      h+='<span class="'+abCls+'" style="font-weight:600">'+e(abias)+'</span>';
+      if(ac.level)h+='<span class="dim" style="font-size:11px">@ '+e(ac.level)+'</span>';
+      if(aLast)h+='<span style="margin-left:auto;font-family:JetBrains Mono,monospace;font-size:11px;color:#c9d1d9">'+e(aLast)+'</span>';
+      if(aChg)h+=' '+pct(aChg);
+      h+=sparkSvg(atk,48,16);
+      h+='</div>';
+      // Row 2: enrichment pills
+      var pills='';
+      if(!isNaN(aConf)){var cc=aConf>=7?'g':aConf>=4?'y':'dim';pills+='<span class="'+cc+'" style="font-size:10px">CF:'+aConf.toFixed(0)+'</span> ';}
+      if(!isNaN(aRvol)&&aRvol>0){var rc=aRvol>=2?'g':aRvol>=1.2?'y':'dim';pills+='<span class="'+rc+'" style="font-size:10px">RVOL:'+aRvol.toFixed(1)+'x</span> ';}
+      if(!isNaN(aGap)&&Math.abs(aGap)>0.1){var gc2=aGap>0?'g':'r';pills+='<span class="'+gc2+'" style="font-size:10px">Gap:'+(aGap>0?'+':'')+aGap.toFixed(1)+'%</span> ';}
+      if(!isNaN(aRs)){var rsc=aRs>1?'g':aRs<-1?'r':'dim';pills+='<span class="'+rsc+'" style="font-size:10px">RS:'+(aRs>0?'+':'')+aRs.toFixed(1)+'</span> ';}
+      if(aSetup)pills+='<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#d2a8ff22;color:#d2a8ff;border:1px solid #d2a8ff44">'+e(aSetup)+'</span> ';
+      if(pills)h+='<div style="margin-top:3px">'+pills+'</div>';
+      h+='</div>';
+    }
+    h+='</div></div>';
+  }
+
+
+  
   if(!hasContent){el.innerHTML='';return;}
 
   h+='</div></div>';
@@ -2679,7 +2824,7 @@ function rInst(d){
   var ivrT=[{v:0,c:'#3fb950',l:'Low'},{v:20,c:'#e3b341',l:'Normal'},{v:40,c:'#d29922',l:'Elevated'},{v:60,c:'#f85149',l:'High'}];
   var fgT=[{v:0,c:'#f85149',l:'Ext Fear'},{v:25,c:'#d29922',l:'Fear'},{v:45,c:'#e3b341',l:'Neutral'},{v:55,c:'#3fb950',l:'Greed'},{v:75,c:'#238636',l:'Ext Greed'}];
   var isCol=true;try{var _v=localStorage.getItem('sec_col_pulse');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="color:#d29922;cursor:pointer;user-select:none" onclick="toggleSec(\'pulse\')"><span id="secArrow_pulse" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> 🏛️ Institutional Pulse</h2>';
+  var h='<h2 style="color:#d29922;cursor:pointer;user-select:none" onclick="toggleSec(\'pulse\')"><span id="secArrow_pulse" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Institutional Pulse</h2>';
   h+='<div id="secBody_pulse" style="'+(isCol?'display:none':'')+'">';
   h+='<p class="dim" style="font-size:11px;margin-top:-4px;margin-bottom:10px">What big money is doing — positioning, flows, sentiment, and credit stress.';
   if(tsStr)h+=' <span class="mono" style="font-size:10px">Updated '+tsStr+'</span>';
@@ -2791,7 +2936,7 @@ function rInst(d){
   }
   // SENTIMENT
   h+='<div class="inst-sub">';
-  h+='<p style="color:#58a6ff;font-weight:700;font-size:13px;margin-bottom:8px">📊 Sentiment & Positioning</p>';
+  h+='<p style="color:#58a6ff;font-weight:700;font-size:13px;margin-bottom:8px">Sentiment & Positioning</p>';
   // Fear & Greed gauge
   var fgScore=fg.score!=null?parseFloat(fg.score):null;
   h+='<div class="inst-grid">';
