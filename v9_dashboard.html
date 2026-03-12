@@ -1,4 +1,4 @@
-<!-- v11.25.7 cache-bust 1772729951.8953855 -->
+<!-- v11.25.8 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -445,6 +445,12 @@ function setupTagHtml(setupRaw,subModeLabel,gpLetter,ticker){
   var r=C_REGISTRY[key],chk=_cSGP(key,subModeLabel,gpLetter);
   var onclick=ticker?' onclick="event.stopPropagation();openPT(\''+ticker+'\')" style="cursor:pointer"':'';
   if(!chk.ok){
+    // GP-D: setups valid as shorts
+    if(gpLetter==='D'){
+      var h2=' <span class="setup-tag st-warn" title="Short direction in GP-D"'+onclick+'>'+e(r.label)+' \u25bc</span>';
+      if(ticker){var gr2=quickGrade(ticker,key,subModeLabel,gpLetter,'SHORT');if(gr2)h2+=gradeHtml(gr2);}
+      return h2;
+    }
     return ' <span style="font-size:9px;color:#484f58;font-family:JetBrains Mono,monospace" title="'+e(chk.reason||'GP blocked')+'"'+onclick+'>'+e(r.label)+'</span>';
   }
   var cls=chk.caution?'st-warn':'st-ok';
@@ -1257,7 +1263,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.7</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.8</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2815,8 +2821,18 @@ function rSetups(d){
     merged.sort(function(a,b){
       var qa=_tq[a]||{},qb=_tq[b]||{};
       var ka=qa.setup?_matchSetupKey(qa.setup):null,kb=qb.setup?_matchSetupKey(qb.setup):null;
-      var okA=ka?_cSGP(ka,_subM,_gpL).ok:false;
-      var okB=kb?_cSGP(kb,_subM,_gpL).ok:false;
+      // GP-D: check short direction for regular tickers
+      var okA=false,okB=false;
+      if(ka){
+        var chkA=_cSGP(ka,_subM,_gpL);
+        okA=chkA.ok;
+        if(!okA&&_gpL==='D')okA=true; // GP-D: all setups potentially valid as shorts
+      }
+      if(kb){
+        var chkB=_cSGP(kb,_subM,_gpL);
+        okB=chkB.ok;
+        if(!okB&&_gpL==='D')okB=true;
+      }
       if(okA!==okB)return okA?-1:1;
       return parseFloat(qb.conf||0)-parseFloat(qa.conf||0);
     });
@@ -3231,7 +3247,8 @@ function _loadPTModal(symbol){
   if(body){
     var refreshBar=document.createElement('div');
     refreshBar.style.cssText='text-align:center;padding:4px;margin-top:-4px;margin-bottom:4px';
-    refreshBar.innerHTML='<span class="dim" style="font-size:9px">\u26a1 Instant from cache</span> <span style="font-size:10px;color:#ffc107;cursor:pointer;border:1px solid #9e6a03;border-radius:4px;padding:2px 10px;margin-left:4px" onclick="sendToWall(\''+symbol+'\')">\u279c Wall</span> <span style="font-size:10px;color:#58a6ff;cursor:pointer;border:1px solid #1f6feb;border-radius:4px;padding:2px 10px;margin-left:8px" onclick="_refreshPTFromServer(\''+symbol+'\')">\u21bb Refresh from server</span>';
+    var _ptFoc=isFocused(symbol);
+    refreshBar.innerHTML='<span class="dim" style="font-size:9px">\u26a1 Instant from cache</span> <span style="font-size:10px;color:'+(_ptFoc?'#d2a8ff':'#7d8590')+';cursor:pointer;border:1px solid '+(_ptFoc?'#d2a8ff':'#30363d')+';border-radius:4px;padding:2px 10px;margin-left:4px" onclick="toggleFocus(\''+symbol+'\');openPT(\''+symbol+'\')">'+(_ptFoc?'\u2605 Focused':'\u2606 Focus')+'</span> <span style="font-size:10px;color:#ffc107;cursor:pointer;border:1px solid #9e6a03;border-radius:4px;padding:2px 10px;margin-left:4px" onclick="sendToWall(\''+symbol+'\')">\u279c Wall</span> <span style="font-size:10px;color:#58a6ff;cursor:pointer;border:1px solid #1f6feb;border-radius:4px;padding:2px 10px;margin-left:8px" onclick="_refreshPTFromServer(\''+symbol+'\')">\u21bb Refresh from server</span>';
     body.insertBefore(refreshBar,body.firstChild);
   }
 }
