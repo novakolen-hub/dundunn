@@ -1,4 +1,4 @@
-<!-- v11.22.5 cache-bust 1772729951.8953855 -->
+<!-- v11.22.6 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1359,7 +1359,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.5</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.22.6</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2184,7 +2184,7 @@ function rBreadth(d){
       if(_commTiles.length){
         h+='<div style="margin-top:6px;margin-bottom:4px"><span style="font-size:10px;color:#7d8590">Commodities ('+_commTiles.length+')</span></div>';
         h+='<div class="heatmap" style="grid-template-columns:repeat('+Math.min(_commTiles.length,5)+',1fr);margin-bottom:6px">';
-        for(var _cti=0;_cti<_commTiles.length;_cti++){h+='<div class="'+hc(_commTiles[_cti].chg)+'" style="font-size:10px;padding:4px 2px">'+e(_commTiles[_cti].sym)+'<br>'+(_commTiles[_cti].chg>0?'+':'')+_commTiles[_cti].chg.toFixed(2)+'%</div>';}
+        for(var _cti=0;_cti<_commTiles.length;_cti++){h+='<div class="'+hc(parseFloat(_commTiles[_cti].chg)||0)+'" style="font-size:10px;padding:4px 2px">'+e(_commTiles[_cti].sym)+'<br>'+(parseFloat(_commTiles[_cti].chg)>0?'+':'')+parseFloat(_commTiles[_cti].chg).toFixed(2)+'%</div>';}
         h+='</div>';
       }
     } else {
