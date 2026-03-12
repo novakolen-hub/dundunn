@@ -1,4 +1,4 @@
-<!-- v11.24.2 cache-bust 1772729951.8953855 -->
+<!-- v11.24.3 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1331,12 +1331,12 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
 // Market countdown clock (AZ=UTC-7 always, market=9:30-4:00 ET)
   var _azN=new Date(now.getTime()+(now.getTimezoneOffset()*60000)-(7*3600000));
   var _azMin=_azN.getHours()*60+_azN.getMinutes();
-  // AZ market hours: EDT (Mar-Nov) = 6:30am-1:00pm AZ, EST (Nov-Mar) = 7:30am-2:00pm AZ
-  // Check if EDT is active: 2nd Sunday Mar to 1st Sunday Nov
-  var _yr=_azN.getFullYear(),_mo=_azN.getMonth(),_dy=_azN.getDate();
-  var _marStart=new Date(_yr,2,1);_marStart.setDate(14-_marStart.getDay());// 2nd Sunday of March
-  var _novEnd=new Date(_yr,10,1);_novEnd.setDate(7-_novEnd.getDay()||7);// 1st Sunday of November
-  var _isEDT=_azN>=_marStart&&_azN<_novEnd;
+  // AZ market hours — use NY timezone to detect EDT reliably
+  var _nyStr=new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:false});
+  var _nyHr=parseInt(_nyStr);
+  var _azHr=_azN.getHours();
+  var _etDiff=_nyHr-_azHr;// should be 3 during EDT, 2 during EST
+  var _isEDT=_etDiff>=3||_etDiff<=-21;// handle midnight wrap
   var _mktOpen=_isEDT?6*60+30:7*60+30;// 6:30am or 7:30am AZ
   var _mktClose=_isEDT?13*60:14*60;// 1:00pm or 2:00pm AZ
   var _isWeekend=_azN.getDay()===0||_azN.getDay()===6;
@@ -1359,7 +1359,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.2</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.3</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
