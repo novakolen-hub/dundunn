@@ -1,4 +1,4 @@
-<!-- v11.24.4 cache-bust 1772729951.8953855 -->
+<!-- v11.24.5 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -283,13 +283,13 @@
 <div id="sInPlay"></div>
 <div id="sActiveSetups"></div>
 <div id="sWatching"></div>
-<div id="sAreteBook"></div>
 <div id="sSetups"></div>
 </div></div>
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('intel')"><span class="grp-arrow" id="grpArrow_intel">▼</span> INTELLIGENCE<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_intel">
 <div id="sAreteEmails"></div>
+<div id="sAreteBook"></div>
 <div id="sEcon"></div>
 <div id="sEarnings"></div>
 </div></div>
@@ -1360,7 +1360,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.4</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.5</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -4254,6 +4254,15 @@ function toggleGroupSections(grp,collapse){
   if(grp==='market'&&collapse){
     var iKeys=['volreg','iv5d','termstruct','expmove','sentiment'];
     for(var i=0;i<iKeys.length;i++){var ib=document.getElementById('instBody_'+iKeys[i]);var ia=document.getElementById('instArrow_'+iKeys[i]);if(ib){ib.style.display='none';if(ia)ia.textContent='\u25b6';try{localStorage.setItem('inst_col_'+iKeys[i],'1');}catch(e){}}}
+  }
+  // Arete Book uses areteBody_/areteArrow_ convention
+  if(grp==='intel'){
+    var abKeys=['outer','Swing','DTC','Option','Long','Watching'];
+    for(var i=0;i<abKeys.length;i++){
+      var ab=document.getElementById('areteBody_'+abKeys[i]);
+      var aa=document.getElementById('areteArrow_'+abKeys[i]);
+      if(ab){ab.style.display=collapse?'none':'';if(aa)aa.style.transform=collapse?'rotate(-90deg)':'rotate(0deg)';try{localStorage.setItem('arete_col_'+abKeys[i],collapse?'1':'0');}catch(e){}}
+    }
   }
 }
 function _restoreGroups(){var g=['market','stocks','intel','positions','reference'];for(var i=0;i<g.length;i++){try{var s=localStorage.getItem('v9_grp_'+g[i]);if(s==='0'){var b=document.getElementById('grpBody_'+g[i]);var a=document.getElementById('grpArrow_'+g[i]);if(b)b.style.display='none';if(a)a.textContent='\u25b6';}}catch(e){}}}
