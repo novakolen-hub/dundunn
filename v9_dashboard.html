@@ -1,4 +1,4 @@
-<!-- v11.24.6 cache-bust 1772729951.8953855 -->
+<!-- v11.24.7 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -738,6 +738,7 @@ function $(i){return document.getElementById(i)}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 var _ic={};
 var _icSlugs={};
+var _SEC={};
 var _tq={};
 var _spark={};
 function sparkSvg(tk,w,h){
@@ -864,7 +865,10 @@ function poll(){
   }).catch(function(err){_e++;var ld=$('loader');if(ld)ld.innerHTML='<div style="color:#f85149;padding:16px;font-size:13px">❌ '+err.message+'<br><br><span class="dim">Check: did you deploy a NEW version? The endpoint URL may have changed.<br>Current EP: '+EP.substring(0,60)+'...</span></div>';$('pl').className='pulse pulse-'+(_e>3?'off':'stale');$('st').textContent='Error'+(_e>1?' (×'+_e+')':'');});
 }
 
-function R(d){_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;if(d.sparkData)_spark=d.sparkData;
+function R(d){
+  // Populate _SEC from available data
+  if(d.watchlistTop){for(var _si=0;_si<d.watchlistTop.length;_si++){var _st=d.watchlistTop[_si];if(_st.ticker&&_st.sector)_SEC[_st.ticker]=_st.sector;}}
+_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;if(d.sparkData)_spark=d.sparkData;
   // Save active textarea before re-render
   var _ae=document.activeElement;
   var _noteId=_ae&&_ae.id&&_ae.id.startsWith('note_')?_ae.id:null;
@@ -1245,7 +1249,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.6</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.7</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
