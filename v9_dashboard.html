@@ -1,4 +1,4 @@
-<!-- v11.25.2 cache-bust 1772729951.8953855 -->
+<!-- v11.25.3 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1251,7 +1251,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.2</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.3</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2767,12 +2767,15 @@ function _renderWatchPage(page){
   var isCol=true;try{var _v=localStorage.getItem('sec_col_watch');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span></h2>';
   h+='<div id="secBody_watch" style="'+(isCol?'display:none':'')+'">';
-  for(var i=start;i<end;i++){h+=uCard(mw[i],'compact',{showFocus:true});}
-  h+='<div style="display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 0;font-size:11px">';
+  // Pagination bar (top, sticky)
+  h+='<div style="display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 0;font-size:11px;position:sticky;top:0;background:#0d1117;z-index:5;border-bottom:1px solid #21262d;margin-bottom:4px">';
   if(page>1)h+='<a href="javascript:void(0)" onclick="_renderWatchPage('+(page-1)+')" style="color:#58a6ff;text-decoration:none">\u25c0 Prev</a>';
-  h+='<span class="dim">Page '+page+' of '+totalPages+' ('+mw.length+' tickers)</span>';
+  for(var _pg=1;_pg<=totalPages;_pg++){h+='<a href="javascript:void(0)" onclick="_renderWatchPage('+_pg+')" style="color:'+(_pg===page?'#e6edf3':'#484f58')+';text-decoration:none;font-weight:'+(_pg===page?'700':'400')+'">'+_pg+'</a>';}
   if(page<totalPages)h+='<a href="javascript:void(0)" onclick="_renderWatchPage('+(page+1)+')" style="color:#58a6ff;text-decoration:none">Next \u25b6</a>';
-  h+='</div></div>';
+  h+='<span class="dim" style="margin-left:8px">('+mw.length+')</span>';
+  h+='</div>';
+  for(var i=start;i<end;i++){h+=uCard(mw[i],'compact',{showFocus:true});}
+  h+='</div>';
   $('sWatching').innerHTML=h;
 }
 
@@ -2816,13 +2819,15 @@ function _renderSetupsPage(page){
   var isCol=false;try{var _v=localStorage.getItem('sec_col_setups');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Setups <span class="dim" style="font-size:12px;font-weight:400">('+merged.length+')</span></h2>';
   h+='<div id="secBody_setups" style="'+(isCol?'display:none':'')+'">';
-  for(var i=start;i<end;i++){h+=uCard(merged[i],'compact',{showFocus:true});}
-  // Pagination bar
-  h+='<div style="display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 0;font-size:11px">';
+  // Pagination bar (top, sticky)
+  h+='<div style="display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 0;font-size:11px;position:sticky;top:0;background:#0d1117;z-index:5;border-bottom:1px solid #21262d;margin-bottom:4px">';
   if(page>1)h+='<a href="javascript:void(0)" onclick="_renderSetupsPage('+(page-1)+')" style="color:#58a6ff;text-decoration:none">\u25c0 Prev</a>';
-  h+='<span class="dim">Page '+page+' of '+totalPages+' ('+merged.length+' setups)</span>';
+  for(var _pg=1;_pg<=totalPages;_pg++){h+='<a href="javascript:void(0)" onclick="_renderSetupsPage('+_pg+')" style="color:'+(_pg===page?'#e6edf3':'#484f58')+';text-decoration:none;font-weight:'+(_pg===page?'700':'400')+'">'+_pg+'</a>';}
   if(page<totalPages)h+='<a href="javascript:void(0)" onclick="_renderSetupsPage('+(page+1)+')" style="color:#58a6ff;text-decoration:none">Next \u25b6</a>';
-  h+='</div></div>';
+  h+='<span class="dim" style="margin-left:8px">('+merged.length+')</span>';
+  h+='</div>';
+  for(var i=start;i<end;i++){h+=uCard(merged[i],'compact',{showFocus:true});}
+  h+='</div>';
   $('sSetups').innerHTML=h;
 }
 
