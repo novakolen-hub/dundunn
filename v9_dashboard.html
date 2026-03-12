@@ -1,4 +1,4 @@
-<!-- v11.23.4 cache-bust 1772729951.8953855 -->
+<!-- v11.23.5 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1358,7 +1358,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.4</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.5</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1617,7 +1617,8 @@ function rAreteEmails(d){
         h+='<span class="ae-arrow">'+(emailOpenState?'\u25bc':'\u25b6')+'</span>';
         h+='</div>';
         var emailOpenState=dayOpen&&!emailIsRead;h+='<div class="ae-body" id="'+uid+'" style="'+(emailOpenState?'':'display:none')+'">';
-        var body=e(em.body||'');
+        var body=e(em.body||'').replace(/\n\n/g,'</p><p style="margin:8px 0">').replace(/\n/g,'<br>');
+        body='<p style="margin:8px 0">'+body+'</p>';
         body=body.replace(/\$([A-Z]{1,5})\b/g,function(m,tk){return '<span class="ae-ticker" onclick="openPT(\''+tk+'\')">$'+tk+'</span>';});
         body=body.replace(/(^|[\s,;:(])([A-Z]{2,5})(\s|[,;:)\.]|$)/g,function(m,pre,tk,post){if(_tq[tk])return pre+'<span class="ae-ticker" onclick="openPT(\''+tk+'\')">'+tk+'</span>'+post;return m;});
         h+=body;
@@ -1634,18 +1635,19 @@ function rAreteEmails(d){
     for(var vi=0;vi<Math.min(ytVids.length,6);vi++){
       var v=ytVids[vi];var vtId='ae_yt_'+vi;
       var ytIsWatched=_isAreteChecked(vtId);
+      var _ytCollapsed=ytIsWatched||vi>0; // watched=collapsed, all but first collapsed
       h+='<div class="ae-day" style="'+(ytIsWatched?'opacity:0.5':'')+';padding:6px 8px;margin-bottom:6px">';
       // Title + controls
       h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">';
       h+='<div style="flex:1;min-width:0">';
-      h+='<div style="font-size:13px;color:#e6edf3;font-weight:600;line-height:1.3">'+e(v.title||'')+'</div>';
+      h+='<div style="font-size:13px;color:#e6edf3;font-weight:600;line-height:1.3;cursor:pointer" onclick="var p=document.getElementById(\'ytPlayer_'+vi+'\');if(p){var s=p.style.display===\'none\';p.style.display=s?\'\':\'none\';p.style.paddingBottom=s?\'56.25%\':\'0\'}">'+(_ytCollapsed?'\u25b6 ':'\u25bc ')+e(v.title||'')+'</div>';
       h+='<div style="display:flex;gap:8px;align-items:center;margin-top:3px">';
       h+='<span class="dim" style="font-size:10px">'+e(v.date||'')+'</span>';
       h+='<a href="https://youtu.be/'+e(v.id)+'" target="_blank" style="font-size:10px;color:#58a6ff;text-decoration:none">Open in app \u2197</a>';
       h+='<span class="arete-check'+(ytIsWatched?' done':'')+'" onclick="event.stopPropagation();toggleAreteWatch(\''+vtId+'\',this)">'+(ytIsWatched?'\u2705 watched':'\u25b6 unwatched')+'</span>';
       h+='</div></div></div>';
-      // Large 16:9 player area
-      h+='<div id="ytPlayer_'+vi+'" style="position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:6px;overflow:hidden;cursor:pointer" onclick="playYTInline(\''+e(v.id)+'\','+vi+')">';
+      // Large 16:9 player area (collapsed if watched or not newest)
+      h+='<div id="ytPlayer_'+vi+'" style="position:relative;width:100%;padding-bottom:'+(_ytCollapsed?'0':'56.25%')+';background:#000;border-radius:6px;overflow:hidden;cursor:pointer;'+(_ytCollapsed?'display:none':'')+'" onclick="playYTInline(\''+e(v.id)+'\','+vi+')">';
       if(v.thumb){h+='<img src="'+e(v.thumb).replace('/default.jpg','/hqdefault.jpg').replace('/sddefault.jpg','/hqdefault.jpg')+'" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover" loading="lazy">';}
       h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3)">';
       h+='<div style="width:56px;height:56px;background:rgba(255,0,0,0.85);border-radius:12px;display:flex;align-items:center;justify-content:center">';
