@@ -1,4 +1,4 @@
-<!-- v11.25.6 cache-bust 1772729951.8953855 -->
+<!-- v11.25.7 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -688,8 +688,8 @@ function uCard(tk, mode, opts) {
   h += '<div class="uc-actions">';
   if (opts.showModal !== false) h += '<span class="uc-btn" onclick="event.stopPropagation();openPT(\'' + tk + '\')">Scorecard</span>';
   if (opts.showFocus !== false) {
-    var isFocused = _focusedTickers && _focusedTickers.has(tk);
-    h += '<span class="uc-btn" onclick="event.stopPropagation();' + (isFocused ? '_focusedTickers.delete(\'' + tk + '\')' : '_focusedTickers.add(\'' + tk + '\')') + ';saveFocused();R(_lastD);">' + (isFocused ? '\u2715 unfocus' : 'focus') + '</span>';
+    var _ucIsFocused = _focusedTickers && _focusedTickers.has(tk);
+    h += '<span class="uc-btn" onclick="event.stopPropagation();' + (_ucIsFocused ? '_focusedTickers.delete(\'' + tk + '\')' : '_focusedTickers.add(\'' + tk + '\')') + ';saveFocused();R(_lastD);">' + (_ucIsFocused ? '\u2715 unfocus' : 'focus') + '</span>';
   }
   h += '</div>';
 
@@ -1257,7 +1257,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.6</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.7</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
