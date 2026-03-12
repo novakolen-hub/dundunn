@@ -1,4 +1,4 @@
-<!-- v11.23.2 cache-bust 1772729951.8953855 -->
+<!-- v11.23.3 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1358,7 +1358,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='📡 V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.2</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.23.3</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2098,7 +2098,8 @@ function rBreadth(d){
 
   // ── 2. REGIME MODIFIERS — VIX + HYG/TLT + BTC + ES/NQ ──
   var vixIt=fBD('$VIX');
-  var vixVal=d.tsVix?parseFloat(d.tsVix):(vixIt?parseFloat(String(vixIt.val||'')):NaN);
+  var _ipVix=(d.instPulse&&d.instPulse.data&&d.instPulse.data.vol_regime)?d.instPulse.data.vol_regime.vix:null;
+  var vixVal=_ipVix?parseFloat(_ipVix):(d.tsVix?parseFloat(d.tsVix):(vixIt?parseFloat(String(vixIt.val||'')):NaN));
   var vixPts=isNaN(vixVal)?0:vixVal<15?1:vixVal<=18?0.5:0;
 
   // HYG/TLT from INTERMARKET RATIOS
@@ -2879,10 +2880,10 @@ function rInst(d){
   if(term.vix9d||term.vix3m){
     var tsCol=term.signal==='danger'?'#f85149':term.signal==='caution'?'#d29922':term.signal==='calm'?'#3fb950':'#e3b341';
     h+='<div class="inst-box" style="border-left-color:'+tsCol+'">';
-    h+='<p style="color:'+tsCol+';font-weight:700;font-size:13px;margin-bottom:8px">📐 VIX Term Structure: <span>'+
+    h+='<p style="color:'+tsCol+';font-weight:700;font-size:13px;margin-bottom:16px">VIX Term Structure: <span>'+
       (term.state||'UNKNOWN').replace(/_/g,' ')+'</span></p>';
     // Mini term structure visualization
-    h+='<div style="display:flex;align-items:flex-end;gap:8px;margin:8px 0 12px;height:70px">';
+    h+='<div style="display:flex;align-items:flex-end;gap:10px;margin:16px 0 16px;height:75px">';
     var tsVals=[{l:'1D',v:term.vix1d},{l:'9D',v:term.vix9d},{l:'VIX',v:term.vix},{l:'3M',v:term.vix3m},{l:'6M',v:term.vix6m}];
     var tsMax=0;for(var ti=0;ti<tsVals.length;ti++){if(tsVals[ti].v&&tsVals[ti].v>tsMax)tsMax=tsVals[ti].v;}
     if(tsMax>0){for(var ti=0;ti<tsVals.length;ti++){
