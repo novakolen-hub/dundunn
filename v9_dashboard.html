@@ -1,4 +1,4 @@
-<!-- v11.25.1 cache-bust 1772729951.8953855 -->
+<!-- v11.25.2 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -885,7 +885,9 @@ _lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if
       if(!_wq.setup&&_wt.setup)_wq.setup=_wt.setup;
     }
   }
-  buildTkNews(d);rTimer(d);rHdr(d);rGP(d);rToday(d);rBreadth(d);rInst(d);rStory(d);rSectors(d);rSess(d);rRatios(d);rTradeCandidates(d);rInPlay(d);rActiveSetups(d);rWatching(d);rSetups(d);rAreteEmails(d);rEcon(d);rEarnings(d);rNews(d);rBook(d);rAreteBook(d);rInv(d);rCoach(d);rFocused(d);rHidden(d);rFoot(d);initSparkTips();initNewsRead();reapplyFocus();
+  var _rfns=[['buildTkNews',buildTkNews],['rTimer',rTimer],['rHdr',rHdr],['rGP',rGP],['rToday',rToday],['rBreadth',rBreadth],['rInst',rInst],['rStory',rStory],['rSectors',rSectors],['rSess',rSess],['rRatios',rRatios],['rTradeCandidates',rTradeCandidates],['rInPlay',rInPlay],['rActiveSetups',rActiveSetups],['rWatching',rWatching],['rSetups',rSetups],['rAreteEmails',rAreteEmails],['rEcon',rEcon],['rEarnings',rEarnings],['rNews',rNews],['rBook',rBook],['rAreteBook',rAreteBook],['rInv',rInv],['rCoach',rCoach],['rFocused',rFocused],['rHidden',rHidden],['rFoot',rFoot]];
+  for(var _ri=0;_ri<_rfns.length;_ri++){try{_rfns[_ri][1](d);}catch(_re){console.error('RENDER ERROR in '+_rfns[_ri][0]+':',_re.message);}}
+  try{initSparkTips();}catch(e){}try{initNewsRead();}catch(e){}try{reapplyFocus();}catch(e){}
   // Restore textarea focus
   if(_noteId){var _el=document.getElementById(_noteId);if(_el){_el.focus();_el.selectionStart=_el.selectionEnd=_noteCur;}}
   // Cross-page: open modal from URL param (Chart Wall → Dashboard)
@@ -1249,7 +1251,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.1</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.2</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2751,34 +2753,27 @@ function rAreteBook(d){
 function rWatching(d){
   var mw=d.myWatching||[];
   if(!mw.length){$('sWatching').innerHTML='';return;}
-  // Enrich _tq
   for(var i=0;i<mw.length;i++){if(!_tq[mw[i]])_tq[mw[i]]={};}
+  window._watchList=mw;
+  _renderWatchPage(1);
+}
+var _WATCH_PER_PAGE=30;
+function _renderWatchPage(page){
+  var mw=window._watchList||[];
+  var totalPages=Math.ceil(mw.length/_WATCH_PER_PAGE);
+  page=Math.max(1,Math.min(page,totalPages));
+  var start=(page-1)*_WATCH_PER_PAGE;
+  var end=Math.min(start+_WATCH_PER_PAGE,mw.length);
   var isCol=true;try{var _v=localStorage.getItem('sec_col_watch');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span></h2>';
   h+='<div id="secBody_watch" style="'+(isCol?'display:none':'')+'">';
-  var CHUNK=20;
-  for(var i=0;i<Math.min(mw.length,CHUNK);i++){
-    h+=uCard(mw[i],'compact',{showFocus:true});
-  }
-  h+='<div id="watchMore"></div>';
-  if(mw.length>CHUNK)h+='<div id="watchLoading" style="text-align:center;padding:8px;font-size:11px;color:#484f58">Loading '+(mw.length-CHUNK)+' more...</div>';
-  h+='</div>';
+  for(var i=start;i<end;i++){h+=uCard(mw[i],'compact',{showFocus:true});}
+  h+='<div style="display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 0;font-size:11px">';
+  if(page>1)h+='<a href="javascript:void(0)" onclick="_renderWatchPage('+(page-1)+')" style="color:#58a6ff;text-decoration:none">\u25c0 Prev</a>';
+  h+='<span class="dim">Page '+page+' of '+totalPages+' ('+mw.length+' tickers)</span>';
+  if(page<totalPages)h+='<a href="javascript:void(0)" onclick="_renderWatchPage('+(page+1)+')" style="color:#58a6ff;text-decoration:none">Next \u25b6</a>';
+  h+='</div></div>';
   $('sWatching').innerHTML=h;
-  if(mw.length>CHUNK){
-    var _ci=CHUNK;
-    function _loadWChunk(){
-      var more=document.getElementById('watchMore');
-      if(!more)return;
-      var end=Math.min(_ci+CHUNK,mw.length);
-      var ch='';
-      for(var j=_ci;j<end;j++){ch+=uCard(mw[j],'compact',{showFocus:true});}
-      more.insertAdjacentHTML('beforeend',ch);
-      _ci=end;
-      if(_ci<mw.length){setTimeout(_loadWChunk,50);}
-      else{var ld=document.getElementById('watchLoading');if(ld)ld.remove();}
-    }
-    setTimeout(_loadWChunk,100);
-  }
 }
 
 function rSetups(d){
@@ -2787,8 +2782,7 @@ function rSetups(d){
   var seen={},merged=[];
   for(var i=0;i<ip.length;i++){
     var sym=ip[i].symbol||'';if(!sym||seen[sym])continue;seen[sym]=1;
-    if(!_tq[sym])_tq[sym]={};
-    var qt=_tq[sym];
+    if(!_tq[sym])_tq[sym]={};var qt=_tq[sym];
     if(!qt.last&&ip[i].last)qt.last=parseFloat(ip[i].last).toFixed(2);
     if(!qt.chg&&ip[i].netPct)qt.chg=(parseFloat(ip[i].netPct)>0?'+':'')+parseFloat(ip[i].netPct).toFixed(2)+'%';
     if(!qt.conf&&ip[i].confluence)qt.conf=String(ip[i].confluence);
@@ -2798,8 +2792,7 @@ function rSetups(d){
   }
   for(var i=0;i<w.length;i++){
     var sym=w[i].ticker||'';if(!sym||seen[sym])continue;seen[sym]=1;
-    if(!_tq[sym])_tq[sym]={};
-    var qt=_tq[sym];
+    if(!_tq[sym])_tq[sym]={};var qt=_tq[sym];
     if(!qt.last&&w[i].last)qt.last=String(w[i].last);
     if(!qt.chg&&w[i].chg)qt.chg=String(w[i].chg);
     if(!qt.conf&&w[i].confluence)qt.conf=String(w[i].confluence);
@@ -2808,34 +2801,29 @@ function rSetups(d){
   }
   merged.sort(function(a,b){return parseFloat(_tq[b]&&_tq[b].conf||0)-parseFloat(_tq[a]&&_tq[a].conf||0);});
   if(!merged.length){$('sSetups').innerHTML='';return}
+  // Store for pagination
+  window._setupsMerged=merged;
+  _renderSetupsPage(1);
+}
+var _SETUPS_PER_PAGE=30;
+function _renderSetupsPage(page){
+  var merged=window._setupsMerged||[];
+  var totalPages=Math.ceil(merged.length/_SETUPS_PER_PAGE);
+  page=Math.max(1,Math.min(page,totalPages));
+  window._setupsPage=page;
+  var start=(page-1)*_SETUPS_PER_PAGE;
+  var end=Math.min(start+_SETUPS_PER_PAGE,merged.length);
   var isCol=false;try{var _v=localStorage.getItem('sec_col_setups');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Setups <span class="dim" style="font-size:12px;font-weight:400">('+merged.length+')</span></h2>';
   h+='<div id="secBody_setups" style="'+(isCol?'display:none':'')+'">';
-  // Render first 20 immediately
-  var CHUNK=20;
-  for(var i=0;i<Math.min(merged.length,CHUNK);i++){
-    h+=uCard(merged[i],'compact',{showFocus:true});
-  }
-  h+='<div id="setupsMore"></div>';
-  if(merged.length>CHUNK)h+='<div id="setupsLoading" style="text-align:center;padding:8px;font-size:11px;color:#484f58">Loading '+(merged.length-CHUNK)+' more...</div>';
-  h+='</div>';
+  for(var i=start;i<end;i++){h+=uCard(merged[i],'compact',{showFocus:true});}
+  // Pagination bar
+  h+='<div style="display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 0;font-size:11px">';
+  if(page>1)h+='<a href="javascript:void(0)" onclick="_renderSetupsPage('+(page-1)+')" style="color:#58a6ff;text-decoration:none">\u25c0 Prev</a>';
+  h+='<span class="dim">Page '+page+' of '+totalPages+' ('+merged.length+' setups)</span>';
+  if(page<totalPages)h+='<a href="javascript:void(0)" onclick="_renderSetupsPage('+(page+1)+')" style="color:#58a6ff;text-decoration:none">Next \u25b6</a>';
+  h+='</div></div>';
   $('sSetups').innerHTML=h;
-  // Chunked load the rest
-  if(merged.length>CHUNK){
-    var _ci=CHUNK;
-    function _loadChunk(){
-      var more=document.getElementById('setupsMore');
-      if(!more)return;
-      var end=Math.min(_ci+CHUNK,merged.length);
-      var ch='';
-      for(var j=_ci;j<end;j++){ch+=uCard(merged[j],'compact',{showFocus:true});}
-      more.insertAdjacentHTML('beforeend',ch);
-      _ci=end;
-      if(_ci<merged.length){setTimeout(_loadChunk,50);}
-      else{var ld=document.getElementById('setupsLoading');if(ld)ld.remove();}
-    }
-    setTimeout(_loadChunk,100);
-  }
 }
 
 // ═══ PORTFOLIO RISK (exposure + correlation + Opus recommendations merged) ═══
