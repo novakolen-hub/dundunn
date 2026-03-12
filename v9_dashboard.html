@@ -1,4 +1,4 @@
-<!-- v11.24.5 cache-bust 1772729951.8953855 -->
+<!-- v11.24.6 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -279,11 +279,9 @@
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_stocks">
-<div id="sTradeCandidates"></div>
-<div id="sInPlay"></div>
-<div id="sActiveSetups"></div>
-<div id="sWatching"></div>
+<div id="sFocused"></div>
 <div id="sSetups"></div>
+<div id="sWatching"></div>
 </div></div>
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('intel')"><span class="grp-arrow" id="grpArrow_intel">▼</span> INTELLIGENCE<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
@@ -303,7 +301,6 @@
 <div class="grp-hdr" onclick="toggleGroup('reference')"><span class="grp-arrow" id="grpArrow_reference">▼</span> REFERENCE<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('reference',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('reference',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_reference">
 <div id="sCoach"></div>
-<div id="sFocused"></div>
 </div></div>
 <div id="sHidden" style="display:none"></div>
 <div class="footer" id="foot">THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><a href=\'v9_chartwall.html\' target=\'_blank\' style=\'color:#58a6ff;font-size:10px\'>Open Chart Wall \u2192</a><br><small>V9 Dashboard · Polling 60s</small></div>
@@ -704,67 +701,7 @@ function ucToggle(id) {
   if (arr) arr.textContent = show ? '\u25bc' : '\u25b6';
 }
 
-function rTradeCandidates(d){
-  var el=$('sTradeCandidates');if(!el)return;
-  var sm=d.gpSubMode,gp=d.gpLetter||'C';
-  var subModeLabel=(sm&&sm.subMode)?sm.subMode:'';
-  var tqKeys=Object.keys(_tq||{});
-  var candidates=[];
-  // Pull from _tq
-  for(var i=0;i<tqKeys.length;i++){
-    var tk=tqKeys[i],q=_tq[tk];
-    if(!q||!q.setup||!q.last)continue;
-    if(tk.charAt(0)==='$'||tk.charAt(0)==='/')continue;
-    var key=_matchSetupKey(q.setup);if(!key)continue;
-    var chk=_cSGP(key,subModeLabel,gp);if(!chk.ok)continue;
-    var gr=quickGrade(tk,key,subModeLabel,gp,'LONG');
-    if(!gr||gr.grade==='F')continue;
-    candidates.push({ticker:tk,key:key,grade:gr,q:q,caution:chk.caution});
-  }
-  // Fallback: also pull from inPlayToday when _tq is sparse
-  if(candidates.length<4&&d.inPlayToday){
-    var _seen={};for(var ci2=0;ci2<candidates.length;ci2++)_seen[candidates[ci2].ticker]=1;
-    for(var ipi=0;ipi<d.inPlayToday.length;ipi++){
-      var ipt=d.inPlayToday[ipi],sym=ipt.symbol||'';
-      if(_seen[sym]||!sym)continue;
-      if(!_tq[sym])_tq[sym]={};
-      var qt=_tq[sym];
-      if(!qt.last&&ipt.last)qt.last=parseFloat(ipt.last).toFixed(2);
-      if(!qt.chg&&ipt.netPct)qt.chg=(parseFloat(ipt.netPct)>0?'+':'')+parseFloat(ipt.netPct).toFixed(2)+'%';
-      if(!qt.conf&&ipt.confluence)qt.conf=String(ipt.confluence);
-      if(!qt.setup&&ipt.setup)qt.setup=ipt.setup;
-      if(!qt.rvol&&ipt.rvol)qt.rvol=String(ipt.rvol);
-      if(!qt.gap&&ipt.gapPct)qt.gap=String(ipt.gapPct);
-      if(!qt.rs&&ipt.relStr)qt.rs=String(ipt.relStr);
-      var key2=_matchSetupKey(qt.setup);
-      if(key2){
-        var gr2=quickGrade(sym,key2,subModeLabel,gp,'LONG');
-        if(gr2&&gr2.grade!=='F')candidates.push({ticker:sym,key:key2,grade:gr2,q:qt,caution:false});
-        _seen[sym]=1;
-      }
-    }
-  }
-  var gradeOrder={A:0,B:1,C:2,F:3};
-  candidates.sort(function(a,b){var gd=(gradeOrder[a.grade.grade]||3)-(gradeOrder[b.grade.grade]||3);if(gd!==0)return gd;return(parseFloat(b.q.conf)||0)-(parseFloat(a.q.conf)||0);});
-  candidates=candidates.slice(0,8);
-  if(!candidates.length){el.innerHTML='<div class="tc-section"><div class="tc-hdr">Top Setups · '+e(subModeLabel||'GP-'+gp)+'</div><div style="padding:12px;color:#484f58;font-size:11px;text-align:center">No qualifying setups right now. Waiting for scanner data.</div></div>';return;}
-  // Build In Play reasons map
-  var ipMap={};if(d.inPlayToday)for(var ip=0;ip<d.inPlayToday.length;ip++){var ipt=d.inPlayToday[ip];if(ipt.symbol)ipMap[ipt.symbol]=ipt;}
-  var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
-  var h='<div class="tc-section"><div class="tc-hdr">Trade Candidates · '+e(subModeLabel||'GP-'+gp)+' <span class="dim" style="font-size:10px">('+candidates.length+')</span></div>';
-  for(var ci=0;ci<candidates.length;ci++){
-    var cd=candidates[ci];
-    var ipInfo=ipMap[cd.ticker];
-    h+=uCard(cd.ticker,'compact',{
-      reasons:ipInfo?ipInfo.reasons:[],
-      areteInfo:areteMap[cd.ticker]||null,
-      showModal:true,
-      showFocus:true
-    });
-  }
-  h+='</div>';
-  el.innerHTML=h;
-}
+function rTradeCandidates(d){}
 
 function _parseSetup(raw){
   if(!raw||raw==='-')return{primary:'',score:0,secondary:'',score2:0};
@@ -795,60 +732,8 @@ function _matchSetupKey(s){
 }
 
 // ═══ Render Active Setups Bar ═══
-function rActiveSetups(d){
-  var el=$('sActiveSetups');if(!el)return;
-  var sm=d.gpSubMode,gp=d.gpLetter||'C';
-  var subModeLabel=(sm&&sm.subMode)?sm.subMode:'';
-  var sizAdj=(sm&&sm.sizingAdj)?sm.sizingAdj:'';
-  if(!subModeLabel){el.innerHTML='';return;}
+function rActiveSetups(d){}
 
-  var allowed=[],caution=[],blocked=[];
-  var keys=Object.keys(C_REGISTRY);
-  for(var i=0;i<keys.length;i++){
-    var k=keys[i],chk=_cSGP(k,subModeLabel,gp);
-    if(chk.ok&&!chk.caution)allowed.push({key:k,r:C_REGISTRY[k]});
-    else if(chk.ok&&chk.caution)caution.push({key:k,r:C_REGISTRY[k]});
-    else blocked.push({key:k,r:C_REGISTRY[k]});
-  }
-
-  // Count matching tickers per setup from quotes
-  var setupCounts={};
-  var tqKeys=Object.keys(_tq||{});
-  for(var j=0;j<tqKeys.length;j++){
-    var tq=_tq[tqKeys[j]];
-    if(tq&&tq.setup){
-      var mk=_matchSetupKey(tq.setup);
-      if(mk){setupCounts[mk]=(setupCounts[mk]||0)+1;}
-    }
-  }
-
-  var h='<div class="as-bar"><div class="as-hdr">Active Setups · '+e(subModeLabel);
-  var hotSecs=d.hotSectors||[];
-  for(var hs=0;hs<hotSecs.length;hs++)h+=' <span class="hot-pill">'+e(hotSecs[hs])+'</span>';
-  h+='</div><div class="as-pills">';
-  for(var a=0;a<allowed.length;a++){
-    var ct=setupCounts[allowed[a].key]||0;
-    h+='<span class="as-pill as-ok" title="'+e(allowed[a].r.nature)+' · RVOL≥'+allowed[a].r.minRVOL+'">'+e(allowed[a].r.label);
-    if(ct>0)h+=' <span class="as-ct">'+ct+'</span>';
-    h+='</span>';
-  }
-  for(var c=0;c<caution.length;c++){
-    var ct2=setupCounts[caution[c].key]||0;
-    h+='<span class="as-pill as-warn" title="Caution: '+e(caution[c].r.label)+' higher risk in '+e(subModeLabel)+'">'+e(caution[c].r.label);
-    if(ct2>0)h+=' <span class="as-ct">'+ct2+'</span>';
-    h+=' △</span>';
-  }
-  h+='</div>';
-  if(blocked.length){
-    h+='<div class="as-blocked">Blocked: '+blocked.map(function(b){return b.r.label}).join(' · ')+'</div>';
-  }
-  h+='</div>';
-  el.innerHTML=h;
-}
-
-var SN={SOXX:'Semis',SMH:'Semis',XLK:'Tech',XLY:'Cons Disc',XLF:'Financials',XLI:'Industrials',XLC:'Comm Svcs',IWM:'Small Cap',XLU:'Utilities',XLP:'Staples',XLV:'Healthcare',XLE:'Energy',XLB:'Materials'};
-var _SEC={NVDA:'Semis',AMD:'Semis',AVGO:'Semis',TSM:'Semis',MU:'Semis',MRVL:'Semis',INTC:'Semis',QCOM:'Semis',ARM:'Semis',KLAC:'Semis',LRCX:'Semis',AMAT:'Semis',ASML:'Semis',ADI:'Semis',SMCI:'Semis',SMTC:'Semis',ONTO:'Semis',ACLS:'Semis',MSFT:'Software',ORCL:'Software',CRM:'Software',NOW:'Software',ADBE:'Software',PLTR:'Software',SNOW:'Software',DDOG:'Software',MDB:'Software',NET:'Software',PANW:'Software',CRWD:'Software',ZS:'Software',FTNT:'Software',AAPL:'Mega Tech',GOOGL:'Mega Tech',GOOG:'Mega Tech',AMZN:'Mega Tech',META:'Mega Tech',NFLX:'Mega Tech',TSLA:'Mega Tech',CRDO:'Networking',ALAB:'Networking',CSCO:'Networking',JNPR:'Networking',CIEN:'Networking',ANET:'Networking',GLW:'Networking',COHR:'Networking',LITE:'Networking',RMBS:'Networking',EQIX:'Data Centers',SKYT:'Data Centers',IREN:'Data Centers',NBIS:'Data Centers',APLD:'Data Centers',JPM:'Financials',GS:'Financials',MS:'Financials',BAC:'Financials',V:'Financials',MA:'Financials',BLK:'Financials',COIN:'Crypto',MSTR:'Crypto',HOOD:'Crypto',IONQ:'Quantum',QBTS:'Quantum',RGTI:'Quantum',RKLB:'Space',OKLO:'Space',LMT:'Defense',RTX:'Defense',NOC:'Defense',XOM:'Energy',CVX:'Energy',SLB:'Energy',OXY:'Energy',LLY:'Pharma',UNH:'Healthcare',JNJ:'Healthcare',PFE:'Pharma',ABBV:'Pharma',BA:'Aero',CAT:'Industrial',DE:'Industrial',WMT:'Retail',COST:'Retail',HD:'Retail',LOW:'Retail',TGT:'Retail',UBER:'Transport',ABNB:'Travel',SQ:'Fintech',SHOP:'E-Commerce',DIS:'Media',BABA:'China',JD:'China',PDD:'China',BIDU:'China',RIVN:'EV',SPOT:'Media'};
-var GPC={A:'g',B:'b',C:'y',D:'r'};
 function $(i){return document.getElementById(i)}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 var _ic={};
@@ -1360,7 +1245,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.5</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.6</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2287,45 +2172,22 @@ function rStory(d){}
 
 // ═══ IN PLAY TODAY (v90.5) ═══
 function rInPlay(d){
-  var items=d.inPlayToday;
-  if(!items||items.length===0){$('sInPlay').innerHTML='';return;}
-  var isCol=false;try{var _v=localStorage.getItem('sec_col_inplay');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="color:#d2a8ff;cursor:pointer;user-select:none" onclick="toggleSec(\'inplay\')"><span id="secArrow_inplay" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> In Play Today <span class="dim" style="font-size:11px;font-weight:400">('+items.length+' tickers)</span></h2>';
-  h+='<div id="secBody_inplay" style="'+(isCol?'display:none':'')+'">';
-  var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
-  for(var i=0;i<Math.min(items.length,20);i++){
-    var it=items[i],sym=it.symbol||'';
-    // Ensure _tq has data from inPlayToday if not already populated
+  // Data enrichment only — no rendering (merged into Setups)
+  var items=d.inPlayToday||[];
+  for(var i=0;i<items.length;i++){
+    var sym=items[i].symbol||'';
     if(!_tq[sym])_tq[sym]={};
     var _qt=_tq[sym];
-    if(!_qt.last&&it.last)_qt.last=parseFloat(it.last).toFixed(2);
-    if(!_qt.chg&&it.netPct)_qt.chg=(parseFloat(it.netPct)>0?'+':'')+parseFloat(it.netPct).toFixed(2)+'%';
-    if(!_qt.conf&&it.confluence)_qt.conf=String(it.confluence);
-    if(!_qt.setup&&it.setup)_qt.setup=it.setup;
-    if(!_qt.rvol&&it.rvol)_qt.rvol=String(it.rvol);
-    if(!_qt.gap&&it.gapPct)_qt.gap=String(it.gapPct);
-    if(!_qt.rs&&it.relStr)_qt.rs=String(it.relStr);
-    h+=uCard(sym,'compact',{
-      reasons:it.reasons||[],
-      areteInfo:areteMap[sym]||null,
-      showModal:true,
-      showFocus:true
-    });
+    if(!_qt.last&&items[i].last)_qt.last=parseFloat(items[i].last).toFixed(2);
+    if(!_qt.chg&&items[i].netPct)_qt.chg=(parseFloat(items[i].netPct)>0?'+':'')+parseFloat(items[i].netPct).toFixed(2)+'%';
+    if(!_qt.conf&&items[i].confluence)_qt.conf=String(items[i].confluence);
+    if(!_qt.setup&&items[i].setup)_qt.setup=items[i].setup;
+    if(!_qt.rvol&&items[i].rvol)_qt.rvol=String(items[i].rvol);
+    if(!_qt.gap&&items[i].gapPct)_qt.gap=String(items[i].gapPct);
+    if(!_qt.rs&&items[i].relStr)_qt.rs=String(items[i].relStr);
   }
-  h+='</div>';$('sInPlay').innerHTML=h;
 }
 
-// ═══ INVERSE ETFs ═══
-var INV_INFO={
-  'SOXS':{tracks:'3x inverse Semiconductors (SOX)',underlying:'SMH',use:'Semi weakness, chip export fears, NVDA/AMD breakdowns',when:'SOX breaking support, semis lagging QQQ, tariff/export ban news'},
-  'SQQQ':{tracks:'3x inverse Nasdaq-100',underlying:'QQQ',use:'Broad tech selloff, growth rotation, risk-off days',when:'QQQ below VWAP + breadth deteriorating, tech leading decline'},
-  'TECS':{tracks:'3x inverse Technology (XLK)',underlying:'XLK',use:'Tech sector weakness, narrowing leadership',when:'XLK underperforming SPY, tech breadth collapsing'},
-  'TSXD':{tracks:'1x inverse Tesla',underlying:'TSLA',use:'TSLA-specific bearish catalyst, earnings miss, delivery miss',when:'TSLA breaking key levels, negative headline risk'},
-  'UVXY':{tracks:'1.5x VIX Short-Term Futures',underlying:'VIX',use:'Volatility spike, fear event, hedging positions',when:'VIX term structure inverting, backwardation forming, pre-event hedge'},
-  'SPXS':{tracks:'3x inverse S&P 500',underlying:'SPY',use:'Broad market selloff',when:'SPY breaking support, breadth deeply negative'},
-  'TZA':{tracks:'3x inverse Russell 2000',underlying:'IWM',use:'Small cap weakness, credit tightening',when:'IWM diverging from SPY, small caps leading decline'},
-  'SH':{tracks:'1x inverse S&P 500',underlying:'SPY',use:'Conservative hedge, overnight protection',when:'Uncertain market, want limited downside exposure'}
-};
 function rInv(d){
   if((d.gpLetter||'C')!=='D'){$('sInverse').innerHTML='';return}
   var inv=gS(d,'INVERSE ETFs (GP-D)');
@@ -2916,18 +2778,48 @@ function rWatching(d){
 
 function rSetups(d){
   var w=d.watchlistTop||[];
-  var nar=d.dashboardNarrative||'',sec=parseN(nar),ts=gN(sec,['TOP SETUPS','SETUPS','WATCHLIST','SETUPS & WATCHLIST','ACTIONABLE','TRADE IDEAS','OPPORTUNITIES']);
-  if(!w.length&&!ts){$('sSetups').innerHTML='';return}
-  var isCol=true;try{var _v=localStorage.getItem('sec_col_setups');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Setups & Watchlist'+sortPills('setups')+'</h2>';
+  var ip=d.inPlayToday||[];
+  
+  // Merge watchlistTop + inPlayToday, dedupe by ticker
+  var seen={},merged=[];
+  // InPlay first (higher priority)
+  for(var i=0;i<ip.length;i++){
+    var sym=ip[i].symbol||'';if(!sym||seen[sym])continue;seen[sym]=1;
+    merged.push({ticker:sym,last:ip[i].last||'',chg:ip[i].netPct?((parseFloat(ip[i].netPct)>0?'+':'')+parseFloat(ip[i].netPct).toFixed(2)+'%'):'',
+      confluence:parseFloat(ip[i].confluence)||0,quality:ip[i].quality||'',setup:ip[i].setup||'',
+      section:ip[i].section||'IN PLAY',inPlay:true,rvol:ip[i].rvol||'',rs:ip[i].relStr||''});
+  }
+  // Then watchlistTop
+  for(var i=0;i<w.length;i++){
+    var sym=w[i].ticker||'';if(!sym||seen[sym])continue;seen[sym]=1;
+    merged.push({ticker:sym,last:w[i].last||'',chg:w[i].chg||'',
+      confluence:parseFloat(w[i].confluence)||0,quality:w[i].quality||'',setup:w[i].setup||'',
+      section:w[i].section||'',inPlay:false});
+  }
+  // Sort by confluence descending
+  merged.sort(function(a,b){return b.confluence-a.confluence;});
+
+  if(!merged.length){$('sSetups').innerHTML='';return}
+  
+  var isCol=false;try{var _v=localStorage.getItem('sec_col_setups');if(_v!==null)isCol=_v==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Setups <span class="dim" style="font-size:12px;font-weight:400">('+merged.length+')</span></h2>';
   h+='<div id="secBody_setups" style="'+(isCol?'display:none':'')+'">';
-  // Opus narrative first
-  if(ts)h+='<div class="alert-box">'+fmt(ts)+'</div>';
-  // Confluence table
-  if(w.length){var seen={};h+='<div class="info-box"><table><tr><th>Ticker</th><th>Last</th><th>Chg</th><th>Conf</th><th>Qual</th><th>Setup</th><th style="font-size:10px">Section</th></tr>';
-    for(var i=0;i<Math.min(w.length,20);i++){var it=w[i];if(seen[it.ticker])continue;seen[it.ticker]=1;var cc=it.confluence>=28?'g':it.confluence>=24?'b':it.confluence>=20?'y':it.confluence>=16?'dim':'r';var qc=it.quality==='A+'?'q-aplus':it.quality==='Solid'?'q-solid':it.quality==='Playbook'?'q-playbook':it.quality==='Watch'?'q-watch':'q-skip';
-      h+='<tr><td class="tc">'+tkLink(it.ticker)+'</td><td>'+e(it.last)+'</td><td>'+pct(it.chg)+'</td><td class="'+cc+' bold mono">'+it.confluence.toFixed(1)+'</td><td class="'+qc+' bold" style="font-size:11px">'+e(it.quality)+'</td><td class="dim">'+e(it.setup)+'</td><td class="dim" style="font-size:11px">'+e(it.section)+'</td></tr>';}
-    h+='</table></div>';}
+  
+  // Table view
+  h+='<div class="info-box" style="padding:0"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg</th><th>CF</th><th>Qual</th><th>Setup</th><th style="font-size:9px">Section</th></tr>';
+  for(var i=0;i<merged.length;i++){
+    var it=merged[i];
+    var cc=it.confluence>=28?'g':it.confluence>=24?'b':it.confluence>=20?'y':it.confluence>=16?'dim':'r';
+    var qc=it.quality==='A+'?'g':it.quality==='Solid'?'b':it.quality==='Playbook'?'y':it.quality==='Watch'?'dim':'r';
+    var rowBg=it.inPlay?'background:rgba(210,168,255,0.05)':'';
+    h+='<tr style="'+rowBg+'"><td class="tc white bold">'+tkLink(it.ticker)+(it.inPlay?' <span style="font-size:8px;color:#d2a8ff">IP</span>':'')+'</td>';
+    h+='<td class="mono">'+e(it.last)+'</td><td>'+pct(it.chg)+'</td>';
+    h+='<td class="'+cc+' bold mono">'+it.confluence.toFixed(1)+'</td>';
+    h+='<td class="'+qc+' bold" style="font-size:10px">'+e(it.quality)+'</td>';
+    h+='<td class="dim" style="font-size:10px">'+e(it.setup)+'</td>';
+    h+='<td class="dim" style="font-size:9px">'+e(it.section)+'</td></tr>';
+  }
+  h+='</table></div>';
   h+='</div>';
   $('sSetups').innerHTML=h;
 }
@@ -4240,7 +4132,7 @@ function toggleTodaySections(collapse){
 function toggleGroup(name){var body=document.getElementById('grpBody_'+name);var arrow=document.getElementById('grpArrow_'+name);if(!body)return;var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';if(arrow)arrow.textContent=isHidden?'\u25bc':'\u25b6';try{localStorage.setItem('v9_grp_'+name,isHidden?'1':'0');}catch(e){}}
 
 function toggleGroupSections(grp,collapse){
-  var map={market:['breadth','inter','intertk','pulse'],stocks:['inplay','watch','setups'],intel:['areteemails','econ','earn'],positions:['inv'],reference:['focused']};
+  var map={market:['breadth','inter','intertk','pulse'],stocks:['focused','setups','watch'],intel:['areteemails','econ','earn'],positions:['inv'],reference:['focused']};
   var keys=map[grp]||[];
   for(var i=0;i<keys.length;i++){
     var body=document.getElementById('secBody_'+keys[i]);
