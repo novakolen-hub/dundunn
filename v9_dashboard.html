@@ -1,4 +1,4 @@
-<!-- v11.24.8 cache-bust 1772729951.8953855 -->
+<!-- v11.24.9 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1249,7 +1249,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.8</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.9</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -4041,8 +4041,12 @@ try{
 poll();setInterval(poll,60000);
 window.addEventListener('scroll',function(){var b=document.getElementById('backToTop');if(b)b.style.display=window.scrollY>300?'flex':'none';});
 // Card focus: click any pos-block to highlight it white, click again to unhighlight
+// ═══ FOCUSED + CHART WALL MANAGEMENT ═══
+var _focusList=[];var _wallList=[];
+try{_focusList=JSON.parse(localStorage.getItem('v9_focused')||'[]');if(!_focusList.length){var _old=JSON.parse(localStorage.getItem('v9_card_focus')||'[]');if(_old.length){_focusList=_old;localStorage.setItem('v9_focused',JSON.stringify(_focusList));}}}catch(e){}
+try{_wallList=JSON.parse(localStorage.getItem('v9_wall')||'[]');}catch(e){}
 var _focusedTickers=new Set(_focusList);
-function saveFocused(){_focusList=Array.from(_focusedTickers);try{localStorage.setItem('v9_focused',JSON.stringify(_focusList));}catch(e){}}
+function saveFocused(){_focusList=Array.from(_focusedTickers);try{localStorage.setItem('v9_focused',JSON.stringify(_focusList));localStorage.setItem('v9_card_focus',JSON.stringify(_focusList));}catch(e){}}
 function reapplyFocus(){
   document.querySelectorAll('.pos-block').forEach(function(card){
     var link=card.querySelector('a[data-tk]');
@@ -4137,10 +4141,6 @@ function toggleTodaySections(collapse){
   }
 }
 
-// ═══ FOCUSED + CHART WALL MANAGEMENT ═══
-var _focusList=[];var _wallList=[];
-try{_focusList=JSON.parse(localStorage.getItem('v9_focused')||'[]');}catch(e){}
-try{_wallList=JSON.parse(localStorage.getItem('v9_wall')||'[]');}catch(e){}
 
 function toggleFocus(tk){
   var idx=_focusList.indexOf(tk);
