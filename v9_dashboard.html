@@ -1,4 +1,4 @@
-<!-- v11.24.7 cache-bust 1772729951.8953855 -->
+<!-- v11.24.8 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1249,7 +1249,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.7</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.24.8</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2811,12 +2811,15 @@ function rSetups(d){
   
   // Table view
   h+='<div class="info-box" style="padding:0"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg</th><th>CF</th><th>Qual</th><th>Setup</th><th style="font-size:9px">Section</th></tr>';
-  for(var i=0;i<merged.length;i++){
+  var _setupMax=30;
+  var _showAll=false;try{_showAll=localStorage.getItem('v9_setups_showall')==='1';}catch(e){}
+  var _dispCount=_showAll?merged.length:Math.min(merged.length,_setupMax);
+  for(var i=0;i<_dispCount;i++){
     var it=merged[i];
     var cc=it.confluence>=28?'g':it.confluence>=24?'b':it.confluence>=20?'y':it.confluence>=16?'dim':'r';
     var qc=it.quality==='A+'?'g':it.quality==='Solid'?'b':it.quality==='Playbook'?'y':it.quality==='Watch'?'dim':'r';
     var rowBg=it.inPlay?'background:rgba(210,168,255,0.05)':'';
-    h+='<tr style="'+rowBg+'"><td class="tc white bold">'+tkLink(it.ticker)+(it.inPlay?' <span style="font-size:8px;color:#d2a8ff">IP</span>':'')+'</td>';
+    h+='<tr style="'+rowBg+'"><td class="tc white bold">'+tkLink(it.ticker)+focusWallBtns(it.ticker)+(it.inPlay?' <span style="font-size:8px;color:#d2a8ff">IP</span>':'')+'</td>';
     h+='<td class="mono">'+e(it.last)+'</td><td>'+pct(it.chg)+'</td>';
     h+='<td class="'+cc+' bold mono">'+it.confluence.toFixed(1)+'</td>';
     h+='<td class="'+qc+' bold" style="font-size:10px">'+e(it.quality)+'</td>';
@@ -2824,6 +2827,11 @@ function rSetups(d){
     h+='<td class="dim" style="font-size:9px">'+e(it.section)+'</td></tr>';
   }
   h+='</table></div>';
+  if(merged.length>_setupMax&&!_showAll){
+    h+='<div style="text-align:center;padding:6px"><a href="javascript:void(0)" onclick="try{localStorage.setItem(\'v9_setups_showall\',\'1\')}catch(e){};if(_lastD)rSetups(_lastD)" style="color:#58a6ff;font-size:11px;text-decoration:none">Show all '+merged.length+' setups \u25bc</a></div>';
+  } else if(merged.length>_setupMax){
+    h+='<div style="text-align:center;padding:6px"><a href="javascript:void(0)" onclick="try{localStorage.setItem(\'v9_setups_showall\',\'0\')}catch(e){};if(_lastD)rSetups(_lastD)" style="color:#58a6ff;font-size:11px;text-decoration:none">Show top '+_setupMax+' \u25b2</a></div>';
+  }
   h+='</div>';
   $('sSetups').innerHTML=h;
 }
@@ -3073,34 +3081,29 @@ function rCoach(d){
 }
 
 function rFocused(d){
-  if(!_focusedTickers||!_focusedTickers.size){$('sFocused').innerHTML='';return;}
-  var tks=Array.from(_focusedTickers);
+  if(!_focusList||!_focusList.length){$('sFocused').innerHTML='';return;}
+  var tks=_focusList.slice();
   var posMap={};(d.positions||[]).forEach(function(p){posMap[p.ticker||p.sym]=p;});
   var areteMap={};(d.aretePositions||[]).forEach(function(p){if(p.ticker)areteMap[p.ticker]=p;});
-  var cm_map={};if(d.confluence){d.confluence.forEach(function(c2){if(c2.ticker)cm_map[c2.ticker]=c2;});}
-  tks=sortTickers(tks,cm_map,'focused');
-  // Opus watching notes
-  var opusMap={};
-  var nar=d.dashboardNarrative||'',sec=parseN(nar);
-  var wn=gN(sec,['WATCHING NOTES']);
-  if(wn){wn.split('\n').forEach(function(ln){ln=ln.trim();if(!ln||ln.indexOf('\u2014')<0)return;var parts=ln.split('\u2014'),tk=parts[0].replace(/\$/g,'').replace(/\*\*/g,'').trim().toUpperCase();var rest=(parts[1]||'').trim(),segs=rest.split('|');opusMap[tk]={bias:(segs[0]||'').trim(),levels:(segs[1]||'').trim(),thesis:(segs[2]||'').trim()};});}
-  // In Play reasons
-  var ipMap={};if(d.inPlayToday)for(var ip=0;ip<d.inPlayToday.length;ip++){var ipt=d.inPlayToday[ip];if(ipt.symbol)ipMap[ipt.symbol]=ipt;}
   var isCol=false;try{var _v=localStorage.getItem('sec_col_focused');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none;color:#0969da" onclick="toggleSec(\'focused\')"><span id="secArrow_focused" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">▼</span> Focused <span class="dim" style="font-size:12px;font-weight:400">('+tks.length+')</span>'+sortPills('focused')+' <span style="font-size:10px;color:#7d8590;font-weight:400;cursor:pointer" onclick="event.stopPropagation();_focusedTickers.clear();saveFocused();R(_lastD);">clear all</span></h2>';
+  var h='<h2 style="cursor:pointer;user-select:none;color:#d2a8ff" onclick="toggleSec(\'focused\')"><span id="secArrow_focused" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Focused <span class="dim" style="font-size:12px;font-weight:400">('+tks.length+')</span> <span style="font-size:10px;color:#7d8590;font-weight:400;cursor:pointer" onclick="event.stopPropagation();_focusList=[];try{localStorage.setItem(\'v9_focused\',\'[]\');}catch(e){};if(_lastD)R(_lastD);">clear</span></h2>';
   h+='<div id="secBody_focused" style="'+(isCol?'display:none':'')+'">';
+  // Compact cards with live data
   for(var i=0;i<tks.length;i++){
-    var tk=tks[i];
-    var ipInfo=ipMap[tk];
-    var pos=posMap[tk]||null;
-    h+=uCard(tk,'compact',{
-      reasons:ipInfo?ipInfo.reasons:[],
-      position:pos,
-      areteInfo:areteMap[tk]||null,
-      opus:opusMap[tk]||null,
-      showModal:true,
-      showFocus:true
-    });
+    var tk=tks[i],q=_tq[tk]||{},pos=posMap[tk]||null,ar=areteMap[tk]||null;
+    h+='<div class="info-box" style="padding:6px 10px;margin-bottom:3px;border-left:3px solid #d2a8ff;display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+    h+='<span class="ae-ticker" style="cursor:pointer;font-weight:700;font-size:13px" onclick="openPT(\''+e(tk)+'\')">'+e(tk)+'</span>';
+    if(q.last)h+='<span class="mono" style="font-size:11px">'+e(q.last)+'</span>';
+    if(q.chg)h+='<span style="font-size:11px">'+pct(q.chg)+'</span>';
+    if(q.conf)h+='<span style="font-size:10px;color:#58a6ff">CF:'+e(q.conf)+'</span>';
+    if(q.setup)h+='<span style="font-size:10px;color:#d2a8ff">'+e(q.setup)+'</span>';
+    if(pos)h+='<span class="tag" style="background:#0d2818;color:#3fb950;border-color:#3fb950;font-size:8px">POS</span>';
+    if(ar)h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border-color:#9e6a03;font-size:8px">ARETE</span>';
+    // Wall + unfocus buttons on right
+    h+='<span style="margin-left:auto;display:flex;gap:6px;align-items:center">';
+    h+='<span style="font-size:9px;cursor:pointer;color:'+(isOnWall(tk)?'#58a6ff':'#484f58')+'" onclick="event.stopPropagation();toggleWall(\''+tk+'\')" title="Wall">'+(isOnWall(tk)?'\u25a3':'\u25a1')+'</span>';
+    h+='<span style="font-size:9px;cursor:pointer;color:#f85149" onclick="event.stopPropagation();toggleFocus(\''+tk+'\')" title="Remove">\u2715</span>';
+    h+='</span></div>';
   }
   h+='</div>';
   $('sFocused').innerHTML=h;
@@ -4038,8 +4041,8 @@ try{
 poll();setInterval(poll,60000);
 window.addEventListener('scroll',function(){var b=document.getElementById('backToTop');if(b)b.style.display=window.scrollY>300?'flex':'none';});
 // Card focus: click any pos-block to highlight it white, click again to unhighlight
-var _focusedTickers=(function(){try{var s=localStorage.getItem('v9_card_focus');return s?new Set(JSON.parse(s)):new Set();}catch(e){return new Set();}})();
-function saveFocused(){try{localStorage.setItem('v9_card_focus',JSON.stringify(Array.from(_focusedTickers)));}catch(e){}}
+var _focusedTickers=new Set(_focusList);
+function saveFocused(){_focusList=Array.from(_focusedTickers);try{localStorage.setItem('v9_focused',JSON.stringify(_focusList));}catch(e){}}
 function reapplyFocus(){
   document.querySelectorAll('.pos-block').forEach(function(card){
     var link=card.querySelector('a[data-tk]');
@@ -4133,6 +4136,34 @@ function toggleTodaySections(collapse){
     try{localStorage.setItem('sec_col_'+ks[i],collapse?'1':'0');}catch(e){}
   }
 }
+
+// ═══ FOCUSED + CHART WALL MANAGEMENT ═══
+var _focusList=[];var _wallList=[];
+try{_focusList=JSON.parse(localStorage.getItem('v9_focused')||'[]');}catch(e){}
+try{_wallList=JSON.parse(localStorage.getItem('v9_wall')||'[]');}catch(e){}
+
+function toggleFocus(tk){
+  var idx=_focusList.indexOf(tk);
+  if(idx>=0){_focusList.splice(idx,1);_focusedTickers.delete(tk);}
+  else{_focusList.push(tk);_focusedTickers.add(tk);}
+  try{localStorage.setItem('v9_focused',JSON.stringify(_focusList));}catch(e){}
+  if(_lastD)R(_lastD);
+}
+function toggleWall(tk){
+  var idx=_wallList.indexOf(tk);
+  if(idx>=0)_wallList.splice(idx,1);else _wallList.push(tk);
+  try{localStorage.setItem('v9_wall',JSON.stringify(_wallList));}catch(e){}
+  // Notify Chart Wall via localStorage event
+  try{localStorage.setItem('v9_wall_sync',JSON.stringify({list:_wallList,t:Date.now()}));}catch(e){}
+}
+function isFocused(tk){return _focusList.indexOf(tk)>=0;}
+function isOnWall(tk){return _wallList.indexOf(tk)>=0;}
+function focusWallBtns(tk){
+  var f=isFocused(tk),w=isOnWall(tk);
+  return '<span style="font-size:9px;margin-left:4px;cursor:pointer;color:'+(f?'#d2a8ff':'#484f58')+'" onclick="event.stopPropagation();toggleFocus(\''+tk+'\')" title="'+(f?'Remove from Focused':'Add to Focused')+'">'+(f?'\u2605':'\u2606')+'</span>'+
+    '<span style="font-size:9px;margin-left:3px;cursor:pointer;color:'+(w?'#58a6ff':'#484f58')+'" onclick="event.stopPropagation();toggleWall(\''+tk+'\')" title="'+(w?'Remove from Wall':'Send to Wall')+'">'+(w?'\u25a3':'\u25a1')+'</span>';
+}
+
 function toggleGroup(name){var body=document.getElementById('grpBody_'+name);var arrow=document.getElementById('grpArrow_'+name);if(!body)return;var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';if(arrow)arrow.textContent=isHidden?'\u25bc':'\u25b6';try{localStorage.setItem('v9_grp_'+name,isHidden?'1':'0');}catch(e){}}
 
 function toggleGroupSections(grp,collapse){
