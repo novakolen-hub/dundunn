@@ -1,4 +1,4 @@
-<!-- v11.25.0 cache-bust 1772729951.8953855 -->
+<!-- v11.25.1 cache-bust 1772729951.8953855 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1249,7 +1249,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.0</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.25.1</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2751,80 +2751,91 @@ function rAreteBook(d){
 function rWatching(d){
   var mw=d.myWatching||[];
   if(!mw.length){$('sWatching').innerHTML='';return;}
+  // Enrich _tq
+  for(var i=0;i<mw.length;i++){if(!_tq[mw[i]])_tq[mw[i]]={};}
   var isCol=true;try{var _v=localStorage.getItem('sec_col_watch');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'watch\')"><span id="secArrow_watch" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Watching <span class="dim" style="font-size:12px;font-weight:400">('+mw.length+')</span></h2>';
   h+='<div id="secBody_watch" style="'+(isCol?'display:none':'')+'">';
-  h+='<div class="info-box" style="padding:0"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg</th><th>CF</th><th>Setup</th><th>RVOL</th><th>RS</th></tr>';
-  for(var i=0;i<mw.length;i++){
-    var tk=mw[i],q=_tq[tk]||{};
-    var cf=q.conf?parseFloat(q.conf):0;
-    var cc=cf>=28?'g':cf>=24?'b':cf>=20?'y':cf>=16?'dim':'r';
-    h+='<tr><td class="tc white bold">'+tkLink(tk)+focusWallBtns(tk)+'</td>';
-    h+='<td class="mono">'+(q.last||'')+'</td>';
-    h+='<td>'+pct(q.chg||'')+'</td>';
-    h+='<td class="'+cc+' bold mono">'+(cf?cf.toFixed(1):'')+'</td>';
-    h+='<td class="dim" style="font-size:10px">'+(q.setup||'')+'</td>';
-    h+='<td class="dim">'+(q.rvol||'')+'</td>';
-    h+='<td class="dim">'+(q.rs||'')+'</td></tr>';
+  var CHUNK=20;
+  for(var i=0;i<Math.min(mw.length,CHUNK);i++){
+    h+=uCard(mw[i],'compact',{showFocus:true});
   }
-  h+='</table></div></div>';
+  h+='<div id="watchMore"></div>';
+  if(mw.length>CHUNK)h+='<div id="watchLoading" style="text-align:center;padding:8px;font-size:11px;color:#484f58">Loading '+(mw.length-CHUNK)+' more...</div>';
+  h+='</div>';
   $('sWatching').innerHTML=h;
+  if(mw.length>CHUNK){
+    var _ci=CHUNK;
+    function _loadWChunk(){
+      var more=document.getElementById('watchMore');
+      if(!more)return;
+      var end=Math.min(_ci+CHUNK,mw.length);
+      var ch='';
+      for(var j=_ci;j<end;j++){ch+=uCard(mw[j],'compact',{showFocus:true});}
+      more.insertAdjacentHTML('beforeend',ch);
+      _ci=end;
+      if(_ci<mw.length){setTimeout(_loadWChunk,50);}
+      else{var ld=document.getElementById('watchLoading');if(ld)ld.remove();}
+    }
+    setTimeout(_loadWChunk,100);
+  }
 }
 
 function rSetups(d){
   var w=d.watchlistTop||[];
   var ip=d.inPlayToday||[];
-  
-  // Merge watchlistTop + inPlayToday, dedupe by ticker
   var seen={},merged=[];
-  // InPlay first (higher priority)
   for(var i=0;i<ip.length;i++){
     var sym=ip[i].symbol||'';if(!sym||seen[sym])continue;seen[sym]=1;
-    merged.push({ticker:sym,last:ip[i].last||'',chg:ip[i].netPct?((parseFloat(ip[i].netPct)>0?'+':'')+parseFloat(ip[i].netPct).toFixed(2)+'%'):'',
-      confluence:parseFloat(ip[i].confluence)||0,quality:ip[i].quality||'',setup:ip[i].setup||'',
-      section:ip[i].section||'IN PLAY',inPlay:true,rvol:ip[i].rvol||'',rs:ip[i].relStr||''});
+    if(!_tq[sym])_tq[sym]={};
+    var qt=_tq[sym];
+    if(!qt.last&&ip[i].last)qt.last=parseFloat(ip[i].last).toFixed(2);
+    if(!qt.chg&&ip[i].netPct)qt.chg=(parseFloat(ip[i].netPct)>0?'+':'')+parseFloat(ip[i].netPct).toFixed(2)+'%';
+    if(!qt.conf&&ip[i].confluence)qt.conf=String(ip[i].confluence);
+    if(!qt.setup&&ip[i].setup)qt.setup=ip[i].setup;
+    if(!qt.rvol&&ip[i].rvol)qt.rvol=String(ip[i].rvol);
+    merged.push(sym);
   }
-  // Then watchlistTop
   for(var i=0;i<w.length;i++){
     var sym=w[i].ticker||'';if(!sym||seen[sym])continue;seen[sym]=1;
-    merged.push({ticker:sym,last:w[i].last||'',chg:w[i].chg||'',
-      confluence:parseFloat(w[i].confluence)||0,quality:w[i].quality||'',setup:w[i].setup||'',
-      section:w[i].section||'',inPlay:false});
+    if(!_tq[sym])_tq[sym]={};
+    var qt=_tq[sym];
+    if(!qt.last&&w[i].last)qt.last=String(w[i].last);
+    if(!qt.chg&&w[i].chg)qt.chg=String(w[i].chg);
+    if(!qt.conf&&w[i].confluence)qt.conf=String(w[i].confluence);
+    if(!qt.setup&&w[i].setup)qt.setup=w[i].setup;
+    merged.push(sym);
   }
-  // Sort by confluence descending
-  merged.sort(function(a,b){return b.confluence-a.confluence;});
-
+  merged.sort(function(a,b){return parseFloat(_tq[b]&&_tq[b].conf||0)-parseFloat(_tq[a]&&_tq[a].conf||0);});
   if(!merged.length){$('sSetups').innerHTML='';return}
-  
   var isCol=false;try{var _v=localStorage.getItem('sec_col_setups');if(_v!==null)isCol=_v==='1';}catch(e){}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Setups <span class="dim" style="font-size:12px;font-weight:400">('+merged.length+')</span></h2>';
   h+='<div id="secBody_setups" style="'+(isCol?'display:none':'')+'">';
-  
-  // Table view
-  h+='<div class="info-box" style="padding:0"><table style="font-size:11px;width:100%"><tr><th style="text-align:left">Ticker</th><th>Last</th><th>Chg</th><th>CF</th><th>Qual</th><th>Setup</th><th style="font-size:9px">Section</th></tr>';
-  var _setupMax=20;
-  var _showAll=false;try{_showAll=localStorage.getItem('v9_setups_showall')==='1';}catch(e){}
-  var _dispCount=_showAll?merged.length:Math.min(merged.length,_setupMax);
-  for(var i=0;i<_dispCount;i++){
-    var it=merged[i];
-    var cc=it.confluence>=28?'g':it.confluence>=24?'b':it.confluence>=20?'y':it.confluence>=16?'dim':'r';
-    var qc=it.quality==='A+'?'g':it.quality==='Solid'?'b':it.quality==='Playbook'?'y':it.quality==='Watch'?'dim':'r';
-    var rowBg=it.inPlay?'background:rgba(210,168,255,0.05)':'';
-    h+='<tr style="'+rowBg+'"><td class="tc white bold">'+tkLink(it.ticker)+focusWallBtns(it.ticker)+(it.inPlay?' <span style="font-size:8px;color:#d2a8ff">IP</span>':'')+'</td>';
-    h+='<td class="mono">'+e(it.last)+'</td><td>'+pct(it.chg)+'</td>';
-    h+='<td class="'+cc+' bold mono">'+it.confluence.toFixed(1)+'</td>';
-    h+='<td class="'+qc+' bold" style="font-size:10px">'+e(it.quality)+'</td>';
-    h+='<td class="dim" style="font-size:10px">'+e(it.setup)+'</td>';
-    h+='<td class="dim" style="font-size:9px">'+e(it.section)+'</td></tr>';
+  // Render first 20 immediately
+  var CHUNK=20;
+  for(var i=0;i<Math.min(merged.length,CHUNK);i++){
+    h+=uCard(merged[i],'compact',{showFocus:true});
   }
-  h+='</table></div>';
-  if(merged.length>_setupMax&&!_showAll){
-    h+='<div style="text-align:center;padding:6px"><a href="javascript:void(0)" onclick="try{localStorage.setItem(\'v9_setups_showall\',\'1\')}catch(e){};if(_lastD)rSetups(_lastD)" style="color:#58a6ff;font-size:11px;text-decoration:none">Show all '+merged.length+' setups \u25bc</a></div>';
-  } else if(merged.length>_setupMax){
-    h+='<div style="text-align:center;padding:6px"><a href="javascript:void(0)" onclick="try{localStorage.setItem(\'v9_setups_showall\',\'0\')}catch(e){};if(_lastD)rSetups(_lastD)" style="color:#58a6ff;font-size:11px;text-decoration:none">Show top '+_setupMax+' \u25b2</a></div>';
-  }
+  h+='<div id="setupsMore"></div>';
+  if(merged.length>CHUNK)h+='<div id="setupsLoading" style="text-align:center;padding:8px;font-size:11px;color:#484f58">Loading '+(merged.length-CHUNK)+' more...</div>';
   h+='</div>';
   $('sSetups').innerHTML=h;
+  // Chunked load the rest
+  if(merged.length>CHUNK){
+    var _ci=CHUNK;
+    function _loadChunk(){
+      var more=document.getElementById('setupsMore');
+      if(!more)return;
+      var end=Math.min(_ci+CHUNK,merged.length);
+      var ch='';
+      for(var j=_ci;j<end;j++){ch+=uCard(merged[j],'compact',{showFocus:true});}
+      more.insertAdjacentHTML('beforeend',ch);
+      _ci=end;
+      if(_ci<merged.length){setTimeout(_loadChunk,50);}
+      else{var ld=document.getElementById('setupsLoading');if(ld)ld.remove();}
+    }
+    setTimeout(_loadChunk,100);
+  }
 }
 
 // ═══ PORTFOLIO RISK (exposure + correlation + Opus recommendations merged) ═══
