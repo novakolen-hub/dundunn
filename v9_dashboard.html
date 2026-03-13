@@ -1,4 +1,4 @@
-<!-- v11.27.0 cache-bust 1773420183 -->
+<!-- v11.28.0 cache-bust 1773426284 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -797,7 +797,7 @@ function sparkSvg(tk,w,h){
 var _to={};
 var _tkNews={};
 var _lastD={};
-var _setupGrids={};
+var _setupScores={};
 function tkLink(tk,lg){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" title="TradingView"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk" data-tk="'+e(tk)+'"'+(lg?' style="font-size:15px"':'')+'>'+e(tk)+'</a></span>';}
 function pct(v){var s=String(v||''),n=parseFloat(s.replace('%',''));if(isNaN(n))return'<span class="dim">—</span>';if(Math.abs(n)<0.5&&s.indexOf('%')<0)n*=100;var c=n>0.01?'g':n<-0.01?'r':'dim';return'<span class="'+c+'">'+(n>0?'+':'')+n.toFixed(2)+'%</span>'}
 function pc(v){var n=parseFloat(String(v).replace(/[$,+]/g,''));return n>0?'g':n<0?'r':'dim'}
@@ -901,7 +901,7 @@ function poll(){
 function R(d){
   // Populate _SEC from available data
   if(d.watchlistTop){for(var _si=0;_si<d.watchlistTop.length;_si++){var _st=d.watchlistTop[_si];if(_st.ticker&&_st.sector)_SEC[_st.ticker]=_st.sector;}}
-_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;if(d.sparkData)_spark=d.sparkData;if(d.setupGrids)_setupGrids=d.setupGrids;
+_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;if(d.sparkData)_spark=d.sparkData;if(d.setupScores)_setupScores=d.setupScores;
   // Save active textarea before re-render
   var _ae=document.activeElement;
   var _noteId=_ae&&_ae.id&&_ae.id.startsWith('note_')?_ae.id:null;
@@ -1285,7 +1285,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.27.0</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.28.0</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -3599,113 +3599,41 @@ function renderPTModal(d){
   $('ptBody').innerHTML=h;
 }
 
-// ═══ SETUP SCORING GRID — computed client-side from _tq data ═══
-function _clientSetupScore(match, rv, minRV, cf, minCf, bonus){
-  if(!match)return 0;
-  var s=10;
-  if(minRV>0&&rv>=minRV)s+=Math.min((rv-minRV)/minRV*5,5);
-  else if(minRV>0&&rv<minRV)return 0;
-  if(cf>=minCf)s+=Math.min((cf-minCf)/4,5);
-  else return 0;
-  s+=Math.min(bonus||0,10);
-  return Math.round(s*10)/10;
-}
-
-function _computeSetupGrid(symbol){
-  var q=_tq[symbol]||{};
-  var last=parseFloat(q.last)||0;
-  var vwap=parseFloat(q.vwap)||0;
-  var rsi=parseFloat(q.rsi)||50;
-  var rvol=parseFloat(q.rvol)||0;
-  var ema9=parseFloat(q.ema9)||0;
-  var ema20=parseFloat(q.ema20)||0;
-  var rs=parseFloat(String(q.rs||'0').replace('%',''))||0;
-  var gap=parseFloat(String(q.gap||'0').replace('%',''))||0;
-  var absGap=Math.abs(gap);
-  var orHi=parseFloat(q.orHi)||0;
-  var orLo=parseFloat(q.orLo)||0;
-  var conf=parseFloat(q.conf)||0;
-  var w52=parseFloat(q.w52)||50;
-  
-  if(!last||!vwap)return null;
-  
-  var aboveVwap=last>vwap;
-  var belowVwap=last<vwap;
-  var vwapDist=vwap>0?Math.abs((last-vwap)/vwap*100):0;
-  var emaStackBull=ema9>ema20;
-  var emaStackBear=ema9<ema20;
-  var nearEma9=ema9>0&&Math.abs(last-ema9)/ema9<0.003;
-  var nearEma20=ema20>0&&Math.abs(last-ema20)/ema20<0.005;
-  var near52High=w52>=97;
-  var near52Low=w52<=3;
-  
-  // Long confluence estimate (use conf as-is since it's already the best of long/short)
-  var lc=conf;
-  // Short confluence estimate — approximate from available data
-  var scBonus=0;
-  if(belowVwap)scBonus+=1.5;if(last<ema9)scBonus+=1;if(emaStackBear)scBonus+=0.5;
-  if(rs<=-1.5)scBonus+=1;else if(rs<=-0.5)scBonus+=0.5;
-  var sc=Math.max(0,Math.min(38,conf+scBonus-(aboveVwap?3:0)));
-  
-  var longs={},shorts={};
-  
-  // === LONG SETUPS ===
-  longs['VWAP-Hold']=_clientSetupScore(aboveVwap&&vwapDist<0.5&&emaStackBull&&rsi>=40&&rsi<=60,rvol,1,lc,18,(0.5-vwapDist)*4+(rsi>=45&&rsi<=55?2:0));
-  longs['OR-Break']=_clientSetupScore(last>orHi&&orHi>0&&aboveVwap&&rsi<75,rvol,1.5,lc,20,(rvol>=2.5?2:0)+(rsi>=50&&rsi<=65?2:0));
-  longs['Pullback-EMA']=_clientSetupScore(nearEma20&&emaStackBull&&rsi>=35&&rsi<=55,rvol,1,lc,16,(nearEma9?3:0)+(rsi>=40&&rsi<=50?2:0));
-  longs['Momentum']=_clientSetupScore(aboveVwap&&last>ema9&&emaStackBull&&rsi>=55&&rsi<=75&&rs>=1,rvol,1.5,lc,22,(rs-1)*2+(rvol>=2.5?2:0));
-  longs['Failed-BD']=_clientSetupScore(last>orLo&&orLo>0&&aboveVwap,rvol,1,lc,18,(vwapDist<0.5?2:0)+(rvol>=2?2:0)+(emaStackBull?1:0));
-  longs['ReturnPullback']=_clientSetupScore(aboveVwap&&vwapDist<0.5,rvol,1,lc,16,(0.5-vwapDist)*4+(emaStackBull?2:0));
-  longs['DailyBreakout']=_clientSetupScore(near52High&&aboveVwap,rvol,3,lc,22,(rvol>=4?2:0)+(w52>=95?3:w52>=90?1:0));
-  longs['GapGo']=_clientSetupScore(absGap>=3.0&&aboveVwap&&gap>=3.0,rvol,2,lc,18,(absGap-3)+(rvol>=3?2:0));
-  longs['Scalping']=_clientSetupScore(rvol>=1.5,rvol,1.5,lc,16,(rvol>=2.5?2:0));
-  longs['BigDog']=_clientSetupScore(aboveVwap&&rvol>=3,rvol,3,lc,20,(rvol>=4?2:0));
-  longs['SecondDay']=_clientSetupScore(absGap>=2.0&&vwapDist<1.5,rvol,1.5,lc,20,(absGap-2)+(vwapDist<0.5?2:0));
-  
-  // === SHORT SETUPS ===
-  shorts['VWAP-Hold']=_clientSetupScore(belowVwap&&vwapDist<0.8,rvol,1,sc,16,(vwapDist<0.3?3:0)+(emaStackBear?2:0)+(rsi>=40&&rsi<=55?2:0));
-  shorts['OR-Break']=_clientSetupScore(last<orLo&&orLo>0&&belowVwap,rvol,1.5,sc,18,(rvol>=2.5?2:0)+(rsi>=30&&rsi<=55?2:0));
-  shorts['Pullback-EMA']=_clientSetupScore(belowVwap&&(nearEma20||nearEma9)&&emaStackBear,rvol,1,sc,16,(nearEma9?3:0)+(rsi>=45&&rsi<=65?2:0));
-  shorts['Momentum']=_clientSetupScore(belowVwap&&last<ema9&&rs<=-0.5,rvol,1.5,sc,20,(emaStackBear?3:0)+(Math.abs(rs)-0.5)*2+(rvol>=2.5?2:0));
-  shorts['Failed-BD']=_clientSetupScore(last<orHi&&orHi>0&&belowVwap,rvol,1,sc,16,(vwapDist<0.5?2:0)+(rvol>=2?2:0)+(emaStackBear?1:0));
-  shorts['ReturnPullback']=_clientSetupScore(belowVwap&&vwapDist<0.8,rvol,1,sc,16,(vwapDist<0.3?4:0)+(emaStackBear?2:0));
-  shorts['DailyBreakout']=_clientSetupScore(near52Low&&belowVwap,rvol,3,sc,22,(rvol>=4?2:0)+(w52<=5?3:w52<=10?1:0));
-  shorts['GapGo']=_clientSetupScore(absGap>=3.0&&belowVwap&&gap<=-3.0,rvol,2,sc,18,(absGap-3)+(rvol>=3?2:0));
-  shorts['Scalping']=(sc>lc)?_clientSetupScore(rvol>=1.5,rvol,1.5,sc,16,(rvol>=2.5?2:0)):0;
-  shorts['BigDog']=_clientSetupScore(belowVwap&&rvol>=3,rvol,3,sc,20,(rvol>=4?2:0));
-  
-  // Filter to scored only
-  var l={},s={};
-  for(var k in longs){if(longs[k]>0)l[k]=longs[k];}
-  for(var k in shorts){if(shorts[k]>0)s[k]=shorts[k];}
-  
-  return{l:l,s:s,lc:Math.round(lc),sc:Math.round(sc)};
-}
-
+// ═══ SETUP SCORING GRID — reads from _SetupScores sheet data ═══
 function buildSetupGridHTML(symbol){
-  var grid=_computeSetupGrid(symbol);
-  if(!grid)return'<div class="pt-section" style="padding:8px 0"><div style="font-size:10px;color:#484f58;font-style:italic">Insufficient data for setup grid</div></div>';
+  var ss=_setupScores[symbol];
+  if(!ss||(!ss.longs&&!ss.shorts))return'<div class="pt-section" style="padding:8px 0"><div style="font-size:10px;color:#484f58;font-style:italic">Setup scores not yet available — waiting for next scan with bars</div></div>';
   
   var longs=[],shorts=[];
-  for(var k in grid.l){longs.push({name:k,score:grid.l[k]});}
-  for(var k in grid.s){shorts.push({name:k,score:grid.s[k]});}
+  for(var k in ss.longs){longs.push({name:k,score:ss.longs[k]});}
+  for(var k in ss.shorts){shorts.push({name:k,score:ss.shorts[k]});}
   longs.sort(function(a,b){return b.score-a.score;});
   shorts.sort(function(a,b){return b.score-a.score;});
   
   var maxRows=Math.max(longs.length,shorts.length);
-  if(maxRows===0)return'<div class="pt-section" style="padding:8px 0"><div style="font-size:10px;color:#484f58;font-style:italic">No setups scored for this ticker</div></div>';
+  if(maxRows===0)return'<div class="pt-section" style="padding:8px 0"><div style="font-size:10px;color:#484f58;font-style:italic">No setups scored for '+e(symbol)+'</div></div>';
   
   var h='<div class="pt-section" style="padding:8px 0">';
-  h+='<div style="font-size:11px;color:#7d8590;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Setup Scoring Grid</div>';
+  h+='<div style="font-size:11px;color:#7d8590;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Setup Scoring Grid</div>';
   
-  var lc=grid.lc||0,sc=grid.sc||0;
+  // Confluence + bonus summary
+  var lc=ss.lConf||0,sc=ss.sConf||0;
   var lcCls=lc>=24?'g':lc>=20?'y':'dim';
   var scCls=sc>=24?'g':sc>=20?'y':'dim';
-  h+='<div style="display:flex;gap:12px;margin-bottom:8px;font-family:JetBrains Mono,monospace;font-size:10px">';
+  h+='<div style="display:flex;gap:10px;margin-bottom:4px;font-family:JetBrains Mono,monospace;font-size:10px;flex-wrap:wrap">';
   h+='<span class="'+lcCls+'">▲ Long Conf: '+lc+'</span>';
   h+='<span class="'+scCls+'">▼ Short Conf: '+sc+'</span>';
+  // Bonus badges
+  if(ss.bonusHot>0)h+='<span style="padding:1px 5px;border-radius:3px;background:#332200;border:1px solid #664400;color:#ffc107;font-size:9px">🔥 Sector +'+ss.bonusHot+'</span>';
+  if(ss.bonusNews>0)h+='<span style="padding:1px 5px;border-radius:3px;background:#1a1a33;border:1px solid #3344aa;color:#58a6ff;font-size:9px">📰 News +'+ss.bonusNews+'</span>';
+  if(ss.bonusEarn>0)h+='<span style="padding:1px 5px;border-radius:3px;background:#1a0d2e;border:1px solid #6f42c1;color:#d2a8ff;font-size:9px">📊 Earnings +'+ss.bonusEarn+'</span>';
+  if(ss.bonusEarn<0)h+='<span style="padding:1px 5px;border-radius:3px;background:#1f1315;border:1px solid #da3633;color:#f85149;font-size:9px">📊 Post-Earn '+ss.bonusEarn+'</span>';
   h+='</div>';
   
+  // Last scored timestamp
+  if(ss.lastScored)h+='<div style="font-size:9px;color:#484f58;margin-bottom:6px;font-family:JetBrains Mono,monospace">Scored: '+e(ss.lastScored)+'</div>';
+  
+  // Two-column grid
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">';
   h+='<div style="background:#0d2818;padding:4px 8px;border-radius:3px 0 0 0;font-size:10px;font-weight:700;color:#3fb950;text-align:center">▲ LONG ('+longs.length+')</div>';
   h+='<div style="background:#1f1315;padding:4px 8px;border-radius:0 3px 0 0;font-size:10px;font-weight:700;color:#f85149;text-align:center">▼ SHORT ('+shorts.length+')</div>';
@@ -3717,9 +3645,10 @@ function buildSetupGridHTML(symbol){
     if(lEntry){
       var lReg=C_REGISTRY[lEntry.name];
       var lLabel=lReg?lReg.label:lEntry.name;
-      var lBg=i===0?'rgba(63,185,80,0.12)':'rgba(63,185,80,0.04)';
-      h+='<div style="background:'+lBg+';padding:4px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #161b22">';
-      h+='<span style="font-size:11px;color:#c9d1d9">'+(i===0?'<b>':'')+e(lLabel)+(i===0?'</b>':'')+'</span>';
+      var isBestL=(ss.bestSide==='LONG'&&ss.bestSetup===lEntry.name);
+      var lBg=isBestL?'rgba(63,185,80,0.18)':i===0?'rgba(63,185,80,0.08)':'rgba(63,185,80,0.03)';
+      h+='<div style="background:'+lBg+';padding:4px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #161b22'+(isBestL?';border-left:2px solid #3fb950':'')+'">';
+      h+='<span style="font-size:11px;color:#c9d1d9">'+(isBestL?'<b>':'')+e(lLabel)+(isBestL?' ★':'')+(isBestL?'</b>':'')+'</span>';
       h+='<span style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:#3fb950">'+lEntry.score.toFixed(1)+'</span>';
       h+='</div>';
     } else {
@@ -3729,16 +3658,31 @@ function buildSetupGridHTML(symbol){
     if(sEntry){
       var sReg=C_REGISTRY[sEntry.name];
       var sLabel=sReg?sReg.label:sEntry.name;
-      var sBg=i===0?'rgba(248,81,73,0.12)':'rgba(248,81,73,0.04)';
-      h+='<div style="background:'+sBg+';padding:4px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #161b22">';
-      h+='<span style="font-size:11px;color:#c9d1d9">'+(i===0?'<b>':'')+e(sLabel)+(i===0?'</b>':'')+'</span>';
+      var isBestS=(ss.bestSide==='SHORT'&&ss.bestSetup===sEntry.name);
+      var sBg=isBestS?'rgba(248,81,73,0.18)':i===0?'rgba(248,81,73,0.08)':'rgba(248,81,73,0.03)';
+      h+='<div style="background:'+sBg+';padding:4px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #161b22'+(isBestS?';border-left:2px solid #f85149':'')+'">';
+      h+='<span style="font-size:11px;color:#c9d1d9">'+(isBestS?'<b>':'')+e(sLabel)+(isBestS?' ★':'')+(isBestS?'</b>':'')+'</span>';
       h+='<span style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:#f85149">'+sEntry.score.toFixed(1)+'</span>';
       h+='</div>';
     } else {
       h+='<div style="background:#0d1117;padding:4px 8px;border-bottom:1px solid #161b22"></div>';
     }
   }
-  h+='</div></div>';
+  h+='</div>';
+  
+  // Best pick summary
+  if(ss.bestSetup){
+    var bestReg=C_REGISTRY[ss.bestSetup];
+    var bestLabel=bestReg?bestReg.label:ss.bestSetup;
+    var bestCol=ss.bestSide==='SHORT'?'#f85149':'#3fb950';
+    var bestIcon=ss.bestSide==='SHORT'?'▼':'▲';
+    h+='<div style="margin-top:6px;padding:6px 8px;border-radius:4px;background:#161b22;border:1px solid '+bestCol+';display:flex;justify-content:space-between;align-items:center">';
+    h+='<span style="font-size:11px;color:'+bestCol+';font-weight:700">'+bestIcon+' Best: '+e(bestLabel)+' ('+e(ss.bestSide)+')</span>';
+    h+='<span style="font-family:JetBrains Mono,monospace;font-size:13px;font-weight:700;color:'+bestCol+'">'+ss.bestScore.toFixed(1)+'</span>';
+    h+='</div>';
+  }
+  
+  h+='</div>';
   return h;
 }
 
