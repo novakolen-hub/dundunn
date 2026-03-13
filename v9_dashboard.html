@@ -1249,6 +1249,13 @@ function toggleAreteIntelAll(expand){
     if(body){body.style.display=expand?'':'none';try{localStorage.setItem('arete_col_'+subs[i],expand?'0':'1');}catch(x){}}
   }
 }
+function toggleAreteBookAll(expand){
+  var subs=['Swing','DTC','Option','Long','Watching'];
+  for(var i=0;i<subs.length;i++){
+    var body=document.getElementById('areteBody_'+subs[i]);
+    if(body){body.style.display=expand?'':'none';try{localStorage.setItem('arete_col_'+subs[i],expand?'0':'1');}catch(x){}}
+  }
+}
 function toggleLearn(id){
   var body=document.getElementById('lb_'+id);var arrow=document.getElementById('la_'+id);if(!body)return;
   var vis=body.style.display!=='none';body.style.display=vis?'none':'';
@@ -2721,6 +2728,7 @@ function rAreteBook(d){
   h+='<span id="areteArrow_outer" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(outerCol?'-90':'0')+'deg)">▼</span> ';
   h+='<span class="tag" style="background:#1f1a0f;color:#e3b341;border:1px solid #9e6a03">ARETE</span> Book ('+totalCount+')'+sortPills('arete');
   if(d.areteUpdated)h+=' <span class="dim" style="font-size:10px;font-weight:400">Updated '+e(d.areteUpdated)+'</span>';
+  h+='<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0;float:right"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleAreteBookAll(true)" style="color:#484f58;text-decoration:none">\u25be all</a> \u00b7 <a href="javascript:void(0)" onclick="event.stopPropagation();toggleAreteBookAll(false)" style="color:#484f58;text-decoration:none">\u25b8 all</a></span>';
   h+='</h2>';
   h+='<div id="areteBody_outer" style="'+(outerCol?'display:none':'')+'">';
   h+='<p class="dim" style="font-size:11px;margin-bottom:6px">Arete Discord positions — reference only, not your trades.</p>';
