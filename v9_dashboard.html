@@ -512,6 +512,7 @@ function uCard(tk, mode, opts) {
   var _isFoc=isFocused(tk),_isWall=isOnWall(tk);
   h += ' <span style="font-size:10px;cursor:pointer;color:'+(_isFoc?'#d2a8ff':'#30363d')+'" onclick="event.stopPropagation();toggleFocus(\''+tk+'\')" title="'+(_isFoc?'Unfocus':'Focus')+'">'+(_isFoc?'\u2605':'\u2606')+'</span>';
   h += '<span style="font-size:10px;cursor:pointer;color:'+(_isWall?'#58a6ff':'#30363d')+';margin-left:2px" onclick="event.stopPropagation();toggleWall(\''+tk+'\')" title="'+(_isWall?'Remove from Wall':'Send to Wall')+'">'+(_isWall?'\u25a3':'\u25a1')+'</span>';
+  h += '<span style="font-size:10px;cursor:pointer;color:#30363d;margin-left:2px" onclick="event.stopPropagation();hideTicker(\''+tk+'\')" title="Hide ticker">\u00d7</span>';
   // Position dot
   if (pos) h += ' <span style="font-size:8px;color:#3fb950;vertical-align:middle">\u25cf</span>';
   // Dynamic badge
