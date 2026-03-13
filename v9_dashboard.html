@@ -1,4 +1,4 @@
-<!-- v11.31.0 cache-bust 1773438765 -->
+<!-- v11.32.0 cache-bust 1773439106 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1242,6 +1242,13 @@ function toggleAreteSection(k){
   if(arrow)arrow.style.transform=isHidden?'rotate(0deg)':'rotate(-90deg)';
   try{localStorage.setItem('arete_col_'+k,isHidden?'0':'1');}catch(e){}
 }
+function toggleAreteIntelAll(expand){
+  var subs=['analysis','emails','youtube'];
+  for(var i=0;i<subs.length;i++){
+    var body=document.getElementById('areteBody_'+subs[i]);
+    if(body){body.style.display=expand?'':'none';try{localStorage.setItem('arete_col_'+subs[i],expand?'0':'1');}catch(x){}}
+  }
+}
 function toggleLearn(id){
   var body=document.getElementById('lb_'+id);var arrow=document.getElementById('la_'+id);if(!body)return;
   var vis=body.style.display!=='none';body.style.display=vis?'none':'';
@@ -1339,7 +1346,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.31.0</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.32.0</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -1484,18 +1491,20 @@ function rAreteEmails(d){
   if(!emails.length&&!analysis){el.innerHTML='';return;}
 
   var isCol=false;try{isCol=localStorage.getItem('sec_col_areteemails')==='1';}catch(e){}
-  var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleSec(\'areteemails\')"><span id="secArrow_areteemails" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Arete Intel <span class="dim" style="font-size:10px;font-weight:400">Alpha Chasers</span></h2>';
+  var h='<h2 style="color:#e3b341;cursor:pointer;user-select:none" onclick="toggleSec(\'areteemails\')"><span id="secArrow_areteemails" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Arete Intel <span class="dim" style="font-size:10px;font-weight:400">Alpha Chasers</span>';
+  h+='<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0;float:right"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleAreteIntelAll(true)" style="color:#484f58;text-decoration:none">\u25be all</a> \u00b7 <a href="javascript:void(0)" onclick="event.stopPropagation();toggleAreteIntelAll(false)" style="color:#484f58;text-decoration:none">\u25b8 all</a></span>';
+  h+='</h2>';
   h+='<div id="secBody_areteemails" style="'+(isCol?'display:none':'')+'">';
 
   // ── ANALYSIS CARD (Claude-extracted summary) ──
   if(analysis){
-    h+='<div class="info-box" style="border-color:#9e6a03;padding:10px 12px;margin-bottom:8px">';
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#e3b341;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Arete Analysis</span>';
-    // Market bias badge
-    var biasCls=analysis.marketBias==='bullish'?'g':analysis.marketBias==='bearish'?'r':'y';
-    h+='<span class="'+biasCls+'" style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600">'+(analysis.marketBias||'neutral').toUpperCase()+'</span>';
+    var anlCol=false;try{anlCol=localStorage.getItem('arete_col_analysis')==='1';}catch(e){}
+    h+='<div style="cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;padding:4px 0;margin-bottom:4px" onclick="var b=document.getElementById(\'areteBody_analysis\');if(b){var v=b.style.display===\'none\';b.style.display=v?\'\':\'none\';this.querySelector(\'span\').style.transform=v?\'rotate(0deg)\':\'rotate(-90deg)\';try{localStorage.setItem(\'arete_col_analysis\',v?\'0\':\'1\')}catch(x){}}">';
+    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#e3b341;font-weight:700;text-transform:uppercase;letter-spacing:0.5px"><span style="display:inline-block;transition:transform 0.2s;transform:rotate('+(anlCol?'-90':'0')+'deg)">\u25bc</span> Analysis</span>';
+    if(analysis.marketBias){var biasCls=analysis.marketBias==='bullish'?'g':analysis.marketBias==='bearish'?'r':'y';h+='<span class="'+biasCls+'" style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:600">'+(analysis.marketBias||'neutral').toUpperCase()+'</span>';}
     h+='</div>';
+    h+='<div id="areteBody_analysis" style="'+(anlCol?'display:none':'')+'">';
+    h+='<div class="info-box" style="border-color:#9e6a03;padding:10px 12px;margin-bottom:8px">';
     // Summary
     if(analysis.summary)h+='<p style="font-size:12px;color:#e6edf3;line-height:1.5;margin-bottom:8px">'+e(analysis.summary)+'</p>';
     // Sector themes
@@ -1585,6 +1594,7 @@ function rAreteEmails(d){
       h+='</div>';
     }
     h+='</div>';
+    h+='</div>'; // close areteBody_analysis
   }
 
   // ── RETROSPECTIVE SCOREBOARD ──
@@ -1622,6 +1632,11 @@ function rAreteEmails(d){
 
   // ── EMAILS (cleaned, collapsible by date) ──
   if(emails.length){
+    var emCol=false;try{emCol=localStorage.getItem('arete_col_emails')==='1';}catch(e){}
+    h+='<div style="cursor:pointer;user-select:none;display:flex;align-items:center;padding:4px 0;margin:8px 0 4px" onclick="var b=document.getElementById(\'areteBody_emails\');if(b){var v=b.style.display===\'none\';b.style.display=v?\'\':\'none\';this.querySelector(\'span\').style.transform=v?\'rotate(0deg)\':\'rotate(-90deg)\';try{localStorage.setItem(\'arete_col_emails\',v?\'0\':\'1\')}catch(x){}}">';
+    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#e3b341;font-weight:700;text-transform:uppercase;letter-spacing:0.5px"><span style="display:inline-block;transition:transform 0.2s;transform:rotate('+(emCol?'-90':'0')+'deg)">\u25bc</span> Emails ('+emails.length+')</span>';
+    h+='</div>';
+    h+='<div id="areteBody_emails" style="'+(emCol?'display:none':'')+'">';
     var byDate={};var dateOrder=[];
     for(var i=0;i<emails.length;i++){
       var em=emails[i];var dk=em.date||'unknown';
@@ -1657,13 +1672,17 @@ function rAreteEmails(d){
         h+='</div></div>';
       }
     }
+    h+='</div>'; // close areteBody_emails
   }
 
   // ── YOUTUBE VIDEOS (Arete channel) ──
   var ytVids=d.areteYouTube||[];
   if(ytVids.length){
-    h+='<div style="margin-top:10px">';
-    h+='<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#e3b341;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Arete YouTube</div>';
+    var ytCol=false;try{ytCol=localStorage.getItem('arete_col_youtube')==='1';}catch(e){}
+    h+='<div style="cursor:pointer;user-select:none;display:flex;align-items:center;padding:4px 0;margin:8px 0 4px" onclick="var b=document.getElementById(\'areteBody_youtube\');if(b){var v=b.style.display===\'none\';b.style.display=v?\'\':\'none\';this.querySelector(\'span\').style.transform=v?\'rotate(0deg)\':\'rotate(-90deg)\';try{localStorage.setItem(\'arete_col_youtube\',v?\'0\':\'1\')}catch(x){}}">';
+    h+='<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#e3b341;font-weight:700;text-transform:uppercase;letter-spacing:0.5px"><span style="display:inline-block;transition:transform 0.2s;transform:rotate('+(ytCol?'-90':'0')+'deg)">\u25bc</span> YouTube ('+ytVids.length+')</span>';
+    h+='</div>';
+    h+='<div id="areteBody_youtube" style="'+(ytCol?'display:none':'')+'">';
     for(var vi=0;vi<Math.min(ytVids.length,6);vi++){
       var v=ytVids[vi];var vtId='ae_yt_'+vi;
       var ytIsWatched=_isAreteChecked(vtId);
@@ -1688,6 +1707,7 @@ function rAreteEmails(d){
       h+='</div>';
     }
     h+='</div>';
+    h+='</div>'; // close areteBody_youtube
   }
 
   h+='</div>';
