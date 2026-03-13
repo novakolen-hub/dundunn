@@ -277,8 +277,9 @@
 </div></div>
 <!-- sectors merged into breadth -->
 <div class="sec-group">
-<div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0;display:flex;align-items:center;gap:6px"><input id="stockSearch" type="text" placeholder="Search ticker..." onclick="event.stopPropagation()" onkeyup="filterStocks(this.value)" style="width:90px;padding:2px 6px;border-radius:3px;border:1px solid #30363d;background:#0d1117;color:#e6edf3;font-family:JetBrains Mono,monospace;font-size:10px;text-transform:uppercase"><a href="javascript:void(0)" onclick="event.stopPropagation();clearStockFilter()" style="color:#484f58;text-decoration:none;font-size:9px">✕</a> <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
+<div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0;display:flex;align-items:center;gap:6px"><input id="addTickerInput" type="text" placeholder="+ Add ticker" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.stopPropagation();addTickerFromInput()}" style="width:80px;padding:2px 6px;border-radius:3px;border:1px solid #238636;background:#0d1117;color:#3fb950;font-family:JetBrains Mono,monospace;font-size:10px;text-transform:uppercase"><input id="stockSearch" type="text" placeholder="Filter..." onclick="event.stopPropagation()" onkeyup="filterStocks(this.value)" style="width:70px;padding:2px 6px;border-radius:3px;border:1px solid #30363d;background:#0d1117;color:#e6edf3;font-family:JetBrains Mono,monospace;font-size:10px;text-transform:uppercase"><a href="javascript:void(0)" onclick="event.stopPropagation();clearStockFilter()" style="color:#484f58;text-decoration:none;font-size:9px">✕</a> <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_stocks">
+<div id="hiddenPills"></div>
 <div id="sFocused"></div>
 <div id="sActiveSetups"></div>
 <div id="sSetups"></div>
@@ -499,7 +500,8 @@ function uCard(tk, mode, opts) {
   var cardId = 'uc_' + tk.replace(/[^A-Z0-9]/g, '');
 
   // --- COMPACT ROW (always rendered) ---
-  var h = '<div class="uc" id="' + cardId + '" style="border-left:3px solid ' + bCol + '"';
+  var _isHid=_hiddenTickers.has(tk);
+  var h = '<div class="uc" id="' + cardId + '" style="border-left:3px solid ' + bCol + (_isHid?';display:none':'') + '"';
   if (!isExpanded) h += ' onclick="openPT(\'' + tk + '\')"';
   h += '>';
   h += '<div class="uc-row">';
@@ -4146,6 +4148,7 @@ function rFoot(d){
   var mdl=(d.dashboardNarrative||'').indexOf('model:sonnet')>=0?' · <span style="color:#e3b341">⚡ Sonnet</span>':'';
   var fSm=(d.gpSubMode&&d.gpSubMode.subMode)?' · '+e(d.gpSubMode.subMode):'';
   $('foot').innerHTML='THE SYSTEM PROTECTS YOU. FOLLOW IT.<br><small>V9 Dashboard v11.16 · '+sL(d.phase)+' · GP-'+(d.gpLetter||'C')+fSm+(d._timing?' · <span class="dim">'+e(d._timing)+'</span>':'')+mdl+'</small>';
+  renderHiddenPills();
 }
 
 // ═══ UTILS ═══
@@ -4207,9 +4210,10 @@ poll();setInterval(poll,60000);
 window.addEventListener('scroll',function(){var b=document.getElementById('backToTop');if(b)b.style.display=window.scrollY>300?'flex':'none';});
 // Card focus: click any pos-block to highlight it white, click again to unhighlight
 // ═══ FOCUSED + CHART WALL MANAGEMENT ═══
-var _focusList=[];var _wallList=[];
+var _focusList=[];var _wallList=[];var _hiddenTickers=new Set();
 try{_focusList=JSON.parse(localStorage.getItem('v9_focused')||'[]');if(!_focusList.length){var _old=JSON.parse(localStorage.getItem('v9_card_focus')||'[]');if(_old.length){_focusList=_old;localStorage.setItem('v9_focused',JSON.stringify(_focusList));}}}catch(e){}
 try{_wallList=JSON.parse(localStorage.getItem('v9_wall')||'[]');}catch(e){}
+try{JSON.parse(localStorage.getItem('v9_hidden')||'[]').forEach(function(t){_hiddenTickers.add(t);});}catch(e){}
 var _focusedTickers=new Set(_focusList);
 function saveFocused(){_focusList=Array.from(_focusedTickers);try{localStorage.setItem('v9_focused',JSON.stringify(_focusList));localStorage.setItem('v9_card_focus',JSON.stringify(_focusList));}catch(e){}}
 function reapplyFocus(){
@@ -4323,10 +4327,54 @@ function toggleWall(tk){
 }
 function isFocused(tk){return _focusList.indexOf(tk)>=0;}
 function isOnWall(tk){return _wallList.indexOf(tk)>=0;}
+function hideTicker(tk){
+  _hiddenTickers.add(tk);
+  try{localStorage.setItem('v9_hidden',JSON.stringify(Array.from(_hiddenTickers)));}catch(e){}
+  // Remove card from DOM immediately
+  var card=document.getElementById('uc_'+tk);if(card)card.style.display='none';
+  // Refresh hidden pills
+  renderHiddenPills();
+}
+function unhideTicker(tk){
+  _hiddenTickers.delete(tk);
+  try{localStorage.setItem('v9_hidden',JSON.stringify(Array.from(_hiddenTickers)));}catch(e){}
+  var card=document.getElementById('uc_'+tk);if(card)card.style.display='';
+  renderHiddenPills();
+}
+function clearAllHidden(){
+  _hiddenTickers.clear();
+  try{localStorage.setItem('v9_hidden','[]');}catch(e){}
+  document.querySelectorAll('.uc').forEach(function(c){c.style.display='';});
+  renderHiddenPills();
+}
+function renderHiddenPills(){
+  var el=document.getElementById('hiddenPills');if(!el)return;
+  if(!_hiddenTickers.size){el.innerHTML='';return;}
+  var h='<div style="padding:6px 0;display:flex;flex-wrap:wrap;gap:4px;align-items:center">';
+  h+='<span class="dim" style="font-size:9px">Hidden:</span>';
+  _hiddenTickers.forEach(function(tk){
+    h+='<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:#161b22;border:1px solid #30363d;color:#7d8590;cursor:pointer" onclick="unhideTicker(\''+tk+'\')" title="Click to unhide">'+tk+' \u00d7</span>';
+  });
+  h+='<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:#1f1315;border:1px solid #da3633;color:#f85149;cursor:pointer" onclick="clearAllHidden()">Clear all</span>';
+  h+='</div>';
+  el.innerHTML=h;
+}
+function addTickerFromInput(){
+  var input=document.getElementById('addTickerInput');if(!input)return;
+  var tk=input.value.trim().toUpperCase();input.value='';
+  if(!tk)return;
+  // Add to focused
+  if(_focusList.indexOf(tk)<0){_focusList.push(tk);_focusedTickers.add(tk);saveFocused();}
+  // Unhide if hidden
+  if(_hiddenTickers.has(tk))unhideTicker(tk);
+  // Re-render focused section
+  if(typeof rFocused==='function'&&_lastD)rFocused(_lastD);
+}
 function focusWallBtns(tk){
   var f=isFocused(tk),w=isOnWall(tk);
   return '<span style="font-size:9px;margin-left:4px;cursor:pointer;color:'+(f?'#d2a8ff':'#484f58')+'" onclick="event.stopPropagation();toggleFocus(\''+tk+'\')" title="'+(f?'Remove from Focused':'Add to Focused')+'">'+(f?'\u2605':'\u2606')+'</span>'+
-    '<span style="font-size:9px;margin-left:3px;cursor:pointer;color:'+(w?'#58a6ff':'#484f58')+'" onclick="event.stopPropagation();toggleWall(\''+tk+'\')" title="'+(w?'Remove from Wall':'Send to Wall')+'">'+(w?'\u25a3':'\u25a1')+'</span>';
+    '<span style="font-size:9px;margin-left:3px;cursor:pointer;color:'+(w?'#58a6ff':'#484f58')+'" onclick="event.stopPropagation();toggleWall(\''+tk+'\')" title="'+(w?'Remove from Wall':'Send to Wall')+'">'+(w?'\u25a3':'\u25a1')+'</span>'+
+    '<span style="font-size:9px;margin-left:3px;cursor:pointer;color:#484f58" onclick="event.stopPropagation();hideTicker(\''+tk+'\')" title="Hide ticker">\u00d7</span>';
 }
 
 function toggleGroup(name){var body=document.getElementById('grpBody_'+name);var arrow=document.getElementById('grpArrow_'+name);if(!body)return;var isHidden=body.style.display==='none';body.style.display=isHidden?'':'none';if(arrow)arrow.textContent=isHidden?'\u25bc':'\u25b6';try{localStorage.setItem('v9_grp_'+name,isHidden?'1':'0');}catch(e){}}
