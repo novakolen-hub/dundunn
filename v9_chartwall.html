@@ -57,6 +57,7 @@
     <span class="hdr-btn" onclick="addToWall()">+ Add</span>
     <span class="hdr-btn" onclick="loadFromScanner()">Load Candidates</span>
     <span class="hdr-btn" onclick="loadInPlay()">Load In Play</span>
+    <span class="hdr-btn" onclick="loadSetups()" style="border-color:#238636;color:#3fb950">Load Setups</span>
     <span class="hdr-btn" onclick="clearWall()">Clear</span>
     <span style="color:#30363d">|</span>
     <span class="hdr-btn" id="btn2" onclick="setCols(2)">2</span>
@@ -130,16 +131,19 @@ function quickGrade(tk){
   var q=_tq[tk]||{};
   var setupKey=matchSetup(q.setup||'');
   if(!q.last||!setupKey)return null;
+  var side=(q.side||'LONG').toUpperCase();
   var g=0,y=0,r=0;
   // 1. GP
-  if(_gpLetter==='A'||_gpLetter==='B')g++;else if(_gpLetter==='C')y++;else r++;
+  if(side==='LONG'){if(_gpLetter==='A'||_gpLetter==='B')g++;else if(_gpLetter==='C')y++;else r++;}
+  else{if(_gpLetter==='D')g++;else if(_gpLetter==='C')y++;else r++;}
   // 2. RVOL
   var rv=parseFloat(q.rvol)||0;
   if(rv>=1)g++;else if(rv>=0.7)y++;else r++;
   // 3. VWAP position
   var last=parseFloat(q.last)||0,vwap=parseFloat(q.vwap)||0;
   var vd=vwap>0?((last-vwap)/vwap*100):0;
-  if(vd>0)g++;else if(vd>-0.3)y++;else r++;
+  if(side==='LONG'){if(vd>0)g++;else if(vd>-0.3)y++;else r++;}
+  else{if(vd<0)g++;else if(vd<0.3)y++;else r++;}
   // 4. Confluence
   var cf=parseFloat(q.conf)||0;
   if(cf>=24)g++;else if(cf>=20)y++;else r++;
@@ -149,7 +153,8 @@ function quickGrade(tk){
   if(_vix<18)g++;else if(_vix<25)y++;else r++;
   // 7. RSI
   var rsi=parseFloat(q.rsi)||50;
-  if(rsi>=35&&rsi<=70)g++;else if(rsi>=25&&rsi<=80)y++;else r++;
+  if(side==='LONG'){if(rsi>=35&&rsi<=70)g++;else if(rsi>=25&&rsi<=80)y++;else r++;}
+  else{if(rsi>=30&&rsi<=65)g++;else if(rsi>=20&&rsi<=75)y++;else r++;}
   // 8. Sector (skip — no position data on wall)
   g++;
   var grade;
@@ -324,14 +329,16 @@ function buildCardHTML(tk){
   var ps=parseSetupScore(q.setup||'');
   var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
   var chgCls=chgN>0?'g':chgN<0?'r':'dim';
-  var setupCls=setup?'cc-setup-ok':'cc-setup-none';
+  var side=(q.side||'LONG').toUpperCase();
+  var setupCls=setup?(side==='SHORT'?'cc-setup-warn':'cc-setup-ok'):'cc-setup-none';
   var gr=quickGrade(tk);
   var gradeHtml=gr?'<span class="cc-grade cc-grade-'+gr.grade+'" title="'+gr.g+'G/'+gr.y+'Y/'+gr.r+'R">'+gr.grade+'</span>':'';
   var scorePill=ps.score>0?' <span class="dim" style="font-size:8px">'+ps.score.toFixed(1)+'</span>':'';
+  var sideIcon=side==='SHORT'?' <span style="color:#f85149;font-size:9px;font-weight:700">\u25bc</span>':'';
   var stats=buildStatsHTML(tk);
 
   return '<div class="cc-hdr" onclick="openInDashboard(\''+esc(tk)+'\')" title="Click → Dashboard modal">'
-    +'<span><span class="cc-tk">'+esc(tk)+'</span>'
+    +'<span><span class="cc-tk">'+esc(tk)+'</span>'+sideIcon
     +(setup?' <span class="cc-setup '+setupCls+'">'+esc(setup)+'</span>':'')
     +gradeHtml+scorePill+'</span>'
     +'<span><span class="cc-price" id="wp_'+tk+'">'+(q.last||'--')+' <span class="'+chgCls+'">'+(q.chg||'')+'</span></span>'
@@ -425,6 +432,19 @@ function loadInPlay(){
   renderWall();saveWall();
 }
 
+function loadSetups(){
+  var cands=[];
+  for(var tk in _setupScores){
+    var ss=_setupScores[tk];
+    if(ss&&ss.bestScore>0)cands.push({tk:tk,score:ss.bestScore,side:ss.bestSide||'LONG'});
+  }
+  if(!cands.length){document.getElementById('status').textContent='No scored setups yet — wait for scan';return;}
+  cands.sort(function(a,b){return b.score-a.score;});
+  _wallTickers=cands.slice(0,12).map(function(c){return c.tk;});
+  renderWall();saveWall();
+  showToast('Loaded '+Math.min(cands.length,12)+' setups ('+cands.filter(function(c){return c.side==='SHORT';}).length+'S)');
+}
+
 /* ═══ CROSS-PAGE: Click → Dashboard modal ═══ */
 function openInDashboard(tk){
   window.open('v9_dashboard.html?openPT='+encodeURIComponent(tk),'v9dash');
@@ -468,6 +488,7 @@ function showToast(msg){
 }
 
 /* ═══ POLLING ═══ */
+var _setupScores={};
 function poll(){
   fetch(EP+'?mode=dashboard&t='+Date.now())
     .then(function(r){return r.json()})
@@ -476,8 +497,11 @@ function poll(){
       if(d.tickerQuotes)_tq=d.tickerQuotes;
       if(d.sparkData)_spark=d.sparkData;
       if(d.inPlayToday)_inPlay=d.inPlayToday;
+      if(d.setupScores)_setupScores=d.setupScores;
       if(d.gpLetter)_gpLetter=d.gpLetter;
       if(d.vix)_vix=parseFloat(d.vix)||15;
+      // Enrich _tq with side from setupScores
+      for(var stk in _setupScores){if(_setupScores[stk].bestSide&&_tq[stk]){_tq[stk].side=_setupScores[stk].bestSide;}}
       document.getElementById('status').textContent='Updated '+new Date().toLocaleTimeString()+' · '+Object.keys(_tq).length+' tickers · GP-'+(_gpLetter||'C');
       if(_wallTickers.length)updatePrices();
       else renderWall();
