@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0e14">
-<title>dundunn Trading Dashboard v11.35.1</title>
+<title>dundunn trading dashboard v11.35.1</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
@@ -260,7 +260,7 @@
 <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 <div class="status-bar"><div><span class="pulse pulse-off" id="pl"></span><span id="st">Connecting...</span></div><div id="lu" class="mono">--:--</div></div>
 <div class="tmr" id="tmrBar"><div class="ti"><span class="tl">1m</span><span class="tv" id="t1m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">5m</span><span class="tv" id="t5m">--:--</span></div><span class="sp">·</span><div class="ti"><span class="tl">30m</span><span class="tv" id="t30m">--:--</span></div><span class="sp">|</span><div class="ti" style="position:relative;cursor:pointer" onclick="toggleQuotaChart()"><span class="tl">Fetches</span><span class="tv" id="tQ">--</span><div id="quotaPopup"  style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti" style="position:relative;cursor:pointer" onclick="toggleApiChart()"><span class="tl">API $</span><span class="tv" id="tCost">--</span><div id="apiPopup"  style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999"></div></div><span class="sp">·</span><div class="ti"><span class="tl">Phase</span><span class="tv" id="tPh">--</span></div></div>
-<h1 id="hdr">dundunn Trading Dashboard</h1>
+<h1 id="hdr">dundunn trading dashboard</h1>
 <p class="dim" style="font-size:12px;margin-top:-8px;position:relative;z-index:10" id="sub">Loading...</p>
 <div id="colExpBar" style="text-align:right;margin:-4px 0 6px;font-size:11px"><a href="javascript:void(0)" id="btnColAll" style="color:#58a6ff;text-decoration:none">Collapse All</a> · <a href="javascript:void(0)" id="btnExpAll" style="color:#58a6ff;text-decoration:none">Expand All</a></div>
 <div id="loader" style="padding:16px"><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:60%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite"></div><div style="height:10px;width:40%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .2s"></div></div><div style="background:#161b22;border-radius:8px;padding:16px;margin-bottom:12px"><div style="height:14px;width:80%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;animation:shimmer 1.5s infinite .4s"></div><div style="height:10px;width:55%;background:linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%);background-size:200%;border-radius:4px;margin-top:8px;animation:shimmer 1.5s infinite .6s"></div></div><style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style></div>
@@ -1378,7 +1378,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   } else {
     _clockStr='<span class="dim" style="font-size:11px">Market Closed</span>';
   }
-$('hdr').innerHTML='dundunn Trading Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
+$('hdr').innerHTML='dundunn trading dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
 $('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.35.1</span>';}
 
