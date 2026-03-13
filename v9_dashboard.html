@@ -1,4 +1,4 @@
-<!-- v11.28.0 cache-bust 1773426284 -->
+<!-- v11.29.0 cache-bust 1773430952 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -280,8 +280,8 @@
 <div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_stocks">
 <div id="sFocused"></div>
+<div id="sActiveSetups"></div>
 <div id="sSetups"></div>
-<div id="sWatching"></div>
 </div></div>
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('intel')"><span class="grp-arrow" id="grpArrow_intel">▼</span> INTELLIGENCE<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
@@ -764,7 +764,60 @@ function _matchSetupKey(s){
 }
 
 // ═══ Render Active Setups Bar ═══
-function rActiveSetups(d){}
+function rActiveSetups(d){
+  // Show only tickers that have a scored setup from _SetupScores sheet
+  var candidates=[];
+  for(var tk in _setupScores){
+    var ss=_setupScores[tk];
+    if(ss&&ss.bestScore>0&&ss.bestSetup){
+      candidates.push({ticker:tk,setup:ss.bestSetup,side:ss.bestSide||'LONG',score:ss.bestScore,
+        lConf:ss.lConf||0,sConf:ss.sConf||0,hotSector:ss.hotSector,newsCatalyst:ss.newsCatalyst,earnings:ss.earnings});
+    }
+  }
+  if(!candidates.length){$('sActiveSetups').innerHTML='';return;}
+  // Sort by bestScore descending
+  candidates.sort(function(a,b){return b.score-a.score;});
+  // Enrich _tq with side from setupScores
+  for(var i=0;i<candidates.length;i++){
+    var tk=candidates[i].ticker;
+    if(!_tq[tk])_tq[tk]={};
+    if(!_tq[tk].side)_tq[tk].side=candidates[i].side;
+  }
+  window._activeSetupsList=candidates;
+  _renderActiveSetupsPage(1);
+}
+var _ACTIVE_SETUPS_PER_PAGE=20;
+function _renderActiveSetupsPage(page){
+  var cands=window._activeSetupsList||[];
+  var totalPages=Math.ceil(cands.length/_ACTIVE_SETUPS_PER_PAGE);
+  page=Math.max(1,Math.min(page,totalPages));
+  var start=(page-1)*_ACTIVE_SETUPS_PER_PAGE;
+  var end=Math.min(start+_ACTIVE_SETUPS_PER_PAGE,cands.length);
+  var isCol=false;try{var _v=localStorage.getItem('sec_col_activesetups');if(_v!==null)isCol=_v==='1';}catch(e){}
+  // Count longs vs shorts
+  var nLong=0,nShort=0;for(var ci=0;ci<cands.length;ci++){if(cands[ci].side==='SHORT')nShort++;else nLong++;}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'activesetups\')"><span id="secArrow_activesetups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> ';
+  h+='Setups <span class="dim" style="font-size:12px;font-weight:400">('+cands.length+'</span>';
+  if(nLong)h+=' <span style="font-size:10px;color:#3fb950;font-weight:600">'+nLong+'L</span>';
+  if(nShort)h+=' <span style="font-size:10px;color:#f85149;font-weight:600">'+nShort+'S</span>';
+  h+='<span class="dim" style="font-size:12px">)</span>';
+  h+='</h2>';
+  h+='<div id="secBody_activesetups" style="'+(isCol?'display:none':'')+'">';
+  // Pagination
+  if(totalPages>1){
+    h+='<div style="display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 0;font-size:11px;position:sticky;top:0;background:#0d1117;z-index:5;border-bottom:1px solid #21262d;margin-bottom:4px">';
+    if(page>1)h+='<a href="javascript:void(0)" onclick="_renderActiveSetupsPage('+(page-1)+')" style="color:#58a6ff;text-decoration:none">\u25c0 Prev</a>';
+    for(var _pg=1;_pg<=totalPages;_pg++){h+='<a href="javascript:void(0)" onclick="_renderActiveSetupsPage('+_pg+')" style="color:'+(_pg===page?'#e6edf3':'#484f58')+';text-decoration:none;font-weight:'+(_pg===page?'700':'400')+'">'+_pg+'</a>';}
+    if(page<totalPages)h+='<a href="javascript:void(0)" onclick="_renderActiveSetupsPage('+(page+1)+')" style="color:#58a6ff;text-decoration:none">Next \u25b6</a>';
+    h+='</div>';
+  }
+  for(var i=start;i<end;i++){
+    var c=cands[i];
+    h+=uCard(c.ticker,'compact',{showFocus:true});
+  }
+  h+='</div>';
+  $('sActiveSetups').innerHTML=h;
+}
 
 function $(i){return document.getElementById(i)}
 function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
@@ -919,7 +972,7 @@ _lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if
       if(!_wq.side&&_wt.side)_wq.side=_wt.side;
     }
   }
-  var _rfns=[['buildTkNews',buildTkNews],['rTimer',rTimer],['rHdr',rHdr],['rGP',rGP],['rToday',rToday],['rBreadth',rBreadth],['rInst',rInst],['rStory',rStory],['rSectors',rSectors],['rSess',rSess],['rRatios',rRatios],['rTradeCandidates',rTradeCandidates],['rInPlay',rInPlay],['rActiveSetups',rActiveSetups],['rWatching',rWatching],['rSetups',rSetups],['rAreteEmails',rAreteEmails],['rEcon',rEcon],['rEarnings',rEarnings],['rNews',rNews],['rBook',rBook],['rAreteBook',rAreteBook],['rInv',rInv],['rCoach',rCoach],['rFocused',rFocused],['rHidden',rHidden],['rFoot',rFoot]];
+  var _rfns=[['buildTkNews',buildTkNews],['rTimer',rTimer],['rHdr',rHdr],['rGP',rGP],['rToday',rToday],['rBreadth',rBreadth],['rInst',rInst],['rStory',rStory],['rSectors',rSectors],['rSess',rSess],['rRatios',rRatios],['rTradeCandidates',rTradeCandidates],['rInPlay',rInPlay],['rActiveSetups',rActiveSetups],['rSetups',rSetups],['rAreteEmails',rAreteEmails],['rEcon',rEcon],['rEarnings',rEarnings],['rNews',rNews],['rBook',rBook],['rAreteBook',rAreteBook],['rInv',rInv],['rCoach',rCoach],['rFocused',rFocused],['rHidden',rHidden],['rFoot',rFoot]];
   for(var _ri=0;_ri<_rfns.length;_ri++){try{_rfns[_ri][1](d);}catch(_re){console.error('RENDER ERROR in '+_rfns[_ri][0]+':',_re.message);}}
   try{initSparkTips();}catch(e){}try{initNewsRead();}catch(e){}try{reapplyFocus();}catch(e){}
   // Restore textarea focus
@@ -1285,7 +1338,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.28.0</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.29.0</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2819,7 +2872,9 @@ function _renderWatchPage(page){
 function rSetups(d){
   var w=d.watchlistTop||[];
   var ip=d.inPlayToday||[];
+  var mw=d.myWatching||[];
   var seen={},merged=[];
+  // Merge inPlayToday
   for(var i=0;i<ip.length;i++){
     var sym=ip[i].symbol||'';if(!sym||seen[sym])continue;seen[sym]=1;
     if(!_tq[sym])_tq[sym]={};var qt=_tq[sym];
@@ -2831,6 +2886,7 @@ function rSetups(d){
     if(!qt.side&&ip[i].side)qt.side=ip[i].side;
     merged.push(sym);
   }
+  // Merge watchlistTop
   for(var i=0;i<w.length;i++){
     var sym=w[i].ticker||'';if(!sym||seen[sym])continue;seen[sym]=1;
     if(!_tq[sym])_tq[sym]={};var qt=_tq[sym];
@@ -2841,33 +2897,17 @@ function rSetups(d){
     if(!qt.side&&w[i].side)qt.side=w[i].side;
     merged.push(sym);
   }
-  // Sort: GP-allowed first, then by confluence
-  try{
-    var _subM=(_lastD&&_lastD.gpSubMode&&_lastD.gpSubMode.subMode)?_lastD.gpSubMode.subMode:'';
-    var _gpL=(_lastD&&_lastD.gpLetter)?_lastD.gpLetter:'C';
-    merged.sort(function(a,b){
-      var qa=_tq[a]||{},qb=_tq[b]||{};
-      var ka=qa.setup?_matchSetupKey(qa.setup):null,kb=qb.setup?_matchSetupKey(qb.setup):null;
-      // GP-D: check short direction for regular tickers
-      var okA=false,okB=false;
-      if(ka){
-        var chkA=_cSGP(ka,_subM,_gpL);
-        okA=chkA.ok;
-        if(!okA&&_gpL==='D')okA=true; // GP-D: all setups potentially valid as shorts
-      }
-      if(kb){
-        var chkB=_cSGP(kb,_subM,_gpL);
-        okB=chkB.ok;
-        if(!okB&&_gpL==='D')okB=true;
-      }
-      if(okA!==okB)return okA?-1:1;
-      return parseFloat(qb.conf||0)-parseFloat(qa.conf||0);
-    });
-  }catch(e){
-    merged.sort(function(a,b){return parseFloat((_tq[b]||{}).conf||0)-parseFloat((_tq[a]||{}).conf||0);});
+  // Merge myWatching (manual watching list)
+  for(var i=0;i<mw.length;i++){
+    var sym=mw[i];if(!sym||seen[sym])continue;seen[sym]=1;
+    if(!_tq[sym])_tq[sym]={};
+    merged.push(sym);
   }
+  // Sort by confluence descending
+  try{
+    merged.sort(function(a,b){return parseFloat((_tq[b]||{}).conf||0)-parseFloat((_tq[a]||{}).conf||0);});
+  }catch(e){}
   if(!merged.length){$('sSetups').innerHTML='';return}
-  // Store for pagination
   window._setupsMerged=merged;
   _renderSetupsPage(1);
 }
@@ -2880,7 +2920,7 @@ function _renderSetupsPage(page){
   var start=(page-1)*_SETUPS_PER_PAGE;
   var end=Math.min(start+_SETUPS_PER_PAGE,merged.length);
   var isCol=false;try{var _v=localStorage.getItem('sec_col_setups');if(_v!==null)isCol=_v==='1';}catch(e){}
-  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> Setups <span class="dim" style="font-size:12px;font-weight:400">('+merged.length+')</span></h2>';
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'setups\')"><span id="secArrow_setups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> All Tickers <span class="dim" style="font-size:12px;font-weight:400">('+merged.length+')</span></h2>';
   h+='<div id="secBody_setups" style="'+(isCol?'display:none':'')+'">';
   // Pagination bar (top, sticky)
   h+='<div style="display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 0;font-size:11px;position:sticky;top:0;background:#0d1117;z-index:5;border-bottom:1px solid #21262d;margin-bottom:4px">';
