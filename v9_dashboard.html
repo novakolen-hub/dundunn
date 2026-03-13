@@ -277,7 +277,7 @@
 </div></div>
 <!-- sectors merged into breadth -->
 <div class="sec-group">
-<div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
+<div class="grp-hdr" onclick="toggleGroup('stocks')"><span class="grp-arrow" id="grpArrow_stocks">▼</span> THE STOCKS<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0;display:flex;align-items:center;gap:6px"><input id="stockSearch" type="text" placeholder="Search ticker..." onclick="event.stopPropagation()" onkeyup="filterStocks(this.value)" style="width:90px;padding:2px 6px;border-radius:3px;border:1px solid #30363d;background:#0d1117;color:#e6edf3;font-family:JetBrains Mono,monospace;font-size:10px;text-transform:uppercase"><a href="javascript:void(0)" onclick="event.stopPropagation();clearStockFilter()" style="color:#484f58;text-decoration:none;font-size:9px">✕</a> <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('stocks',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
 <div class="grp-body" id="grpBody_stocks">
 <div id="sFocused"></div>
 <div id="sActiveSetups"></div>
@@ -788,6 +788,29 @@ function rActiveSetups(d){
   _renderActiveSetupsPage(1);
 }
 var _ACTIVE_SETUPS_PER_PAGE=20;
+var _activeSetupsFilter='ALL';
+function filterActiveSetups(mode){
+  _activeSetupsFilter=mode;
+  _renderActiveSetupsPage(1);
+}
+function filterStocks(val){
+  var q=val.trim().toUpperCase();
+  var sections=['sFocused','sActiveSetups','sSetups','sChartWall'];
+  for(var si=0;si<sections.length;si++){
+    var sec=document.getElementById(sections[si]);if(!sec)continue;
+    var cards=sec.querySelectorAll('.uc');
+    for(var ci=0;ci<cards.length;ci++){
+      var card=cards[ci];
+      var tk=card.id?card.id.replace('uc_',''):'';
+      if(!q||tk.indexOf(q)>=0){card.style.display='';}
+      else{card.style.display='none';}
+    }
+  }
+}
+function clearStockFilter(){
+  var input=document.getElementById('stockSearch');
+  if(input){input.value='';filterStocks('');}
+}
 function _renderActiveSetupsPage(page){
   var cands=window._activeSetupsList||[];
   var totalPages=Math.ceil(cands.length/_ACTIVE_SETUPS_PER_PAGE);
@@ -798,10 +821,10 @@ function _renderActiveSetupsPage(page){
   // Count longs vs shorts
   var nLong=0,nShort=0;for(var ci=0;ci<cands.length;ci++){if(cands[ci].side==='SHORT')nShort++;else nLong++;}
   var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'activesetups\')"><span id="secArrow_activesetups" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> ';
-  h+='Setups <span class="dim" style="font-size:12px;font-weight:400">('+cands.length+'</span>';
-  if(nLong)h+=' <span style="font-size:10px;color:#3fb950;font-weight:600">'+nLong+'L</span>';
-  if(nShort)h+=' <span style="font-size:10px;color:#f85149;font-weight:600">'+nShort+'S</span>';
-  h+='<span class="dim" style="font-size:12px">)</span>';
+  h+='Setups <span class="dim" style="font-size:12px;font-weight:400">('+cands.length+')</span>';
+  h+=' <span onclick="event.stopPropagation();filterActiveSetups(\'ALL\')" style="font-size:9px;cursor:pointer;padding:1px 5px;border-radius:3px;border:1px solid #30363d;color:'+(_activeSetupsFilter==='ALL'?'#e6edf3':'#484f58')+'">ALL</span>';
+  if(nLong)h+=' <span onclick="event.stopPropagation();filterActiveSetups(\'LONG\')" style="font-size:9px;cursor:pointer;padding:1px 5px;border-radius:3px;border:1px solid '+((_activeSetupsFilter==='LONG')?'#238636':'#30363d')+';color:#3fb950">'+nLong+'L</span>';
+  if(nShort)h+=' <span onclick="event.stopPropagation();filterActiveSetups(\'SHORT\')" style="font-size:9px;cursor:pointer;padding:1px 5px;border-radius:3px;border:1px solid '+((_activeSetupsFilter==='SHORT')?'#da3633':'#30363d')+';color:#f85149">'+nShort+'S</span>';
   h+='</h2>';
   h+='<div id="secBody_activesetups" style="'+(isCol?'display:none':'')+'">';
   // Pagination
@@ -814,6 +837,7 @@ function _renderActiveSetupsPage(page){
   }
   for(var i=start;i<end;i++){
     var c=cands[i];
+    if(_activeSetupsFilter!=='ALL'&&c.side!==_activeSetupsFilter)continue;
     h+=uCard(c.ticker,'compact',{showFocus:true});
   }
   h+='</div>';
