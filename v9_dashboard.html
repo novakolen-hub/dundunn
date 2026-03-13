@@ -1,4 +1,4 @@
-<!-- v11.30.0 cache-bust 1773438690 -->
+<!-- v11.31.0 cache-bust 1773438765 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1339,7 +1339,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.30.0</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.31.0</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2751,87 +2751,8 @@ function rAreteBook(d){
       var secAvg=secCnt?secSum/secCnt:0;var secAvgC=secAvg>0.01?'g':secAvg<-0.01?'r':'dim';
       h+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:#7d8590;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid #21262d;padding-bottom:2px">'+e(sec)+' ('+tks.length+') <span class="'+secAvgC+'" style="font-weight:400">avg '+(secAvg>0?'+':'')+secAvg.toFixed(2)+'%</span></div>';
       for(var ti=0;ti<tks.length;ti++){
-        var tk=tks[ti],q=_tq[tk]||{},op=_to[tk]||{},cm=_confMap[tk]||{},nws=_tkNews[tk]||[];
-        // Border color by change
-        var chgN=q.chg?parseFloat(String(q.chg).replace('%','')):0;
-        var bCol=chgN>0.05?'#238636':chgN<-0.05?'#da3633':'#9e6a03';
-        // Card
-        h+='<div class="pos-block" style="border-left:3px solid '+bCol+';padding:8px 10px;margin-bottom:4px">';
-        // Row 1: ticker, overlap badge, confluence, price, change
-        h+='<div style="display:flex;justify-content:space-between;align-items:center">';
-        h+='<span>'+tkLink(tk,1);
-        if(_myTk[tk]==='pos')h+=' <span style="font-size:9px;background:#238636;color:#fff;padding:1px 4px;border-radius:3px">IN BOOK</span>';
-        else if(_myTk[tk]==='watch')h+=' <span style="font-size:9px;background:#1f6feb;color:#fff;padding:1px 4px;border-radius:3px">WATCHING</span>';
-        if(cm.conf){var cc=cm.conf>=28?'g':cm.conf>=24?'y':'dim';h+=' <span class="mono '+cc+'" style="font-size:11px" title="Confluence">⚡'+cm.conf.toFixed(0)+'</span>';}
-        if(q.rs){var rsN=parseFloat(String(q.rs).replace('%',''));if(!isNaN(rsN)){var rc=rsN>1?'g':rsN<-1?'r':'dim';h+=' <span class="mono '+rc+'" style="font-size:10px" title="Rel Strength vs SPY">RS '+(rsN>0?'+':'')+rsN.toFixed(1)+'%</span>';}}
-        h+='</span>';
-        h+='<span class="mono" style="font-size:12px">';
-        if(q.last)h+=e(q.last)+' ';
-        if(q.chg)h+=pct(q.chg);
-        h+=sparkSvg(tk)+'</span></div>';
-        // Row 2: options data (if available from tastytrade bridge)
-        var oH='';
-        if(op.ivr!=null)oH+='<span class="y">IVR '+op.ivr+'</span>';
-        if(op.iv!=null)oH+=' <span class="dim">IV '+op.iv+'%</span>';
-        if(op.expMove)oH+=' <span class="b">±'+op.expMove+'</span>';
-        if(op.beta)oH+=' <span class="dim">β'+op.beta+'</span>';
-        if(oH)h+='<div style="font-size:11px;margin-top:2px">📊 '+oH+'</div>';
-        // Row 2b: enriched data from watchlist
-        var eH='';
-        if(q.rvol){var rv=parseFloat(q.rvol);if(!isNaN(rv)&&rv>0){var rvc=rv>=2?'g':rv>=1.5?'y':'dim';eH+='<span class="'+rvc+'">RVOL '+rv.toFixed(1)+'x</span> ';}}
-        if(q.gap){var gv=parseFloat(String(q.gap).replace('%',''));if(!isNaN(gv)&&Math.abs(gv)>0.1){var gc=gv>0?'g':'r';eH+='<span class="'+gc+'">Gap '+(gv>0?'+':'')+gv.toFixed(1)+'%</span> ';}}
-        if(q.w52){var wv=parseFloat(String(q.w52).replace('%',''));if(!isNaN(wv)){var wc=wv>80?'g':wv<20?'r':'dim';eH+='<span class="'+wc+'">52w '+wv.toFixed(0)+'%</span> ';}}
-        if(q.ema50d){var ed=parseFloat(String(q.ema50d).replace('%',''));if(!isNaN(ed)){var ec=ed>0?'g':ed<-3?'r':'dim';eH+='<span class="'+ec+'">EMA50 '+(ed>0?'+':'')+ed.toFixed(1)+'%</span> ';}}
-        // Flags
-        var _fl=[];
-        if(q.vwapF&&q.vwapF!=='—')_fl.push('VWAP');
-        if(q.rsF&&q.rsF!=='—')_fl.push('RS');
-        if(q.rsiF&&q.rsiF!=='—')_fl.push('RSI');
-        if(q.rvolF&&q.rvolF!=='—')_fl.push('RVol');
-        if(_fl.length)eH+='<span style="background:#1f6feb33;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#58a6ff">'+_fl.join(' · ')+'</span>';
-        if(eH)h+='<div style="font-size:11px;margin-top:2px">'+eH+'</div>';
-        h+=levelsHtml(tk);
-        // Row 3: confluence setup if present
-        if(cm.setup||cm.qual){h+='<div style="font-size:11px;margin-top:2px;color:#8b949e">';if(cm.setup)h+='Setup: <span class="white">'+e(cm.setup)+'</span> ';if(cm.qual)h+='Qual: <span class="white">'+e(cm.qual)+'</span>';h+='</div>';}
-        // Row 4: news
-        h+=posNewsHtml(tk);
-        // Row 5: Bias signal summary
-        var bull=0,bear=0,reasons=[];
-        var _rs=q.rs?parseFloat(String(q.rs).replace('%','')):NaN;
-        var _rv=q.rvol?parseFloat(q.rvol):NaN;
-        var _gp=q.gap?parseFloat(String(q.gap).replace('%','')):NaN;
-        var _w5=q.w52?parseFloat(String(q.w52).replace('%','')):NaN;
-        var _ed=q.ema50d?parseFloat(String(q.ema50d).replace('%','')):NaN;
-        if(!isNaN(_rs)){if(_rs>1){bull++;reasons.push('RS+');}else if(_rs<-1){bear++;reasons.push('RS−');}}
-        if(!isNaN(_rv)&&_rv>=1.5){bull++;reasons.push('RVOL '+_rv.toFixed(1)+'x');}
-        if(!isNaN(_gp)){if(_gp>0.3){bull++;reasons.push('gap↑');}else if(_gp<-0.3){bear++;reasons.push('gap↓');}}
-        if(!isNaN(_w5)){if(_w5>70){bull++;reasons.push('near 52wH');}else if(_w5<30){bear++;reasons.push('near 52wL');}}
-        if(!isNaN(_ed)){if(_ed>0){bull++;reasons.push('>EMA50');}else if(_ed<-2){bear++;reasons.push('<EMA50');}}
-        if(q.vwapF&&q.vwapF!=='—'){bull++;reasons.push('VWAP✓');}
-        if(q.rsF&&q.rsF!=='—'){bull++;reasons.push('RSflag');}
-        if(chgN>0.5){bull++;reasons.push('price↑');}else if(chgN<-0.5){bear++;reasons.push('price↓');}
-        if(bull>0||bear>0){
-          var net=bull-bear;
-          var biasIcon=net>=2?'🟢 ↑':net<=-2?'🔴 ↓':'⚪ →';
-          var biasCol=net>=2?'#238636':net<=-2?'#da3633':'#7d8590';
-          // Verdict
-          var verd='';
-          if(net>=3)verd='Strong bullish stack — watch for entry';
-          else if(net===2)verd='Leaning bullish — needs catalyst';
-          else if(net===1)verd='Slight bullish lean — be selective';
-          else if(net===0)verd='Mixed signals — wait for clarity';
-          else if(net===-1)verd='Slight bearish lean — caution';
-          else if(net===-2)verd='Leaning bearish — avoid or short setup';
-          else verd='Strong bearish stack — short or avoid';
-          h+='<div style="margin-top:4px;padding:4px 8px;background:#0d1117;border:1px solid '+biasCol+';border-radius:4px;font-size:11px">';
-          h+='<span style="font-size:13px">'+biasIcon+'</span> ';
-          h+='<span class="mono" style="color:'+biasCol+'">+'+bull+'/−'+bear+'</span> ';
-          h+='<span class="dim">'+reasons.join(' · ')+'</span>';
-          h+='<div style="color:'+biasCol+';margin-top:1px;font-style:italic">'+e(verd)+'</div>';
-          h+='</div>';
-        }
-        h+=cardNotes(tk);
-        h+='</div>';
+        var tk=tks[ti];
+        h+=uCard(tk,'compact',{showFocus:true});
       }
       h+='</div>';
     }
