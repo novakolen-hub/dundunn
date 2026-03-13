@@ -1,4 +1,4 @@
-<!-- v11.29.0 cache-bust 1773430952 -->
+<!-- v11.30.0 cache-bust 1773438690 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -282,6 +282,7 @@
 <div id="sFocused"></div>
 <div id="sActiveSetups"></div>
 <div id="sSetups"></div>
+<div id="sChartWall"></div>
 </div></div>
 <div class="sec-group">
 <div class="grp-hdr" onclick="toggleGroup('intel')"><span class="grp-arrow" id="grpArrow_intel">▼</span> INTELLIGENCE<span style="margin-left:auto;font-size:9px;font-weight:400;letter-spacing:0"><a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',true)" style="color:#484f58;text-decoration:none">▾ all</a> · <a href="javascript:void(0)" onclick="event.stopPropagation();toggleGroupSections('intel',false)" style="color:#484f58;text-decoration:none">▸ all</a></span></div>
@@ -972,7 +973,7 @@ _lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if
       if(!_wq.side&&_wt.side)_wq.side=_wt.side;
     }
   }
-  var _rfns=[['buildTkNews',buildTkNews],['rTimer',rTimer],['rHdr',rHdr],['rGP',rGP],['rToday',rToday],['rBreadth',rBreadth],['rInst',rInst],['rStory',rStory],['rSectors',rSectors],['rSess',rSess],['rRatios',rRatios],['rTradeCandidates',rTradeCandidates],['rInPlay',rInPlay],['rActiveSetups',rActiveSetups],['rSetups',rSetups],['rAreteEmails',rAreteEmails],['rEcon',rEcon],['rEarnings',rEarnings],['rNews',rNews],['rBook',rBook],['rAreteBook',rAreteBook],['rInv',rInv],['rCoach',rCoach],['rFocused',rFocused],['rHidden',rHidden],['rFoot',rFoot]];
+  var _rfns=[['buildTkNews',buildTkNews],['rTimer',rTimer],['rHdr',rHdr],['rGP',rGP],['rToday',rToday],['rBreadth',rBreadth],['rInst',rInst],['rStory',rStory],['rSectors',rSectors],['rSess',rSess],['rRatios',rRatios],['rTradeCandidates',rTradeCandidates],['rInPlay',rInPlay],['rActiveSetups',rActiveSetups],['rSetups',rSetups],['rChartWall',rChartWall],['rAreteEmails',rAreteEmails],['rEcon',rEcon],['rEarnings',rEarnings],['rNews',rNews],['rBook',rBook],['rAreteBook',rAreteBook],['rInv',rInv],['rCoach',rCoach],['rFocused',rFocused],['rHidden',rHidden],['rFoot',rFoot]];
   for(var _ri=0;_ri<_rfns.length;_ri++){try{_rfns[_ri][1](d);}catch(_re){console.error('RENDER ERROR in '+_rfns[_ri][0]+':',_re.message);}}
   try{initSparkTips();}catch(e){}try{initNewsRead();}catch(e){}try{reapplyFocus();}catch(e){}
   // Restore textarea focus
@@ -1338,7 +1339,7 @@ function rHdr(d){var now=new Date(),dn='Sun Mon Tue Wed Thu Fri Sat'.split(' '),
   }
 $('hdr').innerHTML='V9 Dashboard — '+dn[now.getDay()]+' '+mn[now.getMonth()]+' '+now.getDate()+' · '+sL(d.phase)+'<span style="float:right">'+_clockStr+'</span>';
 var smLabel=(d.gpSubMode&&d.gpSubMode.subMode)?(' · '+d.gpSubMode.subMode):'';
-$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.29.0</span>';}
+$('sub').innerHTML='GP-'+(d.gpLetter||'C')+smLabel+' · Score: '+(d.breadthScore||'—')+' · '+(d.enabled?'<span class="g">Scanner ON</span>':'<span class="r">Scanner OFF</span>')+' <span class="dim" style="font-size:9px">v11.30.0</span>';}
 
 // ═══ SHARED GP COLOR MAP ═══
 var GP_COLOR={A:'#3fb950',B:'#58a6ff',C:'#e3b341',D:'#f85149'};
@@ -2840,6 +2841,23 @@ function rAreteBook(d){
 }
 // ═══ WATCHING (Config tab: my watching + arete watching) ═══
 // ═══ WATCHING (Config tab: my watching + arete watching) ═══
+function rChartWall(d){
+  var wallTickers=[];
+  try{var s=localStorage.getItem('v9_wall_tickers');if(s)wallTickers=JSON.parse(s);}catch(x){}
+  if(!wallTickers.length){$('sChartWall').innerHTML='';return;}
+  // Ensure _tq has data for wall tickers
+  for(var i=0;i<wallTickers.length;i++){if(!_tq[wallTickers[i]])_tq[wallTickers[i]]={};}
+  var isCol=true;try{var _v=localStorage.getItem('sec_col_chartwall');if(_v!==null)isCol=_v==='1';}catch(e){}
+  var h='<h2 style="cursor:pointer;user-select:none" onclick="toggleSec(\'chartwall\')"><span id="secArrow_chartwall" style="display:inline-block;transition:transform 0.2s;transform:rotate('+(isCol?'-90':'0')+'deg)">\u25bc</span> ';
+  h+='Chart Wall <span class="dim" style="font-size:12px;font-weight:400">('+wallTickers.length+')</span>';
+  h+=' <a href="v9_chartwall.html" target="v9wall" onclick="event.stopPropagation()" style="font-size:10px;color:#58a6ff;font-weight:400;text-decoration:none;margin-left:6px">Open Wall \u2197</a>';
+  h+='</h2>';
+  h+='<div id="secBody_chartwall" style="'+(isCol?'display:none':'')+'">';
+  for(var i=0;i<wallTickers.length;i++){h+=uCard(wallTickers[i],'compact',{showFocus:true});}
+  h+='</div>';
+  $('sChartWall').innerHTML=h;
+}
+
 function rWatching(d){
   var mw=d.myWatching||[];
   if(!mw.length){$('sWatching').innerHTML='';return;}
