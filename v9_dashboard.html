@@ -468,7 +468,7 @@ function setupTagHtml(setupRaw,subModeLabel,gpLetter,ticker){
     if(sS>sL){bestSide='SHORT';bestGr=grShort;}
   } else if(grShort&&!grLong){bestSide='SHORT';bestGr=grShort;}
   var q2=_tq[ticker]||{};
-  if(q2.setupDir==='SHORT'&&!bestGr)bestSide='SHORT';
+  if((q2.side||'').toUpperCase()==='SHORT'&&!bestGr)bestSide='SHORT';
 
   var cls=chk.caution?'st-warn':'st-ok';
   if(bestSide==='SHORT')cls='st-warn';
@@ -514,6 +514,8 @@ function uCard(tk, mode, opts) {
   // Dynamic badge
   var isDyn = d.dynamicTickers && d.dynamicTickers[tk];
   if (isDyn) h += ' <span style="font-size:8px;color:#ffc107;vertical-align:middle" title="Dynamic: ' + e((isDyn.source || '') + ' \u2014 ' + (isDyn.reason || '')) + '">\u26a1</span>';
+  // SHORT direction indicator
+  if ((q.side||'').toUpperCase() === 'SHORT') h += ' <span style="font-size:9px;color:#f85149;font-weight:700;vertical-align:middle" title="Short setup">\u25bc</span>';
   h += '</span>';
 
   // Price + change (always show something)
@@ -536,7 +538,7 @@ function uCard(tk, mode, opts) {
   }
 
   // Grade
-  var gr = setupKey ? quickGrade(tk, setupKey, subM, gpl, 'LONG') : null;
+  var gr = setupKey ? quickGrade(tk, setupKey, subM, gpl, (q.side||'LONG').toUpperCase()) : null;
   if (gr && gr.grade !== 'F') h += gradeHtml(gr);
 
   // RVOL compact
@@ -795,6 +797,7 @@ function sparkSvg(tk,w,h){
 var _to={};
 var _tkNews={};
 var _lastD={};
+var _setupGrids={};
 function tkLink(tk,lg){var sl=_icSlugs[tk],iu=sl?'https://www.investing.com'+sl:'https://www.investing.com/search/?q='+encodeURIComponent(tk),tu='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(tk);return'<span style="display:inline-flex;align-items:center"><a href="'+tu+'" title="TradingView"><span class="tv-d"></span></a><a href="'+iu+'" target="_blank" class="ic-lnk" data-tk="'+e(tk)+'"'+(lg?' style="font-size:15px"':'')+'>'+e(tk)+'</a></span>';}
 function pct(v){var s=String(v||''),n=parseFloat(s.replace('%',''));if(isNaN(n))return'<span class="dim">—</span>';if(Math.abs(n)<0.5&&s.indexOf('%')<0)n*=100;var c=n>0.01?'g':n<-0.01?'r':'dim';return'<span class="'+c+'">'+(n>0?'+':'')+n.toFixed(2)+'%</span>'}
 function pc(v){var n=parseFloat(String(v).replace(/[$,+]/g,''));return n>0?'g':n<0?'r':'dim'}
@@ -898,7 +901,7 @@ function poll(){
 function R(d){
   // Populate _SEC from available data
   if(d.watchlistTop){for(var _si=0;_si<d.watchlistTop.length;_si++){var _st=d.watchlistTop[_si];if(_st.ticker&&_st.sector)_SEC[_st.ticker]=_st.sector;}}
-_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;if(d.sparkData)_spark=d.sparkData;
+_lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if(d.tickerOptions)_to=d.tickerOptions;if(d.sparkData)_spark=d.sparkData;if(d.setupGrids)_setupGrids=d.setupGrids;
   // Save active textarea before re-render
   var _ae=document.activeElement;
   var _noteId=_ae&&_ae.id&&_ae.id.startsWith('note_')?_ae.id:null;
@@ -913,6 +916,7 @@ _lastD=d;if(d.icSlugs)_icSlugs=d.icSlugs;if(d.tickerQuotes)_tq=d.tickerQuotes;if
       if(!_wq.chg&&_wt.chg)_wq.chg=String(_wt.chg);
       if(!_wq.conf&&_wt.confluence)_wq.conf=String(_wt.confluence);
       if(!_wq.setup&&_wt.setup)_wq.setup=_wt.setup;
+      if(!_wq.side&&_wt.side)_wq.side=_wt.side;
     }
   }
   var _rfns=[['buildTkNews',buildTkNews],['rTimer',rTimer],['rHdr',rHdr],['rGP',rGP],['rToday',rToday],['rBreadth',rBreadth],['rInst',rInst],['rStory',rStory],['rSectors',rSectors],['rSess',rSess],['rRatios',rRatios],['rTradeCandidates',rTradeCandidates],['rInPlay',rInPlay],['rActiveSetups',rActiveSetups],['rWatching',rWatching],['rSetups',rSetups],['rAreteEmails',rAreteEmails],['rEcon',rEcon],['rEarnings',rEarnings],['rNews',rNews],['rBook',rBook],['rAreteBook',rAreteBook],['rInv',rInv],['rCoach',rCoach],['rFocused',rFocused],['rHidden',rHidden],['rFoot',rFoot]];
@@ -1369,6 +1373,8 @@ function rGP(d){
   if(_btcGP)mkt+=' \u00b7 BTC '+e(_btcGP.val)+' '+pct(_btcGP.chg);
   for(var _fgi=0;_fgi<Math.min(_futGP.length,2);_fgi++){mkt+=' \u00b7 '+e(_futGP[_fgi].sym)+' '+pct(_futGP[_fgi].chg);}
   if(mkt)h+='<div style="width:100%;text-align:center;margin-top:4px;font-size:10px;color:#8b949e;line-height:1.5">'+mkt+'</div>';
+  // Last scan time
+  if(d.lastScanTime)h+='<div style="width:100%;text-align:center;font-size:9px;color:#484f58;font-family:JetBrains Mono,monospace;margin-top:2px">Last scan: '+e(d.lastScanTime)+' AZ</div>';
   h+='</div>';
 
   // ── Alert Banner (from breadthAlerts) ──
@@ -2221,6 +2227,7 @@ function rInPlay(d){
     if(!_qt.rvol&&items[i].rvol)_qt.rvol=String(items[i].rvol);
     if(!_qt.gap&&items[i].gapPct)_qt.gap=String(items[i].gapPct);
     if(!_qt.rs&&items[i].relStr)_qt.rs=String(items[i].relStr);
+    if(!_qt.side&&items[i].side)_qt.side=items[i].side;
   }
 }
 
@@ -2667,7 +2674,7 @@ function rAreteBook(d){
     h+='<div id="areteBody_Watching" style="'+(awCol?'display:none':'')+'">';
     // Build confluence lookup from watchlistTop
     var _confMap={};var wt=d.watchlistTop||[];
-    for(var ci=0;ci<wt.length;ci++){if(wt[ci].ticker)_confMap[wt[ci].ticker]={conf:wt[ci].confluence,qual:wt[ci].quality,setup:wt[ci].setup,sect:wt[ci].sector};}
+    for(var ci=0;ci<wt.length;ci++){if(wt[ci].ticker)_confMap[wt[ci].ticker]={conf:wt[ci].confluence,qual:wt[ci].quality,setup:wt[ci].setup,sect:wt[ci].sector,side:wt[ci].side||'LONG'};}
     // Sort tickers before grouping
     aw=sortTickers(aw,_confMap,'arete_watch');
     // Group by sector
@@ -2821,6 +2828,7 @@ function rSetups(d){
     if(!qt.conf&&ip[i].confluence)qt.conf=String(ip[i].confluence);
     if(!qt.setup&&ip[i].setup)qt.setup=ip[i].setup;
     if(!qt.rvol&&ip[i].rvol)qt.rvol=String(ip[i].rvol);
+    if(!qt.side&&ip[i].side)qt.side=ip[i].side;
     merged.push(sym);
   }
   for(var i=0;i<w.length;i++){
@@ -2830,7 +2838,7 @@ function rSetups(d){
     if(!qt.chg&&w[i].chg)qt.chg=String(w[i].chg);
     if(!qt.conf&&w[i].confluence)qt.conf=String(w[i].confluence);
     if(!qt.setup&&w[i].setup)qt.setup=w[i].setup;
-    if(!qt.setupDir&&w[i].setupDir)qt.setupDir=w[i].setupDir;
+    if(!qt.side&&w[i].side)qt.side=w[i].side;
     merged.push(sym);
   }
   // Sort: GP-allowed first, then by confluence
@@ -3190,7 +3198,7 @@ function _buildCandidateList(){
     if(!q||!q.setup||!q.last||tk.charAt(0)==='$')continue;
     var key=_matchSetupKey(q.setup);if(!key)continue;
     var chk=_cSGP(key,subModeLabel,gp);if(!chk.ok)continue;
-    var gr=quickGrade(tk,key,subModeLabel,gp,'LONG');
+    var gr=quickGrade(tk,key,subModeLabel,gp,(q.side||'LONG').toUpperCase());
     if(!gr||gr.grade==='F')continue;
     cands.push({ticker:tk,grade:gr.grade,conf:parseFloat(q.conf)||0});
   }
@@ -3424,7 +3432,8 @@ function renderPTModal(d){
   // Compact header — repeats what you saw in the list
   var _psM=_parseSetup(d.setup||'');
   var _skM=_matchSetupKey(d.setup);
-  var _grM=_skM?quickGrade(d.symbol,_skM,(d.gpSubMode||''),(d.gameplan||'C'),'LONG'):null;
+  var _detSide=((_tq[d.symbol]||{}).side||'LONG').toUpperCase();
+  var _grM=_skM?quickGrade(d.symbol,_skM,(d.gpSubMode||''),(d.gameplan||'C'),_detSide):null;
   h+='<div style="padding:6px 0 8px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #1c2333;margin-bottom:8px">';
   h+='<span style="font-size:16px;font-weight:700;color:#e6edf3">$'+e(d.last)+'</span>';
   var _chgM=d.chg?parseFloat(String(d.chg).replace('%','')):0;
@@ -3524,8 +3533,11 @@ function renderPTModal(d){
 
   // ── Section 3: Scorecard (client-side from C_REGISTRY) ──
   h+='<div class="pt-section" id="ptSCSection">';
-  h+=buildScorecardHTML(d,detectedKey||'Momentum','LONG');
+  h+=buildScorecardHTML(d,detectedKey||'Momentum',_detSide);
   h+='</div>';
+
+  // ── Section 3b: Setup Scoring Grid (all setups, both sides) ──
+  h+=buildSetupGridHTML(d.symbol);
 
   // ── Section 4: Trade Plan (auto-filled) ──
   h+='<div class="pt-section">';
@@ -3587,6 +3599,75 @@ function renderPTModal(d){
   $('ptBody').innerHTML=h;
 }
 
+// ═══ SETUP SCORING GRID — shows all scored setups, both sides ═══
+function buildSetupGridHTML(symbol){
+  var grid=_setupGrids[symbol];
+  if(!grid)return'<div class="pt-section" style="padding:8px 0"><div style="font-size:10px;color:#484f58;font-style:italic">Setup grid not available — run a scan with bars for this ticker</div></div>';
+  
+  // Build arrays from grid.l (long) and grid.s (short)
+  var longs=[],shorts=[];
+  for(var k in grid.l){longs.push({name:k,score:grid.l[k]});}
+  for(var k in grid.s){shorts.push({name:k,score:grid.s[k]});}
+  longs.sort(function(a,b){return b.score-a.score;});
+  shorts.sort(function(a,b){return b.score-a.score;});
+  
+  var maxRows=Math.max(longs.length,shorts.length);
+  if(maxRows===0)return'<div class="pt-section" style="padding:8px 0"><div style="font-size:10px;color:#484f58;font-style:italic">No setups scored for this ticker</div></div>';
+  
+  var h='<div class="pt-section" style="padding:8px 0">';
+  h+='<div style="font-size:11px;color:#7d8590;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Setup Scoring Grid</div>';
+  
+  // Confluence summary
+  var lc=grid.lc||0,sc=grid.sc||0;
+  var lcCls=lc>=24?'g':lc>=20?'y':'dim';
+  var scCls=sc>=24?'g':sc>=20?'y':'dim';
+  h+='<div style="display:flex;gap:12px;margin-bottom:8px;font-family:JetBrains Mono,monospace;font-size:10px">';
+  h+='<span class="'+lcCls+'">▲ Long Confluence: '+lc.toFixed(0)+'</span>';
+  h+='<span class="'+scCls+'">▼ Short Confluence: '+sc.toFixed(0)+'</span>';
+  h+='</div>';
+  
+  // Two-column grid
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">';
+  // Headers
+  h+='<div style="background:#0d2818;padding:4px 8px;border-radius:3px 0 0 0;font-size:10px;font-weight:700;color:#3fb950;text-align:center">▲ LONG ('+longs.length+')</div>';
+  h+='<div style="background:#1f1315;padding:4px 8px;border-radius:0 3px 0 0;font-size:10px;font-weight:700;color:#f85149;text-align:center">▼ SHORT ('+shorts.length+')</div>';
+  
+  for(var i=0;i<maxRows;i++){
+    var lEntry=longs[i]||null;
+    var sEntry=shorts[i]||null;
+    
+    // Long cell
+    if(lEntry){
+      var lPct=Math.min(lEntry.score/25*100,100);
+      var lReg=C_REGISTRY[lEntry.name];
+      var lLabel=lReg?lReg.label:lEntry.name;
+      var lBg=i===0?'rgba(63,185,80,0.12)':'rgba(63,185,80,0.04)';
+      h+='<div style="background:'+lBg+';padding:4px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #161b22">';
+      h+='<span style="font-size:11px;color:#c9d1d9">'+(i===0?'<b>':'')+''+e(lLabel)+''+(i===0?'</b>':'')+'</span>';
+      h+='<span style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:#3fb950">'+lEntry.score.toFixed(1)+'</span>';
+      h+='</div>';
+    } else {
+      h+='<div style="background:#0d1117;padding:4px 8px;border-bottom:1px solid #161b22"></div>';
+    }
+    
+    // Short cell
+    if(sEntry){
+      var sPct=Math.min(sEntry.score/25*100,100);
+      var sReg=C_REGISTRY[sEntry.name];
+      var sLabel=sReg?sReg.label:sEntry.name;
+      var sBg=i===0?'rgba(248,81,73,0.12)':'rgba(248,81,73,0.04)';
+      h+='<div style="background:'+sBg+';padding:4px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #161b22">';
+      h+='<span style="font-size:11px;color:#c9d1d9">'+(i===0?'<b>':'')+''+e(sLabel)+''+(i===0?'</b>':'')+'</span>';
+      h+='<span style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:700;color:#f85149">'+sEntry.score.toFixed(1)+'</span>';
+      h+='</div>';
+    } else {
+      h+='<div style="background:#0d1117;padding:4px 8px;border-bottom:1px solid #161b22"></div>';
+    }
+  }
+  h+='</div></div>';
+  return h;
+}
+
 // Client-side scorecard checks (mirrors v90.9 evaluateScorecard Check 1)
 function buildScorecardHTML(d,setupKey,side){
   var reg=C_REGISTRY[setupKey]||{};
@@ -3637,7 +3718,7 @@ function buildScorecardHTML(d,setupKey,side){
 
   // ── RENDER ──
   var gC=0,yC=0,rC=0;
-  var h='<div style="margin-top:10px"><div style="font-size:11px;color:#7d8590;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">'+(reg.label||'Setup')+' Scorecard</div>';
+  var h='<div style="margin-top:10px"><div style="font-size:11px;color:#7d8590;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">'+(reg.label||'Setup')+' Scorecard'+(side==='SHORT'?' <span style="color:#f85149">▼ SHORT</span>':'')+'</div>';
   h+='<div class="pt-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px">';
   for(var i=0;i<checks.length;i++){
     var ck=checks[i];
